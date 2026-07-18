@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>F/A-18 INTERCEPTOR — San Francisco Bay, 1994</title>
+<link rel="stylesheet" href="css/style.css">
+<script type="importmap">
+{ "imports": { "three": "./libs/three.module.js" } }
+</script>
+</head>
+<body>
+<canvas id="gl"></canvas>
+<canvas id="hud"></canvas>
+
+<!-- ============ TITLE SCREEN ============ -->
+<div id="menu" class="overlay">
+  <div class="stars"></div>
+  <div class="title-block">
+    <div class="title-top">ELECTRONIC ARTS &middot; 1988 &middot; A TRIBUTE REBUILD</div>
+    <h1 class="game-title">F/A-18<br><span>INTERCEPTOR</span></h1>
+    <div class="title-sub">SAN FRANCISCO BAY AREA &middot; SEPTEMBER 1994</div>
+  </div>
+  <div class="menu-list" id="menu-list"></div>
+  <div class="menu-footer">
+    <div id="pilot-record"></div>
+    <div class="hint">ARROWS / MOUSE — FLY &nbsp;&middot;&nbsp; W/S — THROTTLE &nbsp;&middot;&nbsp; SPACE — FIRE &nbsp;&middot;&nbsp; H — CONTROLS</div>
+  </div>
+</div>
+
+<!-- ============ BRIEFING ============ -->
+<div id="briefing" class="overlay hidden">
+  <div class="brief-box">
+    <div class="brief-head"><span id="brief-code"></span><span class="brief-class">TOP SECRET</span></div>
+    <h2 id="brief-title"></h2>
+    <div id="brief-body"></div>
+    <div id="brief-loadout"></div>
+    <div class="brief-buttons">
+      <button id="brief-fly" class="mbtn">COMMENCE SORTIE</button>
+      <button id="brief-back" class="mbtn ghost">BACK</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DEBRIEF ============ -->
+<div id="debrief" class="overlay hidden">
+  <div class="brief-box">
+    <h2 id="debrief-title"></h2>
+    <div id="debrief-body"></div>
+    <div class="brief-buttons">
+      <button id="debrief-next" class="mbtn">CONTINUE</button>
+      <button id="debrief-menu" class="mbtn ghost">MAIN MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CONTROLS ============ -->
+<div id="controls" class="overlay hidden">
+  <div class="brief-box wide">
+    <h2>FLIGHT MANUAL — CONTROLS</h2>
+    <div class="ctl-grid">
+      <div><b>MOUSE</b> / <b>&#8593;&#8595;&#8592;&#8594;</b></div><div>Pitch &amp; roll (M toggles mouse-stick)</div>
+      <div><b>W / S</b></div><div>Throttle up / down</div>
+      <div><b>SHIFT</b> (hold)</div><div>Afterburner</div>
+      <div><b>, / .</b></div><div>Rudder left / right</div>
+      <div><b>SPACE</b></div><div>Fire selected weapon</div>
+      <div><b>ENTER</b></div><div>Cycle weapon (AMRAAM / Sidewinder / Gun)</div>
+      <div><b>G</b></div><div>Hold gun trigger</div>
+      <div><b>T</b></div><div>Cycle radar target</div>
+      <div><b>R</b></div><div>Radar range (2 / 10 / 40 NM)</div>
+      <div><b>B</b></div><div>Wheel brakes / airbrake</div>
+      <div><b>L</b></div><div>Landing gear</div>
+      <div><b>A</b></div><div>Arrestor hook</div>
+      <div><b>C / F</b></div><div>Chaff / Flares</div>
+      <div><b>E</b></div><div>ECM jammer toggle</div>
+      <div><b>SHIFT+P</b></div><div>Drop rescue pod (Mission 4)</div>
+      <div><b>V</b></div><div>Camera: chase / cockpit / orbit</div>
+      <div><b>X</b></div><div>Eject &nbsp;&middot;&nbsp; <b>P / ESC</b> pause</div>
+      <div><b>N</b> music &nbsp;&middot;&nbsp; <b>H</b></div><div>This screen</div>
+    </div>
+    <div class="brief-buttons"><button id="controls-back" class="mbtn">CLOSE</button></div>
+  </div>
+</div>
+
+<!-- ============ PAUSE ============ -->
+<div id="pause" class="overlay hidden">
+  <div class="pause-inner">
+    <h2>PAUSED</h2>
+    <div class="menu-list">
+      <button class="mbtn" id="pause-resume">RESUME</button>
+      <button class="mbtn" id="pause-restart">RESTART MISSION</button>
+      <button class="mbtn ghost" id="pause-quit">ABORT TO MENU</button>
+    </div>
+  </div>
+</div>
+
+<div id="flash"></div>
+<div id="errbox"></div>
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>
