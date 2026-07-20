@@ -13,13 +13,35 @@ import { Intro, FF_SPOTS } from './intro.js';
 
 const $ = (id) => document.getElementById(id);
 
+// ---- guard-band safety: clamp off-screen clip coordinates ----------------
+// In low grazing views the ground cells that straddle the camera's w=0 plane
+// are clipped into triangles hundreds of viewports wide; some rasterizers
+// (incl. software WebGL) overflow their guard band on them, smearing terrain
+// and sea across the sky and punching holes beside the runways. Clamping every
+// projected vertex to ±4 viewports keeps rasterizer coordinates sane; the
+// frustum clip still produces the identical on-screen image.
+if (!new URLSearchParams(location.search).has('nogb'))
+THREE.ShaderChunk.project_vertex = `vec4 mvPosition = vec4( transformed, 1.0 );
+#ifdef USE_BATCHING
+	mvPosition = batchingMatrix * mvPosition;
+#endif
+#ifdef USE_INSTANCING
+	mvPosition = instanceMatrix * mvPosition;
+#endif
+mvPosition = modelViewMatrix * mvPosition;
+gl_Position = projectionMatrix * mvPosition;
+{
+	float _gb = abs( gl_Position.w ) * 64.0 + 1e-4;
+	gl_Position.xy = clamp( gl_Position.xy, -vec2( _gb ), vec2( _gb ) );
+}`;
+
 // ---------------- error overlay (helps debugging) ----------------
 window.addEventListener('error', (e) => { $('errbox').textContent += `\n${e.message}`; });
 
 // ---------------- renderer ----------------
 // logarithmic depth buffer: kills ocean/terrain z-fighting at map altitude and
 // giant-triangle depth artifacts near the camera (standard depth can't span 1.5m..320km)
-const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: false, logarithmicDepthBuffer: true });
+const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: false, logarithmicDepthBuffer: !new URLSearchParams(location.search).has('nologz') });
 // Amiga-authentic chunky pixels: render small, upscale with nearest-neighbor
 const RETRO_SCALE = 0.36;
 renderer.setPixelRatio(1);
@@ -1033,6 +1055,24 @@ if (auto && warpT > 0) {
     });
   }
   if (params.has('probe')) window.__probeFrames = 5;   // run after 5 real frames (matrices fresh)
+  if (params.has('cnear')) { camera.near = parseFloat(params.get('cnear')); camera.updateProjectionMatrix(); }   // probe: near-plane sweep
+  if (params.has('tlift')) {   // debug: lift the terrain mesh by N metres
+    const lift = parseFloat(params.get('tlift'));
+    G.scene.traverse(o => { if (o.geometry && o.geometry.attributes.position && o.geometry.attributes.position.count > 200000 && o.material.vertexColors) o.position.y = lift; });
+  }
+  if (params.has('tdye')) {   // debug: dye terrain verts within 6 km of the player red
+    G.scene.traverse(o => {
+      if (o.geometry && o.geometry.attributes.position && o.geometry.attributes.position.count > 200000) {
+        const p = o.geometry.attributes.position, c = o.geometry.attributes.color;
+        const px = G.player.pos.x, pz = G.player.pos.z;
+        for (let i = 0; i < p.count; i++) {
+          const x = p.getX(i) + 5000, z = p.getZ(i) + 8000;
+          if (Math.hypot(x - px, z - pz) < 6000) c.setXYZ(i, 1, 0, 0);
+        }
+        c.needsUpdate = true;
+      }
+    });
+  }
   const dye = params.get('dye');   // test hook: paint the Nth textured plane red
   if (dye !== null) {
     let di = 0;
@@ -1064,6 +1104,14 @@ if (auto && warpT > 0) {
     d.style.cssText = 'position:fixed;top:8px;left:8px;color:#0f0;font:22px monospace;z-index:99;text-shadow:1px 1px 0 #000';
     d.textContent = `localX.y=${xr.y.toFixed(3)}  hdg=${G.player.headingDeg().toFixed(1)}  vel.y=${G.player.vel.y.toFixed(1)}`;
     document.body.appendChild(d);
+  }
+  // deterministic orbit camera for tests: oyaw/opitch in degrees, odist in m
+  if (params.has('oyaw') || params.has('opitch') || params.has('odist')) {
+    G.orbit.manual = true;
+    if (params.has('oyaw')) G.orbit.yaw = parseFloat(params.get('oyaw')) * Math.PI / 180;
+    if (params.has('opitch')) G.orbit.pitch = parseFloat(params.get('opitch')) * Math.PI / 180;
+    if (params.has('odist')) G.orbit.dist = parseFloat(params.get('odist'));
+    snapCamera();
   }
 }
 window.__camdist = parseFloat(params.get('camdist') || '0');

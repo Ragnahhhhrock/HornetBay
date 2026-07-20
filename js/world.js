@@ -106,7 +106,13 @@ export function groundHeight(x, z) {
   }
   for (const F of FLATS) {
     const d = Math.hypot(x - F.x, z - F.z);
-    if (d < F.r) h = lerp(h, F.y, sstep(F.r, F.r * 0.45, d));
+    // flat out to 1.05r so the whole runway rectangle (len/2 ~ 0.7r) plus
+    // margin sits exactly at field elevation, then a wide, gentle apron out
+    // to 2.6x the pad radius: a short ramp cuts 300 m cliff walls into the
+    // mesh around each airfield, and those giant vertical triangles straddle
+    // ground-level cameras and wreck weak rasterizers (smears in the sky,
+    // holes beside the runway)
+    if (d < F.r * 2.6) h = lerp(h, F.y, sstep(F.r * 2.6, F.r * 1.05, d));
   }
   return h;
 }
@@ -219,12 +225,37 @@ export class World {
   }
 
   _buildOcean() {
-    // the original's sea is one solid sheet of blue — no waves, no glint
-    const geo = new THREE.PlaneGeometry(560000, 560000, 1, 1);
-    geo.rotateX(-Math.PI / 2);
+    // The sea is one solid sheet of blue, built as a polar fan centred on the
+    // camera: tiny cells near the eye (no extreme slivers for the near-plane
+    // clip to mangle on weak rasterizers), growing geometrically to the
+    // horizon. It follows the camera in World.update; being flat and
+    // untextured, the motion is invisible.
+    const RINGS = 72, SEGS = 128, R0 = 60, R1 = 260000;
+    const q = Math.pow(R1 / R0, 1 / (RINGS - 1));
+    const verts = [0, 0, 0];
+    for (let i = 0; i < RINGS; i++) {
+      const r = R0 * Math.pow(q, i);
+      for (let j = 0; j < SEGS; j++) {
+        const a = (j / SEGS) * Math.PI * 2;
+        verts.push(Math.cos(a) * r, 0, Math.sin(a) * r);
+      }
+    }
+    const idx = [];
+    for (let j = 0; j < SEGS; j++) idx.push(0, 1 + ((j + 1) % SEGS), 1 + j);
+    for (let i = 0; i < RINGS - 1; i++) {
+      for (let j = 0; j < SEGS; j++) {
+        const a = 1 + i * SEGS + j, b = 1 + i * SEGS + ((j + 1) % SEGS),
+              c = 1 + (i + 1) * SEGS + j, d = 1 + (i + 1) * SEGS + ((j + 1) % SEGS);
+        idx.push(a, b, d, a, d, c);
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(verts), 3));
+    geo.setIndex(idx);
     this.waterMat = new THREE.MeshBasicMaterial({ color: 0x003366, fog: true });
     const mesh = new THREE.Mesh(geo, this.waterMat);
     mesh.position.set(5000, -2.5, 8000);   // a touch below the beaches, less grazing z-fight
+    mesh.frustumCulled = false;            // it follows the camera — always visible
     this.oceanMesh = mesh;
     this.scene.add(mesh);
     // sparse whitecap specks, like the original's sea texture
@@ -260,7 +291,15 @@ export class World {
       const h = groundHeight(x, z);
       // sink submerged verts well below the water plane so distant depth
       // buffer imprecision never lets the seafloor z-fight through the sea
-      pos.setY(i, h < 0 ? h - 25 : h);
+      let y = h < 0 ? h - 25 : h;
+      // keep the coarse sheet well under the fine airfield pads: its 479 m
+      // cells mis-interpolate the flattening ramps by up to ~2.3 m, which
+      // buried the runway strips. Smooth 5 m depression, no cliffs.
+      for (const F of FLATS) {
+        const dF = Math.hypot(x - F.x, z - F.z);
+        if (dF < F.r * 2.8) y -= 5 * sstep(F.r * 2.8, F.r * 0.5, dF);
+      }
+      pos.setY(i, y);
       const dCity = Math.hypot(x - 7000, z - 5000);
       if (h < -4) tmp.copy(cDeep);
       else if (h < 1.5) tmp.copy(cSand);
@@ -277,6 +316,33 @@ export class World {
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(CX, 0, CZ);
     this.scene.add(mesh);
+
+    // Fine pads under each airfield: a 62 m local copy of the true surface
+    // (interpolation error is sub-centimetre on the gentle ramps). The coarse
+    // sheet is depressed 5 m below these discs, so the pad is the visible
+    // ground around every airfield and the runway strips rest 20 cm above it.
+    for (const F of FLATS) {
+      const pg = new THREE.PlaneGeometry((F.r + 400) * 2, (F.r + 400) * 2, 84, 84);
+      pg.rotateX(-Math.PI / 2);
+      const pp = pg.attributes.position;
+      const pcol = new Float32Array(pp.count * 3);
+      for (let i = 0; i < pp.count; i++) {
+        const x = pp.getX(i) + F.x, z = pp.getZ(i) + F.z;
+        const h = groundHeight(x, z);
+        pp.setY(i, h < 0 ? h - 25 : h);
+        const dCity = Math.hypot(x - 7000, z - 5000);
+        if (h < -4) tmp.copy(cDeep);
+        else if (h < 1.5) tmp.copy(cSand);
+        else if (h < 3) tmp.copy(cShallow).lerp(cSand, sstep(-2, 1.5, h));
+        else if (dCity < 2800) tmp.copy(cCity).lerp(cGrass, sstep(1600, 2800, dCity));
+        else tmp.copy(cGrass).lerp(cRock, sstep(170, 320, h));
+        pcol[i * 3] = tmp.r; pcol[i * 3 + 1] = tmp.g; pcol[i * 3 + 2] = tmp.b;
+      }
+      pg.setAttribute('color', new THREE.BufferAttribute(pcol, 3));
+      const pad = new THREE.Mesh(pg, mat);
+      pad.position.set(F.x, 0, F.z);
+      this.scene.add(pad);
+    }
   }
 
   _cloudTexture() {
@@ -473,10 +539,14 @@ export class World {
         g2.fillRect(5 + k * 9.5, 4, 5, 14); g2.fillRect(5 + k * 9.5, 494, 5, 14);
       }
       const t = new THREE.CanvasTexture(c);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(rw.wid, rw.len),
-        new THREE.MeshLambertMaterial({ map: t }));
+      // subdivided along the length: a 3 km two-triangle strip straddles
+      // ground-level cameras and breaks weak rasterizers — 75 m segments clip cleanly
+      const smat = new THREE.MeshLambertMaterial({ map: t });
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(rw.wid, rw.len, 1, 40), smat);
       m.rotation.x = -Math.PI / 2; m.rotation.z = -rw.hdg;
-      m.position.set(rw.x, rw.elev + 0.3, rw.z);
+      // 20 cm above the pad (which is exactly the true surface): wins the
+      // depth contest everywhere without visible float
+      m.position.set(rw.x, rw.elev + 0.2, rw.z);
       this.scene.add(m);
       const tw = new THREE.Mesh(new THREE.CylinderGeometry(4, 6, 40, 8), new THREE.MeshLambertMaterial({ color: 0xb8c0c8 }));
       tw.position.set(rw.x + 300, rw.elev + 20, rw.z + 300); this.scene.add(tw);
@@ -499,6 +569,7 @@ export class World {
     this.time += dt;
     // ocean is flat — nothing to animate
     if (this.skyMesh) this.skyMesh.position.copy(camPos);
+    if (this.oceanMesh) this.oceanMesh.position.set(camPos.x, -2.5, camPos.z);
     this.carrier.update(dt);
     this.enemySub.update(dt);
   }
