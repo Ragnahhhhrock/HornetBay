@@ -9,6 +9,7 @@ import { HUD } from './hud.js';
 import { Input } from './input.js';
 import { AudioEngine } from './audio.js';
 import { MISSIONS } from './missions.js';
+import { Intro, FF_SPOTS } from './intro.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -16,14 +17,16 @@ const $ = (id) => document.getElementById(id);
 window.addEventListener('error', (e) => { $('errbox').textContent += `\n${e.message}`; });
 
 // ---------------- renderer ----------------
-const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: true });
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: false });
+// Amiga-authentic chunky pixels: render small, upscale with nearest-neighbor
+const RETRO_SCALE = 0.36;
+renderer.setPixelRatio(1);
+renderer.setSize(Math.floor(window.innerWidth * RETRO_SCALE), Math.floor(window.innerHeight * RETRO_SCALE), false);
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
-const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.5, 320000);
+const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1.5, 320000);
 window.addEventListener('resize', () => {
-  renderer.setSize(window.innerWidth, window.innerHeight);
+  renderer.setSize(Math.floor(window.innerWidth * RETRO_SCALE), Math.floor(window.innerHeight * RETRO_SCALE), false);
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   hud.resize();
@@ -37,11 +40,14 @@ const G = {
   player: null, world: null, fx: null, hud: null, audio: null, input: null,
   bandits: [], missiles: [], radarContacts: [], messages: [],
   playerTarget: null, lockLevel: 0, locked: false,
-  waypoint: null, radarRange: 10 * NM, radarRangeNM: 10,
-  mission: null, over: false, view: 'chase',
+  waypoint: null, radarRange: 40 * NM, radarRangeNM: 40,   // original powers up on the 40 MI scope
+  mission: null, over: false, view: 'cockpit',
   trappedThisSortie: false, landedThisSortie: false,
   missileWarning: false, podDropRequested: false,
   freeFlightStart: 'carrier',
+  orbit: { yaw: 0, pitch: 0.25, dist: 55, manual: false },
+  shakeT: 0, smokeTrail: false,
+  xmag: 1.0, towerName: '',
   msg(text, kind = 'info') { this.messages.unshift({ text, kind, t: this.time }); if (this.messages.length > 6) this.messages.pop(); },
   radio(text) { this.msg(text, 'radio'); this.audio.radioClick(); },
   addScore(n) { this.score += n; },
@@ -50,6 +56,7 @@ window.G = G; // debug hook
 
 G.audio = new AudioEngine();
 G.input = new Input();
+G.intro = new Intro(G);
 const hud = new HUD($('hud'));
 G.hud = hud;
 
@@ -66,34 +73,75 @@ let save = { qualified: false, done: {}, best: 0, kills: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
 
-// ---------------- menu ----------------
-function buildMenu() {
+// ---------------- menu (original 1-8 structure) ----------------
+const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
+let menuMode = 'main';
+function buildMenu(mode = 'main') {
+  menuMode = mode;
   const list = $('menu-list');
   list.innerHTML = '';
-  const addBtn = (label, tag, cb, disabled = false) => {
+  const addBtn = (num, label, tag, cb) => {
     const b = document.createElement('button');
     b.className = 'mbtn';
-    b.innerHTML = `${label}${tag ? `<span class="tag">${tag}</span>` : ''}`;
-    b.disabled = disabled;
+    b.innerHTML = `${num ? `<span class="mnum">${num}</span>` : ''}${label}${tag ? `<span class="tag">${tag}</span>` : ''}`;
+    b.dataset.key = num || '';
     if (cb) b.onclick = () => { G.audio.ensure(); cb(); };
     list.appendChild(b);
   };
-  addBtn('QUALIFICATION — CARRIER OPS', save.qualified ? 'QUALIFIED' : 'REQUIRED', () => startBriefing('qual'));
-  const order = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
-  order.forEach((id, i) => {
-    const def = MISSIONS.find(m => m.id === id);
-    const prevDone = i === 0 || save.done[order[i - 1]];
-    const unlocked = save.qualified && prevDone;
-    const tag = save.done[id] ? 'COMPLETE' : (unlocked ? '' : (save.qualified ? 'LOCKED' : 'NEED QUAL'));
-    addBtn(`MISSION ${i + 1} — ${def.title}`, tag, unlocked ? () => startBriefing(id) : null, !unlocked);
+  if (mode === 'missions') {
+    $('menu-title').textContent = 'SELECTABLE MISSIONS';
+    MISSION_ORDER.forEach((id, i) => {
+      const def = MISSIONS.find(m => m.id === id);
+      addBtn(`F${i + 1}`, def.title, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+    });
+    addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
+    return;
+  }
+  if (mode === 'log') {
+    $('menu-title').textContent = 'YOUR CURRENT FLIGHT LOG STATISTICS';
+    const done = MISSION_ORDER.filter(id => save.done[id]).length;
+    for (const ln of [
+      `CALLSIGN ......... ${save.callsign || 'ROOKIE'}`,
+      `QUALIFIED ........ ${save.qualified ? 'YES' : 'NO'}`,
+      `MISSIONS DONE .... ${done} OF ${MISSION_ORDER.length}`,
+      `KILLS ............ ${save.kills}`,
+      `BEST SCORE ....... ${save.best}`,
+      `CARRIER TRAPS .... ${save.traps || 0}`,
+    ]) {
+      const d = document.createElement('div'); d.className = 'logline'; d.textContent = ln; list.appendChild(d);
+    }
+    addBtn('C', 'CHANGE CALLSIGN', '', () => {
+      const n = prompt('ENTER YOUR CALLSIGN:', save.callsign || 'ROOKIE');
+      if (n) { save.callsign = n.toUpperCase().slice(0, 12); persist(); buildMenu('log'); }
+    });
+    addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
+    return;
+  }
+  $('menu-title').textContent = '';   // main mode: the logo block above says it
+  addBtn('1', 'DEMO', '', () => startDemo(true));
+  addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
+  addBtn('3', 'TRAINING: DEMO OF MANEUVERS', 'SOON', () => G.msg('TRAINING NOT AVAILABLE THIS TOUR', 'info'));
+  addBtn('4', 'TRAINING: PRACTICE MANEUVERS', 'SOON', () => G.msg('TRAINING NOT AVAILABLE THIS TOUR', 'info'));
+  addBtn('5', 'QUALIFICATION: REQUIRED FOR MISSIONS', save.qualified ? 'QUALIFIED' : '', () => startBriefing('qual'));
+  addBtn('6', 'SELECTABLE MISSIONS', '', () => buildMenu('missions'));
+  addBtn('7', 'NEXT ACTIVE ADVANCED MISSION', '', () => {
+    const next = MISSION_ORDER.find(id => !save.done[id]) || MISSION_ORDER[0];
+    startBriefing(next);
   });
-  addBtn('FREE FLIGHT — FROM CARRIER', '', () => { G.freeFlightStart = 'carrier'; startBriefing('free'); });
-  addBtn('FREE FLIGHT — FROM SFO', '', () => { G.freeFlightStart = 'sfo'; startBriefing('free'); });
-  addBtn('FREE FLIGHT — AIRBORNE', '', () => { G.freeFlightStart = 'air'; startBriefing('free'); });
-  addBtn('FLIGHT MANUAL / CONTROLS', '', () => { $('controls').classList.remove('hidden'); });
+  addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
+  addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { $('controls').classList.remove('hidden'); });
   $('pilot-record').textContent =
-    `PILOT LOG — MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
+    `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
 }
+// number keys drive the menu like the original
+window.addEventListener('keydown', (e) => {
+  if (G.state !== 'menu') return;
+  if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : null;
+  if (!d) return;
+  const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
+  if (btn && btn.onclick) { G.audio.ensure(); btn.onclick(); }
+});
 
 function showMenu() {
   G.state = 'menu';
@@ -105,21 +153,45 @@ function showMenu() {
   startDemo();
 }
 
-// ---------------- briefing / debrief ----------------
+// ---------------- briefing / debrief (map + typed text + zoom, like the original)
 let pendingMission = null;
 function startBriefing(id) {
   const def = MISSIONS.find(m => m.id === id);
   pendingMission = def;
-  G.state = 'briefing';
   $('menu').classList.add('hidden');
-  $('briefing').classList.remove('hidden');
-  $('brief-code').textContent = def.code;
-  $('brief-title').textContent = (def.num < 90 ? (def.num === 0 ? 'QUALIFICATION' : `MISSION ${def.num}`) : 'FREE FLIGHT') + ' — ' + def.title;
-  $('brief-body').textContent = def.briefing;
-  $('brief-loadout').textContent = 'LOADOUT — ' + def.loadout + '\nAIRFRAME — ' + (G.player.type === 'f16' ? 'F-16 FALCON' : 'F/A-18 HORNET') + '  [PRESS F TO SWITCH]';
+  stopDemo();
+  G.intro.briefing(def, () => enterPlaneSelect(def));
 }
-$('brief-fly').onclick = () => { $('briefing').classList.add('hidden'); launchMission(pendingMission); };
-$('brief-back').onclick = () => { $('briefing').classList.add('hidden'); showMenu(); };
+function enterPlaneSelect(def) {
+  pendingMission = def;
+  G.intro.planeSelect();
+}
+function startFreeFlightMap() {
+  $('menu').classList.add('hidden');
+  stopDemo();
+  G.intro.mapSelect();
+}
+function launchWithZoom(def) {
+  launchMission(def, { zoom: true });
+}
+// plane select + map select + briefing keys
+window.addEventListener('keydown', (e) => {
+  if (G.state === 'planesel') {
+    if (e.code === 'Digit1') { G.player.type = 'f18'; launchWithZoom(pendingMission); }
+    else if (e.code === 'Digit2') {
+      // the F-16 has no tailhook and can't take off from or land on the carrier
+      const carrierStart = pendingMission.id === 'free' ? G.freeFlightStart === 'carrier' : pendingMission.id !== 'm1';
+      if (carrierStart) { G.intro.blockMsg = 'F-16 CANNOT OPERATE FROM THE CARRIER'; G.intro.blockT = G.time; G.audio.radioClick(); }
+      else { G.player.type = 'f16'; launchWithZoom(pendingMission); }
+    }
+  } else if (G.state === 'mapselect') {
+    const spot = FF_SPOTS.find(s => s.key === (e.code.startsWith('Digit') ? e.code.slice(5) : ''));
+    if (spot) { G.freeFlightStart = spot.id; enterPlaneSelect(MISSIONS.find(m => m.id === 'free')); }
+  } else if (G.state === 'briefing') {
+    if (e.code === 'Enter' || e.code === 'Space') { G.intro.afterBrief && G.intro.afterBrief(); }
+    if (e.code === 'Escape') showMenu();
+  }
+});
 $('debrief-menu').onclick = () => { $('debrief').classList.add('hidden'); showMenu(); };
 $('debrief-next').onclick = () => { $('debrief').classList.add('hidden'); showMenu(); };
 $('controls-back').onclick = () => $('controls').classList.add('hidden');
@@ -127,17 +199,14 @@ $('pause-resume').onclick = () => togglePause();
 $('pause-restart').onclick = () => { $('pause').classList.add('hidden'); launchMission(G.missionDef); };
 $('pause-quit').onclick = () => { $('pause').classList.add('hidden'); showMenu(); };
 
-// plane switch on briefing (F key)
-window.addEventListener('keydown', (e) => {
-  if (e.code === 'KeyF' && G.state === 'briefing') {
-    G.player.type = G.player.type === 'f18' ? 'f16' : 'f18';
-    $('brief-loadout').textContent = 'LOADOUT — ' + pendingMission.loadout + '\nAIRFRAME — ' + (G.player.type === 'f16' ? 'F-16 FALCON' : 'F/A-18 HORNET') + '  [PRESS F TO SWITCH]';
-  }
-});
-
 // ---------------- mission lifecycle ----------------
-function launchMission(def) {
+function launchMission(def, opts = {}) {
   G.missionDef = def;
+  // safety net: the F-16 never goes to the boat, whatever path got us here
+  if (G.player.type === 'f16') {
+    const carrierStart = def.id === 'free' ? G.freeFlightStart === 'carrier' : def.id !== 'm1';
+    if (carrierStart) G.player.type = 'f18';
+  }
   $('menu').classList.add('hidden');
   $('briefing').classList.add('hidden');
   $('debrief').classList.add('hidden');
@@ -152,15 +221,19 @@ function launchMission(def) {
   G.messages = []; G.playerTarget = null; G.lockLevel = 0; G.waypoint = null;
   G.trappedThisSortie = false; G.landedThisSortie = false; G.over = false;
   G.missileWarning = false; G.podDropRequested = false;
-  G.world.enemySub.group.visible = def.id === 'm6';
+  G.world.enemySub.group.visible = false;   // m6 spawns its own destructible sub entity
   G.world.setTimeOfDay(def.time || 'day');
   G.mission = Object.assign({}, def);
   G.mission.setup(G);
-  G.state = 'flying';
   scriptT = 0; runScript._gear = false;
-  snapCamera();
   G.msg(def.title, 'info');
   G.audio.ensure();
+  if (opts.zoom) {
+    G.intro.zoomToAircraft(() => { G.state = 'flying'; snapCamera(); });
+  } else {
+    G.state = 'flying';
+    snapCamera();
+  }
 }
 
 G.spawnAI = (type, opts) => {
@@ -197,6 +270,7 @@ G.onAircraftDown = (unit, byPlayer) => {
     }
   }
   if (unit.type === 'cruise') { G.msg('CRUISE MISSILE DESTROYED', 'good'); }
+  if (unit.type === 'sub') { G.msg('SHADOW SUB DESTROYED!', 'good'); }
 };
 G.onPlayerHit = (dmg, byWhom) => {
   if (G.player.dead || G.player.ejected) return;
@@ -205,7 +279,7 @@ G.onPlayerHit = (dmg, byWhom) => {
   flash(0.5);
   if (G.player.damage >= 100) {
     G.player.dead = true;
-    G.msg('FIRE! YOU\'RE GOING DOWN — EJECT (X)!', 'bad');
+    G.msg('FIRE! YOU\'RE GOING DOWN — EJECT (SHIFT+E)!', 'bad');
     G.audio.fail();
   } else {
     G.msg(`HIT! DAMAGE ${Math.round(G.player.damage)}%`, 'warn');
@@ -232,6 +306,20 @@ G.onTrapped = () => {
   const P = G.player;
   P.fuel = P.cfg.fuel; P.stores.aim9 = 2; P.stores.aim120 = 4; P.stores.gun = 500;
   P.stores.chaff = 14; P.stores.flares = 14; P.damage = Math.min(P.damage, 20);
+};
+// sonic boom: crossing Mach 1 shakes the world and cracks the air
+G.onMachCross = (supersonic) => {
+  const P = G.player;
+  G.shakeT = Math.max(G.shakeT, 1.4);
+  G.audio.sonicBoom();
+  if (supersonic) G.msg('MACH 1', 'info');
+  // vapor cone puffs shedding off the airframe
+  for (let i = 0; i < 10; i++) {
+    const p = P.pos.clone().addScaledVector(P.fwd, 2 - i * 1.8);
+    p.y += (Math.random() - 0.5) * 1.5;
+    G.fx.smoke(p, 0.55, 1.3, 0xf4f8ff);
+  }
+  G.fx.flash(P.pos.clone(), 12, 0xffffff, 0.14);
 };
 G.completeMission = (title, text) => {
   if (G.over) return;
@@ -308,10 +396,14 @@ function togglePause() {
 // ---------------- cameras ----------------
 const camPos = new THREE.Vector3(-24000, 900, 14000);
 const camUp = new THREE.Vector3(0, 1, 0);
-let orbitA = 0;
+
 const _v = new THREE.Vector3(), _v2 = new THREE.Vector3(), _fwd = new THREE.Vector3();
+// plane models fly nose = local +Z, but a three.js camera looks down its
+// local -Z — rotate the cockpit cam 180° about Y so it faces the nose
+const _qy180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI);
 
 function updateCamera(dt) {
+  if (G.intro.active) return; // intro drives the camera in map/briefing/zoom states
   const P = G.player;
   if (G.state === 'menu' && demoJet) {
     // cinematic chase of the demo jet
@@ -327,6 +419,8 @@ function updateCamera(dt) {
     return;
   }
   if (!P) return;
+  // own jet must not block the cockpit view
+  if (P.model) P.model.visible = G.view !== 'cockpit';
   if (G.view === 'chase') {
     const f = P.fwd.clone();
     const dist = window.__camdist > 0 ? window.__camdist : 24 + P.speed * 0.03;
@@ -343,20 +437,48 @@ function updateCamera(dt) {
     camUp.z = damp(camUp.z, up.z * 0.55, 3, dt);
     camera.up.copy(camUp).normalize();
     camera.lookAt(_v2.copy(P.pos).addScaledVector(f, 60));
-    camera.fov = damp(camera.fov, 55 + P.speed * 0.045, 3, dt);
+    camera.fov = damp(camera.fov, (55 + P.speed * 0.045) / G.xmag, 3, dt);
     camera.updateProjectionMatrix();
   } else if (G.view === 'cockpit') {
     const f = P.fwd.clone();
     camera.position.copy(P.pos).addScaledVector(f, 1.6).add(_v.set(0, 1.55, 0).applyQuaternion(P.quat));
-    camera.quaternion.copy(P.quat);
-    camera.fov = damp(camera.fov, 68, 4, dt); camera.updateProjectionMatrix();
-  } else { // orbit
-    orbitA += dt * 0.35;
-    _v.set(P.pos.x + Math.sin(orbitA) * 55, P.pos.y + 14, P.pos.z + Math.cos(orbitA) * 55);
+    camera.quaternion.copy(P.quat).multiply(_qy180); // face the nose, not the tail
+    camera.fov = damp(camera.fov, 68 / G.xmag, 4, dt); camera.updateProjectionMatrix();
+  } else if (G.view === 'tower') {
+    // watch the jet from the nearest control tower cab (runways or the carrier island)
+    let best = null, bestD = Infinity;
+    for (const tv of G.world.towerViews || []) {
+      const d = tv.pos.distanceToSquared(P.pos);
+      if (d < bestD) { bestD = d; best = tv; }
+    }
+    G.world.carrierTowerPos(_v2);
+    let name = best ? best.name : 'TOWER';
+    if (_v2.distanceToSquared(P.pos) < bestD) { _v.copy(_v2); name = 'ENTERPRISE TOWER'; }
+    else if (best) _v.copy(best.pos);
+    G.towerName = name;
     camera.position.copy(_v);
     camera.up.set(0, 1, 0);
     camera.lookAt(P.pos);
-    camera.fov = damp(camera.fov, 45, 3, dt); camera.updateProjectionMatrix();
+    camera.fov = damp(camera.fov, 55 / G.xmag, 5, dt); camera.updateProjectionMatrix();
+  } else { // orbit — original keypad POV: yaw/pitch/distance
+    const orb = G.orbit;
+    if (!orb.manual) orb.yaw += dt * 0.35;
+    const cp = Math.cos(orb.pitch);
+    _v.set(
+      P.pos.x + Math.sin(orb.yaw) * cp * orb.dist,
+      Math.max(P.pos.y + Math.sin(orb.pitch) * orb.dist, 2.5),
+      P.pos.z + Math.cos(orb.yaw) * cp * orb.dist);
+    camera.position.copy(_v);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(P.pos);
+    camera.fov = damp(camera.fov, 45 / G.xmag, 3, dt); camera.updateProjectionMatrix();
+  }
+  // camera shake (sonic boom, heavy damage, hard knocks)
+  if (G.shakeT > 0.01) {
+    const mag = G.shakeT * (G.view === 'cockpit' ? 0.22 : 0.5);
+    camera.position.x += (Math.random() - 0.5) * mag;
+    camera.position.y += (Math.random() - 0.5) * mag;
+    camera.position.z += (Math.random() - 0.5) * mag;
   }
 }
 
@@ -423,18 +545,30 @@ function updateRadarContacts() {
     c.push({ pos: b.pos, kind: b.kind || 'bandit', identified: b.identified });
   }
   c.push({ pos: G.world.carrier.pos, kind: 'carrier' });
-  if (G.missionDef && G.missionDef.id === 'm6' && !G.world.enemySub.submerged) c.push({ pos: G.world.enemySub.pos, kind: 'sub' });
   for (const m of G.missiles) if (!m.dead && m.target === G.player) c.push({ pos: m.pos, kind: 'missile' });
 }
 
 // ---------------- per-frame input handling ----------------
-function handleDiscreteInput() {
+function handleDiscreteInput(dt) {
   const I = G.input, P = G.player;
   if (G.state !== 'flying') {
     if (I.pressed('Escape') || I.pressed('KeyP')) { if (G.state === 'paused') togglePause(); }
     return;
   }
-  if (I.pressed('Escape') || (I.pressed('KeyP') && !I.ab)) { togglePause(); return; }
+  if (I.pressed('Escape')) {
+    // original behavior: ESC re-positions on the catapult during qual / free flight
+    if ((G.missionDef.id === 'qual' || G.missionDef.id === 'free') && !I.ab) {
+      const id = G.missionDef.id, s = G.freeFlightStart;
+      if (id === 'qual' || s === 'carrier' || !s) G.setPlayerStart({ onCarrier: true });
+      else if (s === 'sfo') G.setPlayerStart({ runway: G.world.runways[0] });
+      else if (s === 'oakland') G.setPlayerStart({ runway: G.world.runways[1] });
+      else if (s === 'moffett') G.setPlayerStart({ runway: G.world.runways[2] });
+      G.msg('RE-POSITIONED', 'info');
+      return;
+    }
+    togglePause(); return;
+  }
+  if (I.pressed('KeyP') && !I.ab) { togglePause(); return; }
   if (I.pressed('KeyP') && I.ab) G.podDropRequested = true;
   if (I.pressed('Enter')) {
     const order = ['aim120', 'aim9', 'gun'];
@@ -448,16 +582,40 @@ function handleDiscreteInput() {
     const [nm, m] = ranges[(i + 1) % 3];
     G.radarRangeNM = nm; G.radarRange = m;
   }
-  if (I.pressed('KeyL')) { P.gearDown = !P.gearDown; G.audio.gear(); if (P.gearDown && P.speedKts > 300) G.msg('GEAR OVERSPEED!', 'warn'); }
-  if (I.pressed('KeyA')) { P.hookDown = !P.hookDown; G.audio.hook(); }
+  // original key set: G gear, H hook, B brake, Shift+E eject
+  if (I.pressed('KeyG') || I.pressed('KeyL')) { P.gearDown = !P.gearDown; G.audio.gear(); if (P.gearDown && P.speedKts > 300) G.msg('GEAR OVERSPEED!', 'warn'); }
+  if (I.pressed('KeyH') || I.pressed('KeyA')) {
+    if (P.type === 'f16') G.msg('THE F-16 HAS NO TAILHOOK', 'warn');
+    else { P.hookDown = !P.hookDown; G.audio.hook(); }
+  }
   if (I.pressed('KeyB')) { P.brakes = !P.brakes; }
-  if (I.pressed('KeyE')) { P.ecm = !P.ecm; G.msg(P.ecm ? 'ECM ON — THEY SEE YOU TOO' : 'ECM OFF', 'info'); }
+  if (I.pressed('KeyM')) { P.ecm = !P.ecm; G.msg(P.ecm ? 'ECM ON — THEY SEE YOU TOO' : 'ECM OFF', 'info'); }
   if (I.pressed('KeyC') && P.stores.chaff > 0) { P.stores.chaff--; P.chaffT = G.time; G.audio.chaff(); for (let i = 0; i < 8; i++) G.fx.smoke(P.pos, 0.8, 3, 0xaaaaaa); }
   if (I.pressed('KeyF') && P.stores.flares > 0) { P.stores.flares--; P.flareT = G.time; G.audio.chaff(); for (let i = 0; i < 6; i++) G.fx.fire(_v.copy(P.pos).addScaledVector(P.vel, -0.03 * i), 0.6, 4); }
-  if (I.pressed('KeyV')) { G.view = G.view === 'chase' ? 'cockpit' : G.view === 'cockpit' ? 'orbit' : 'chase'; }
-  if (I.pressed('KeyN')) { G.audio.setMusicOn(!G.audio.musicOn); G.msg(G.audio.musicOn ? 'MUSIC ON' : 'MUSIC OFF', 'info'); }
-  if (I.pressed('KeyH')) $('controls').classList.toggle('hidden');
-  if (I.pressed('KeyX') && !P.onGround && !P.ejected && G.state === 'flying') {
+  if (I.pressed('KeyV')) {
+    const order = ['cockpit', 'chase', 'orbit', 'tower'];
+    G.view = order[(order.indexOf(G.view) + 1) % order.length];
+  }
+  // view magnification (the original's XMAG) — works in every view
+  const XSTEPS = [1, 1.5, 2, 3, 4, 6, 8];
+  if (I.pressed('Equal') || I.pressed('Minus')) {
+    const i = XSTEPS.findIndex(x => x >= G.xmag - 0.01);
+    G.xmag = XSTEPS[clamp(i + (I.pressed('Equal') ? 1 : -1), 0, XSTEPS.length - 1)];
+    G.msg(`${G.xmag.toFixed(1)} XMAG`, 'info');
+  }
+
+  if (I.pressed('Slash')) $('controls').classList.toggle('hidden');
+  // original: F10 twice at max throttle lights the burner
+  if (I.pressed('F10') && P.throttle >= 0.99 && !P.abLatch) {
+    P.abLatch = true; G.msg('AFTERBURNER', 'warn'); G.audio.radioClick();
+  }
+  // smoke trail (the original's training aid — S is throttle-down here, so D it is)
+  if (I.pressed('KeyD')) { G.smokeTrail = !G.smokeTrail; G.msg(G.smokeTrail ? 'SMOKE TRAIL ON' : 'SMOKE TRAIL OFF', 'info'); }
+  // original: keypad changes point of view / distance
+  const povKeys = ['Numpad0', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad6', 'Numpad7', 'Numpad8', 'Numpad9', 'NumpadAdd', 'NumpadSubtract'];
+  if (povKeys.some(k => I.pressed(k))) G.view = 'orbit';
+  // eject is Shift+E — plain E is safe to fat-finger
+  if (I.pressed('KeyE') && (I.down('ShiftLeft') || I.down('ShiftRight')) && !P.onGround && !P.ejected && G.state === 'flying') {
     P.ejected = true; P.dead = false;
     P.stores.gun = 0;
     G.msg('EJECTED! THE JET IS GONE.', 'warn');
@@ -468,6 +626,27 @@ function handleDiscreteInput() {
     }
   }
   if (I.throttleSet >= 0) P.throttle = I.throttleSet === 0 ? 1 : I.throttleSet;
+  // original: keypad steers the external point of view (held keys move smoothly)
+  if (G.view === 'orbit') {
+    const orb = G.orbit;
+    if (I.down('Numpad4')) { orb.yaw -= 1.6 * dt; orb.manual = true; }
+    if (I.down('Numpad6')) { orb.yaw += 1.6 * dt; orb.manual = true; }
+    if (I.down('Numpad8')) { orb.pitch = clamp(orb.pitch + 1.1 * dt, -0.05, 1.35); orb.manual = true; }
+    if (I.down('Numpad2')) { orb.pitch = clamp(orb.pitch - 1.1 * dt, -0.05, 1.35); orb.manual = true; }
+    if (I.down('NumpadAdd') || I.down('Numpad9')) { orb.dist = Math.max(18, orb.dist - 45 * dt); orb.manual = true; }
+    if (I.down('NumpadSubtract') || I.down('Numpad3')) { orb.dist = Math.min(240, orb.dist + 45 * dt); orb.manual = true; }
+  }
+  // original training aid: continuous white smoke trail
+  if (G.smokeTrail && !P.onGround && !P.dead) {
+    G._smokeT = (G._smokeT || 0) - dt;
+    if (G._smokeT <= 0) {
+      G._smokeT = 0.05;
+      for (const sgn of [-1, 1]) {
+        _v.set(sgn * 4.3, 0.25, -1.2).applyQuaternion(P.quat).add(P.pos);
+        G.fx.smoke(_v, 2.2, 1.6, 0xf0f0f0);
+      }
+    }
+  }
 }
 
 // ---------------- scripted input (headless testing / attract mode) ----------------
@@ -592,15 +771,27 @@ function frame() {
 function stepGame(dt) {
   G.input.poll();
   if (SCRIPT) runScript(dt);
-  handleDiscreteInput();
+  handleDiscreteInput(dt);
 
   if (G.state === 'menu' && demoJet) {
     G.time += dt;
     demoJet.update(dt, G);
     G.world.update(dt, camera.position);
     G.fx.update(dt);
+  } else if (G.intro.active) {
+    // satellite map / briefing / plane select / zoom intro states
+    G.time += dt;
+    if (G.state === 'zoom' && G.player) {
+      G.player.update(dt, G.input, G);
+      for (const b of G.bandits) b.update(dt, G);
+    }
+    G.intro.update(dt);
+    G.world.update(dt, camera.position);
+    G.fx.update(dt);
+    hud.draw(G, dt);
   } else if (G.state === 'flying' || G.state === 'dead') {
     G.time += dt;
+    G.shakeT = Math.max(0, G.shakeT - dt * 1.3);
     const P = G.player;
     if (G.state === 'flying') {
       P.update(dt, G.input, G);
@@ -666,26 +857,66 @@ showMenu();
 const auto = params.get('auto');
 const viewP = params.get('view');
 if (viewP) G.view = viewP;
-if (auto) {
+// intro-flow test hooks: ?auto=menu | map | brief:<id> | planesel:<id> | zoom:<id>
+if (auto === 'menu') { /* stay on menu */ }
+else if (auto === 'map') { startFreeFlightMap(); }
+else if (auto && auto.startsWith('brief:')) { startBriefing(auto.slice(6)); }
+else if (auto && auto.startsWith('planesel:')) {
+  const def = MISSIONS.find(m => m.id === auto.slice(9));
+  pendingMission = def; $('menu').classList.add('hidden'); stopDemo(); G.intro.briefing(def, () => {});
+  G.intro.typed = 1e9; G.intro.afterBrief = null; enterPlaneSelect(def);
+}
+else if (auto && auto.startsWith('zoom:')) {
+  const def = MISSIONS.find(m => m.id === auto.slice(5));
+  pendingMission = def; $('menu').classList.add('hidden'); stopDemo();
+  launchMission(def, { zoom: true });
+}
+else if (auto) {
   const plane = params.get('plane');
   if (plane) G.player.type = plane;
   const start = params.get('start');
   if (start) G.freeFlightStart = start;
   if (params.get('unlock') === '1') { save.qualified = true; save.done = { m1: true, m2: true, m3: true, m4: true, m5: true }; }
   launchMission(MISSIONS.find(m => m.id === auto) || MISSIONS[0]);
-  const warpT = parseFloat(params.get('t') || '0');
-  if (warpT > 0) {
-    const step = 1 / 60;
-    for (let i = 0; i < warpT * 60; i++) {
-      stepGame(step);
-      if (G.state === 'debrief' || G.state === 'menu') break;
-    }
-    window.__warped = true;
-    snapCamera();
+  const ppos = params.get('ppos');           // test teleport: ppos=x,z[,h]
+  if (ppos) {
+    const [px, pz, ph] = ppos.split(',').map(Number);
+    G.setPlayerStart({ pos: new THREE.Vector3(px, ph || 800, pz), heading: params.get('phdg') ? Number(params.get('phdg')) * Math.PI / 180 : Math.PI / 2, speed: 180 });
   }
   if (params.get('xray') === '1') {
     G.player.model.traverse(o => { if (o.material) { o.material = new THREE.MeshBasicMaterial({ color: 0xff0044 }); } });
     G.player.model.scale.setScalar(4);
+  }
+}
+// shared headless warp: works for mission AND intro-flow states
+if (params.get('hold') === '1') G.intro.hold = true;
+const xm = params.get('xmag');
+if (xm) G.xmag = parseFloat(xm);
+const warpT = parseFloat(params.get('t') || '0');
+if (auto && warpT > 0) {
+  const step = 1 / 60;
+  const burn = params.has('burn');   // test hook: firewalled throttle + rotate pitch during warp
+  // test hook: hold keys (e.g. keys=ArrowRight@10 starts 10 s into the warp)
+  const holdKeys = params.get('keys');
+  let keyList = null, keyAt = 0;
+  if (holdKeys) { const [kl, at] = holdKeys.split('@'); keyList = kl.split(','); keyAt = parseFloat(at || '0'); }
+  for (let i = 0; i < warpT * 60; i++) {
+    if (burn && G.player) {
+      G.player.throttle = 1; G.player.abLatch = true; G.player.brakes = false;
+    }
+    if (keyList && i * step >= keyAt) for (const k of keyList) G.input.keys.add(k);
+    stepGame(step);
+    G.input.postUpdate();   // mirror the real frame loop, or justPressed sticks
+    if (G.state === 'debrief' || G.state === 'menu') break;
+  }
+  window.__warped = true;
+  if (G.state === 'flying') snapCamera();
+  if (params.has('dbgroll') && G.player) {   // numeric bank readout for sign tests
+    const xr = new THREE.Vector3(1, 0, 0).applyQuaternion(G.player.quat);
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:8px;left:8px;color:#0f0;font:22px monospace;z-index:99;text-shadow:1px 1px 0 #000';
+    d.textContent = `localX.y=${xr.y.toFixed(3)}  hdg=${G.player.headingDeg().toFixed(1)}  vel.y=${G.player.vel.y.toFixed(1)}`;
+    document.body.appendChild(d);
   }
 }
 window.__camdist = parseFloat(params.get('camdist') || '0');

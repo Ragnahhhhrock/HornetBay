@@ -1,21 +1,35 @@
-// hud.js — 2D HUD: flight symbology, radar, targeting, weapons, messages
+// hud.js — Amiga-authentic cockpit: HUD combiner glass, white symbology,
+// bottom instrument panel (attitude dial, fuel, radar scope, compass ball,
+// data block), and the original's minimal external-view readout bar
 import * as THREE from 'three';
-import { clamp, lerp, KTS, FT, NM, wrapAngle, deg } from './util.js';
+import { clamp, KTS, FT, NM, wrapAngle, deg } from './util.js';
 
-const GREEN = '#3aff72', AMBER = '#ffb437', RED = '#ff4a3a', BLUE = '#8fd0ff', WHITE = '#e8f4ff';
+const WHITE = '#f2f2f2', GREEN = '#3aff72', AMBER = '#ffb437', RED = '#ff4a3a',
+      BLUE = '#8fd0ff', PANEL = '#8f8f8f', DARK = '#0a0a0a';
 const _v = new THREE.Vector3();
+// the original separates thousands with a space: "3 075 FT"
+const fmtN = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 export class HUD {
   constructor(canvas) {
     this.cv = canvas;
     this.cx = canvas.getContext('2d');
+    // dithered Amiga panel texture (4x4 checker)
+    const d = document.createElement('canvas'); d.width = d.height = 4;
+    const g = d.getContext('2d');
+    g.fillStyle = '#565656'; g.fillRect(0, 0, 4, 4);
+    g.fillStyle = '#464646';
+    g.fillRect(0, 0, 2, 2); g.fillRect(2, 2, 2, 2);
+    this.dither = this.cx.createPattern(d, 'repeat');
     this.resize();
   }
   resize() {
-    this.cv.width = window.innerWidth; this.cv.height = window.innerHeight;
+    // low backing resolution -> chunky Amiga pixels once CSS upscales it
+    this.cv.width = Math.floor(window.innerWidth * 0.55);
+    this.cv.height = Math.floor(window.innerHeight * 0.55);
     this.w = this.cv.width; this.h = this.cv.height;
     this.cxw = this.w / 2; this.cyh = this.h / 2;
-    this.scale = clamp(this.h / 900, 0.7, 1.6);
+    this.scale = clamp(this.h / 500, 0.6, 1.5);
   }
   project(pos, camera, out) {
     _v.copy(pos).project(camera);
@@ -27,178 +41,270 @@ export class HUD {
   }
 
   draw(G, dt) {
-    const c = this.cx, w = this.w, h = this.h, cx = this.cxw, cy = this.cyh, s = this.scale;
+    const c = this.cx, w = this.w, h = this.h;
     c.clearRect(0, 0, w, h);
+    if (G.intro && G.intro.active) { G.intro.drawOverlay(c, w, h); return; }
     if (!G.player || G.state !== 'flying') return;
-    const P = G.player;
-    c.font = `${12 * s}px "Courier New", monospace`;
-    c.lineWidth = 1.4 * s;
-
-    if (G.view === 'cockpit') this._cockpitFrame(c, w, h, s);
-
-    const sp = P.speedKts, alt = P.altFt;
+    const P = G.player, s = this.scale;
     const fwd = P.fwd;
     const pitch = Math.asin(clamp(fwd.y, -1, 1));
-    // bank angle from quaternion
     const right = _v.set(1, 0, 0).applyQuaternion(P.quat);
     const upY = new THREE.Vector3(0, 1, 0).applyQuaternion(P.quat).y;
     const bank = Math.atan2(-right.y, upY);
     const hdg = Math.atan2(fwd.x, -fwd.z);
+    const st = { G, P, s, sp: P.speedKts, alt: P.altFt, pitch, bank, hdg };
 
-    this._ladder(c, cx, cy, pitch, bank, s);
-    this._tapes(c, sp, alt, hdg, P, s, w, h);
-    this._flightPathMarker(c, G, P);
-    this._gunReticle(c, cx, cy, s, G);
-    this._targetBox(c, G, s);
-    this._waypoint(c, G, s);
-    this._radar(c, G, s);
-    this._infoBlock(c, G, P, s);
-    this._messages(c, G, s, dt);
-    this._warnings(c, G, P, s, w, h);
+    c.lineWidth = 1.2 * s;
+    if (G.view === 'cockpit') {
+      this._hudGlass(c, st);
+      this._pitchTicks(c, st);
+      this._hudNumbers(c, st);
+      this._vectorText(c, G, s);
+      this._flightPathMarker(c, G, P);
+      this._gunReticle(c, st);
+      this._targetBox(c, G, s);
+      this._waypoint(c, G, s);
+      this._warnings(c, G, P, s);
+      this._panel(c, st);   // messages print in the panel's centre-bottom strip
+    } else {
+      this._flightPathMarker(c, G, P);
+      this._gunReticle(c, st);
+      this._targetBox(c, G, s);
+      this._waypoint(c, G, s);
+      this._messages(c, G, s);
+      this._warnings(c, G, P, s);
+      this._extBar(c, st);
+      const vlabel = G.view === 'tower' ? (G.towerName || 'TOWER VIEW')
+        : G.view === 'orbit' ? 'EXTERNAL VIEW' : 'CHASE VIEW';
+      c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
+      c.textAlign = 'center'; c.fillText(`${vlabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
+    }
     this._mouseStick(c, G, s);
-    if (G.view === 'orbit') this._centerText(c, 'EXTERNAL VIEW', s);
   }
 
-  // ---------- attitude ladder ----------
-  _ladder(c, cx, cy, pitch, bank, s) {
+  // ---------------- HUD combiner glass frame ----------------
+  _hudGlass(c, { s }) {
+    const w = this.w, h = this.h;
+    // chamfered top corners, exactly like the original's combiner glass
+    const x1 = w * 0.265, x2 = w * 0.735, xt1 = w * 0.29, xt2 = w * 0.71;
+    const yT = h * 0.165, yC = h * 0.185, yB = this._panelTop();
+    c.strokeStyle = '#202020'; c.lineWidth = 2.4 * s;
+    c.beginPath();
+    c.moveTo(x1, yB); c.lineTo(x1, yC); c.lineTo(xt1, yT); c.lineTo(xt2, yT); c.lineTo(x2, yC); c.lineTo(x2, yB);
+    c.stroke();
+    c.lineWidth = 1.2 * s;
+  }
+  _panelTop() { return this.h * 0.72; }   // measured from the original cockpit
+
+  // yellow tower vector text, top of the glass: "YOUR VECTOR 350 FOR BOGEY"
+  _vectorText(c, G, s) {
+    if (!G.vectorText) return;
+    c.fillStyle = '#ffe23a'; c.font = `bold ${12 * s}px "Courier New", monospace`;
+    c.textAlign = 'center';
+    c.fillText(G.vectorText, this.cxw, this.h * 0.225);
+    c.textAlign = 'left';
+  }
+
+  // ---------------- white HUD numbers (speed/alt/heading/G/AM) ----------------
+  _hudNumbers(c, { G, P, s, sp, alt, hdg }) {
+    const w = this.w, h = this.h, cx = this.cxw;
+    c.fillStyle = WHITE; c.strokeStyle = WHITE;
+    // heading tens across the top of the glass
+    const hd = deg(hdg), hy = h * 0.165, hspan = w * 0.115;
+    c.font = `${12 * s}px "Courier New", monospace`;
+    c.textAlign = 'center';
+    for (let a = -20; a <= 20; a += 10) {
+      let ah = Math.round((hd + a) / 10) * 10;
+      const off = wrapAngle((ah - hd) * Math.PI / 180) * 180 / Math.PI;
+      const x = cx + off / 20 * hspan;
+      if (Math.abs(x - cx) > hspan + 4) continue;
+      const lbl = (((ah % 360) + 360) % 360) / 10;
+      c.fillText(lbl.toString().padStart(2, '0'), x, hy);
+      c.beginPath(); c.moveTo(x, hy + 4 * s); c.lineTo(x, hy + 9 * s); c.stroke();
+    }
+    // caret
+    c.beginPath(); c.moveTo(cx, hy + 11 * s); c.lineTo(cx, hy + 17 * s); c.stroke();
+    // speed left, altitude right — the F-16 has tape-style side scales,
+    // the Hornet the original's stacked number-over-unit blocks
+    if (P.type === 'f16') {
+      this._tape(c, w * 0.288, h * 0.40, sp, 20, 110, v => Math.round(v).toString(), 'KT', s, -1);
+      this._tape(c, w * 0.712, h * 0.40, alt, 100, 550, v => fmtN(Math.round(v)), 'FT', s, 1);
+    } else {
+      c.textAlign = 'center';
+      c.font = `bold ${17 * s}px "Courier New", monospace`;
+      c.fillText(`${Math.round(sp)}`, w * 0.305, h * 0.38);
+      c.fillText(fmtN(alt), w * 0.695, h * 0.38);
+      c.font = `${11 * s}px "Courier New", monospace`;
+      c.fillText('KT', w * 0.305, h * 0.38 + 13 * s);
+      c.fillText('FT', w * 0.695, h * 0.38 + 13 * s);
+    }
+    // G + missiles remaining, low on the glass like the original
+    c.textAlign = 'center'; c.font = `${12.5 * s}px "Courier New", monospace`;
+    c.fillText(`${P.gForce.toFixed(1)} G`, w * 0.305, h * 0.70);
+    const msl = P.weapon === 'aim120' ? P.stores.aim120 : P.weapon === 'aim9' ? P.stores.aim9 : P.stores.gun;
+    c.fillText(`${P.weapon === 'gun' ? 'GU' : 'AM'} ${msl}`, w * 0.695, h * 0.70);
+    c.textAlign = 'left';
+  }
+
+  // F-16 tape scale: vertical strip, current value boxed at center.
+  // side -1 = scale grows to the left of the strip (speed), +1 = right (alt)
+  _tape(c, x, cy, val, minor, range, fmt, unit, s, side) {
+    const half = 105 * s, px = half / range;
+    c.save();
+    c.strokeStyle = WHITE; c.fillStyle = WHITE; c.lineWidth = 1.4 * s;
+    // clip to the tape window
+    c.beginPath(); c.rect(x - 46 * s, cy - half, 92 * s, half * 2); c.clip();
+    const lo = Math.floor((val - range) / minor) * minor;
+    c.font = `${10.5 * s}px "Courier New", monospace`;
+    for (let v = lo; v <= val + range; v += minor) {
+      if (v < 0) continue;
+      const y = cy - (v - val) * px;
+      const major = (v / minor) % 2 === 0;
+      c.beginPath();
+      c.moveTo(x, y);
+      c.lineTo(x + side * (major ? 12 : 6) * s, y);
+      c.stroke();
+      if (major) {
+        c.textAlign = side < 0 ? 'right' : 'left';
+        c.fillText(fmt(v), x + side * 15 * s, y + 3.5 * s);
+      }
+    }
+    c.restore();
+    // center box with the digital value
+    c.font = `bold ${12.5 * s}px "Courier New", monospace`;
+    const txt = fmt(val);
+    const bw = Math.max(34 * s, c.measureText(txt).width + 10 * s), bh = 16 * s;
+    const bx = side < 0 ? x - bw - 16 * s : x + 16 * s;
+    c.fillStyle = 'rgba(8,8,24,0.92)';
+    c.fillRect(bx, cy - bh / 2, bw, bh);
+    c.strokeStyle = WHITE; c.lineWidth = 1.4 * s;
+    c.strokeRect(bx, cy - bh / 2, bw, bh);
+    c.fillStyle = WHITE;
+    // caret from box to the tape line
+    c.beginPath();
+    if (side < 0) { c.moveTo(x, cy); c.lineTo(x - 8 * s, cy - 5 * s); c.lineTo(x - 8 * s, cy + 5 * s); }
+    else { c.moveTo(x, cy); c.lineTo(x + 8 * s, cy - 5 * s); c.lineTo(x + 8 * s, cy + 5 * s); }
+    c.closePath(); c.fill();
+    c.textAlign = side < 0 ? 'right' : 'left';
+    c.fillText(txt, side < 0 ? bx + bw - 5 * s : bx + 5 * s, cy + 4.5 * s);
+    c.font = `${10 * s}px "Courier New", monospace`;
+    c.fillText(unit, side < 0 ? bx + bw - 5 * s : bx + 5 * s, cy + bh / 2 + 11 * s);
+    c.textAlign = 'left';
+  }
+
+  // ---------------- minimal pitch ticks + waterline ----------------
+  _pitchTicks(c, { s, pitch, bank }) {
+    const cx = this.cxw, cy = this.cyh * 0.92;
     c.save();
     c.translate(cx, cy);
     c.rotate(bank);
-    const pxPerRad = 620 * s;
-    c.strokeStyle = GREEN; c.fillStyle = GREEN;
-    // horizon
+    const pxPerRad = 520 * s;
+    c.strokeStyle = WHITE;
     c.beginPath();
-    c.moveTo(-2000, -pitch * pxPerRad); c.lineTo(2000, -pitch * pxPerRad);
+    c.moveTo(-170 * s, -pitch * pxPerRad); c.lineTo(170 * s, -pitch * pxPerRad);
     c.stroke();
-    for (let p = -80; p <= 80; p += 10) {
-      if (p === 0) continue;
+    for (const p of [-10, 10]) {
       const y = -(p * Math.PI / 180 - pitch) * pxPerRad;
-      if (Math.abs(y) > 700 * s) continue;
-      const len = (p % 30 === 0 ? 60 : 32) * s;
+      if (Math.abs(y) > 300 * s) continue;
       c.beginPath();
-      c.moveTo(-len, y); c.lineTo(-len * 0.25, y); c.moveTo(len * 0.25, y); c.lineTo(len, y);
+      c.moveTo(-52 * s, y); c.lineTo(-18 * s, y); c.moveTo(18 * s, y); c.lineTo(52 * s, y);
       c.stroke();
-      c.fillText(Math.abs(p).toString(), -len - 26 * s, y + 4 * s);
-      c.fillText(Math.abs(p).toString(), len + 8 * s, y + 4 * s);
     }
     c.restore();
-    // fixed waterline (aircraft symbol)
-    c.strokeStyle = AMBER; c.lineWidth = 2.4 * s;
+    // fixed waterline (W)
+    c.strokeStyle = WHITE; c.lineWidth = 2 * s;
     c.beginPath();
-    c.moveTo(cx - 70 * s, cy); c.lineTo(cx - 22 * s, cy); c.lineTo(cx - 12 * s, cy + 9 * s);
-    c.moveTo(cx + 70 * s, cy); c.lineTo(cx + 22 * s, cy); c.lineTo(cx + 12 * s, cy + 9 * s);
-    c.moveTo(cx, cy - 4 * s); c.lineTo(cx, cy + 2 * s);
+    c.moveTo(cx - 44 * s, cy); c.lineTo(cx - 14 * s, cy); c.lineTo(cx - 8 * s, cy + 7 * s);
+    c.moveTo(cx + 44 * s, cy); c.lineTo(cx + 14 * s, cy); c.lineTo(cx + 8 * s, cy + 7 * s);
+    c.moveTo(cx, cy - 3 * s); c.lineTo(cx, cy + 2 * s);
     c.stroke();
-    c.lineWidth = 1.4 * s;
+    c.lineWidth = 1.2 * s;
   }
 
-  // ---------- tapes ----------
-  _tapes(c, sp, alt, hdg, P, s, w, h) {
-    const cx = this.cxw, cy = this.cyh;
-    c.strokeStyle = GREEN; c.fillStyle = GREEN;
-    // speed box
-    this._box(c, cx - 340 * s, cy - 14 * s, 96 * s, 28 * s);
-    c.font = `bold ${17 * s}px "Courier New", monospace`;
-    c.fillText(Math.round(sp).toString().padStart(3, '0'), cx - 330 * s, cy + 6 * s);
-    c.font = `${10 * s}px "Courier New", monospace`;
-    c.fillText('KTS', cx - 262 * s, cy + 6 * s);
-    // altitude box
-    this._box(c, cx + 244 * s, cy - 14 * s, 110 * s, 28 * s);
-    c.font = `bold ${17 * s}px "Courier New", monospace`;
-    c.fillText(Math.round(alt).toLocaleString('en-US'), cx + 254 * s, cy + 6 * s);
-    c.font = `${10 * s}px "Courier New", monospace`;
-    c.fillText('FT', cx + 326 * s, cy + 6 * s);
-    // radar altitude when low
-    const agl = Math.max(0, P.pos.y - Math.max(0, P.groundH ?? 0)) / FT;
-    if (agl < 2500) { c.fillStyle = AMBER; c.fillText('R ' + Math.round(agl), cx + 254 * s, cy + 30 * s); }
-    // heading tape
-    const hd = deg(hdg);
-    c.fillStyle = GREEN;
-    const hy = 40 * s, hspan = 180 * s;
-    c.beginPath(); c.moveTo(cx - hspan, hy + 16 * s); c.lineTo(cx + hspan, hy + 16 * s); c.stroke();
-    c.font = `${11 * s}px "Courier New", monospace`;
-    for (let a = -30; a <= 30; a += 5) {
-      let ah = Math.round((hd + a) / 5) * 5;
-      const off = wrapAngle((ah - hd) * Math.PI / 180) * 180 / Math.PI;
-      const x = cx + off / 30 * hspan;
-      if (Math.abs(x - cx) > hspan) continue;
-      const big = ah % 30 === 0;
-      c.beginPath(); c.moveTo(x, hy + 16 * s); c.lineTo(x, hy + (big ? 8 : 12) * s); c.stroke();
-      if (big) {
-        let lbl = ((ah % 360) + 360) % 360;
-        c.fillText((lbl / 10).toString(), x - 5 * s, hy + 4 * s);
-      }
-    }
-    c.strokeStyle = AMBER;
-    c.beginPath(); c.moveTo(cx, hy + 20 * s); c.lineTo(cx, hy + 30 * s); c.stroke();
-    c.strokeStyle = GREEN;
-  }
-  _box(c, x, y, w, h) { c.beginPath(); c.rect(x, y, w, h); c.stroke(); }
-
-  // ---------- flight path marker ----------
   _flightPathMarker(c, G, P) {
     if (P.speed < 5) return;
     const mark = _v.copy(P.pos).addScaledVector(P.vel, 2.5);
     const pr = this.project(mark, G.camera, { x: 0, y: 0 });
     if (!pr.visible) return;
-    c.strokeStyle = GREEN;
-    c.beginPath(); c.arc(pr.x, pr.y, 7 * this.scale, 0, Math.PI * 2); c.stroke();
+    const s = this.scale;
+    c.strokeStyle = WHITE;
     c.beginPath();
-    c.moveTo(pr.x - 14 * this.scale, pr.y); c.lineTo(pr.x - 7 * this.scale, pr.y);
-    c.moveTo(pr.x + 7 * this.scale, pr.y); c.lineTo(pr.x + 14 * this.scale, pr.y);
-    c.moveTo(pr.x, pr.y - 7 * this.scale); c.lineTo(pr.x, pr.y - 13 * this.scale);
+    c.moveTo(pr.x - 9 * s, pr.y); c.lineTo(pr.x + 9 * s, pr.y);
+    c.moveTo(pr.x, pr.y - 9 * s); c.lineTo(pr.x, pr.y + 9 * s);
     c.stroke();
+    c.fillStyle = WHITE; c.fillRect(pr.x - 1, pr.y - 1, 2, 2);
   }
 
-  _gunReticle(c, cx, cy, s, G) {
+  _gunReticle(c, { G, s }) {
     if (G.player.weapon !== 'gun') return;
-    c.strokeStyle = AMBER;
-    c.beginPath(); c.arc(cx, cy - 40 * s, 16 * s, 0, Math.PI * 2); c.stroke();
-    c.beginPath(); c.moveTo(cx, cy - 40 * s - 22 * s); c.lineTo(cx, cy - 40 * s + 22 * s);
-    c.moveTo(cx - 22 * s, cy - 40 * s); c.moveTo(cx + 22 * s, cy - 40 * s); c.stroke();
-    c.fillStyle = AMBER; c.fillRect(cx - 1.5, cy - 41.5 * s, 3, 3);
+    const cx = this.cxw, cy = this.cyh * 0.92;
+    c.strokeStyle = WHITE;
+    c.beginPath(); c.arc(cx, cy - 30 * s, 13 * s, 0, Math.PI * 2); c.stroke();
+    c.beginPath(); c.moveTo(cx, cy - 30 * s - 18 * s); c.lineTo(cx, cy - 30 * s + 18 * s);
+    c.moveTo(cx - 18 * s, cy - 30 * s); c.lineTo(cx + 18 * s, cy - 30 * s); c.stroke();
+    c.fillStyle = WHITE; c.fillRect(cx - 1.5, cy - 31.5 * s, 3, 3);
   }
 
-  // ---------- target ----------
+  // ---------------- target diamond / lock / missile markers ----------------
   _targetBox(c, G, s) {
     const t = G.playerTarget;
-    if (!t || t.dead) return;
-    const pr = this.project(t.pos, G.camera, { x: 0, y: 0 });
-    const dist = G.player.pos.distanceTo(t.pos);
-    c.font = `${11 * s}px "Courier New", monospace`;
-    if (pr.visible) {
-      c.strokeStyle = G.lockLevel >= 1 ? RED : (t.identified === false ? '#9a9a9a' : RED);
-      const r = 16 * s;
-      c.beginPath();
-      c.moveTo(pr.x, pr.y - r); c.lineTo(pr.x + r, pr.y); c.lineTo(pr.x, pr.y + r); c.lineTo(pr.x - r, pr.y);
-      c.closePath(); c.stroke();
-      // lock circle
-      if (G.lockLevel > 0.02) {
-        c.strokeStyle = G.lockLevel >= 1 ? RED : AMBER;
-        c.beginPath(); c.arc(pr.x, pr.y, r + 10 * s, -Math.PI / 2, -Math.PI / 2 + G.lockLevel * Math.PI * 2); c.stroke();
+    if (t && !t.dead) {
+      const pr = this.project(t.pos, G.camera, { x: 0, y: 0 });
+      const dist = G.player.pos.distanceTo(t.pos);
+      c.font = `${11 * s}px "Courier New", monospace`;
+      if (pr.visible) {
+        c.strokeStyle = G.lockLevel >= 1 ? RED : (t.identified === false ? '#bfbfbf' : WHITE);
+        const r = 15 * s;
+        c.beginPath();
+        c.moveTo(pr.x, pr.y - r); c.lineTo(pr.x + r, pr.y); c.lineTo(pr.x, pr.y + r); c.lineTo(pr.x - r, pr.y);
+        c.closePath(); c.stroke();
+        if (G.lockLevel > 0.02) {
+          c.strokeStyle = G.lockLevel >= 1 ? RED : AMBER;
+          c.beginPath(); c.arc(pr.x, pr.y, r + 9 * s, -Math.PI / 2, -Math.PI / 2 + G.lockLevel * Math.PI * 2); c.stroke();
+        }
+        c.fillStyle = c.strokeStyle;
+        c.fillText(`${t.label || t.name} ${(dist / NM).toFixed(1)}NM`, pr.x + r + 6 * s, pr.y - 4 * s);
+        c.fillText(`${Math.round(t.speed / KTS)}KT ${Math.round(t.pos.y / FT)}FT`, pr.x + r + 6 * s, pr.y + 10 * s);
+        if (G.lockLevel >= 1) {
+          c.fillStyle = RED; c.font = `bold ${14 * s}px "Courier New", monospace`;
+          if (Math.sin(G.time * 10) > -0.4) c.fillText('SHOOT', pr.x - 22 * s, pr.y + r + 22 * s);
+        }
+      } else {
+        const dir = _v.copy(t.pos).sub(G.player.pos);
+        const f = G.player.fwd;
+        const a = wrapAngle(Math.atan2(dir.x, -dir.z) - Math.atan2(f.x, -f.z));
+        const R = 170 * s;
+        const ax = this.cxw + Math.sin(a) * R, ay = this.cyh - Math.cos(a) * R * 0.7;
+        c.fillStyle = RED;
+        c.save(); c.translate(ax, ay); c.rotate(a);
+        c.beginPath(); c.moveTo(0, -9 * s); c.lineTo(6 * s, 6 * s); c.lineTo(-6 * s, 6 * s); c.closePath(); c.fill();
+        c.restore();
       }
-      c.fillStyle = c.strokeStyle;
-      const nm = (dist / NM).toFixed(1);
-      c.fillText(`${t.label || t.name} ${nm}NM`, pr.x + r + 6 * s, pr.y - 4 * s);
-      c.fillText(`${Math.round(t.speed / KTS)}KT ${Math.round(t.pos.y / FT)}FT`, pr.x + r + 6 * s, pr.y + 10 * s);
-      if (G.lockLevel >= 1) {
-        c.fillStyle = RED; c.font = `bold ${14 * s}px "Courier New", monospace`;
-        if (Math.sin(G.time * 10) > -0.4) c.fillText('SHOOT', pr.x - 22 * s, pr.y + r + 22 * s);
+      // red bandit banner cycling HDG -> ALT -> SPD, like the original
+      if (t.identified !== false) {
+        const bHdg = Math.round(((t.heading !== undefined ? t.heading : Math.atan2(t.vel.x, -t.vel.z)) * 180 / Math.PI + 360) % 360);
+        const phase = Math.floor(G.time / 2.5) % 3;
+        const info = phase === 0 ? `HDG: ${String(bHdg).padStart(3, '0')}`
+          : phase === 1 ? `ALT: ${Math.round(t.pos.y / FT)}`
+          : `SPD: ${Math.round(t.speed / KTS)}`;
+        c.fillStyle = RED; c.font = `bold ${13 * s}px "Courier New", monospace`;
+        c.textAlign = 'center';
+        c.fillText(`${(t.label || 'MIG-29').toUpperCase()} ${info}`, this.cxw, this._panelTop() - 14 * s);
+        c.textAlign = 'left';
       }
-    } else {
-      // off-screen arrow
-      const dir = _v.copy(t.pos).sub(G.player.pos);
-      const f = G.player.fwd;
-      const ang = Math.atan2(dir.x, -dir.z) - Math.atan2(f.x, -f.z);
-      const a = wrapAngle(ang);
-      const R = 200 * s;
-      const ax = this.cxw + Math.sin(a) * R, ay = this.cyh - Math.cos(a) * R * 0.7;
-      c.fillStyle = RED;
-      c.save(); c.translate(ax, ay); c.rotate(a);
-      c.beginPath(); c.moveTo(0, -10 * s); c.lineTo(6 * s, 6 * s); c.lineTo(-6 * s, 6 * s); c.closePath(); c.fill();
-      c.restore();
+      // range readout under the horizon: 4-digit + 'IN RNG' inside weapon range
+      const rng100 = Math.max(0, Math.round(dist / (FT * 100)));
+      const wpn = G.player.weapon;
+      const inRng = wpn === 'aim120' ? dist < 20000 : wpn === 'aim9' ? dist < 6500 : dist < 1800;
+      c.fillStyle = WHITE; c.font = `${12 * s}px "Courier New", monospace`;
+      c.textAlign = 'center';
+      c.fillText(String(rng100).padStart(4, '0'), this.cxw + this.w * 0.09, this.cyh + 52 * s);
+      if (inRng) {
+        c.font = `bold ${12 * s}px "Courier New", monospace`;
+        c.fillText('IN RNG', this.cxw + this.w * 0.09, this.cyh + 68 * s);
+      }
+      c.textAlign = 'left';
     }
-    // incoming missile markers
     for (const m of G.missiles) {
       if (m.dead || m.target !== G.player) continue;
       const pm = this.project(m.pos, G.camera, { x: 0, y: 0 });
@@ -213,158 +319,299 @@ export class HUD {
   _waypoint(c, G, s) {
     if (!G.waypoint) return;
     const pr = this.project(G.waypoint, G.camera, { x: 0, y: 0 });
+    if (!pr.visible) return;
+    const r = 9 * s;
     c.strokeStyle = WHITE;
-    if (pr.visible) {
-      const r = 10 * s;
-      c.beginPath();
-      c.moveTo(pr.x, pr.y - r); c.lineTo(pr.x + r, pr.y); c.lineTo(pr.x, pr.y + r); c.lineTo(pr.x - r, pr.y);
-      c.closePath(); c.stroke();
-      const d = G.player.pos.distanceTo(G.waypoint) / NM;
-      c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
-      c.fillText(`WPT ${d.toFixed(1)}`, pr.x + r + 4 * s, pr.y + 4 * s);
-    }
-  }
-
-  // ---------- radar ----------
-  _radar(c, G, s) {
-    const R = 88 * s, cx = this.cxw, cy = this.h - R - 26 * s;
-    c.save();
-    c.strokeStyle = GREEN; c.fillStyle = GREEN;
-    c.globalAlpha = 0.9;
-    c.beginPath(); c.arc(cx, cy, R, 0, Math.PI * 2); c.stroke();
-    c.beginPath(); c.arc(cx, cy, R * 0.5, 0, Math.PI * 2); c.stroke();
-    c.beginPath(); c.moveTo(cx - R, cy); c.lineTo(cx + R, cy); c.moveTo(cx, cy - R); c.lineTo(cx, cy + R); c.stroke();
-    const range = G.radarRange; // meters
-    const pf = G.player.fwd;
-    const hdg = Math.atan2(pf.x, -pf.z);
-    for (const ct of G.radarContacts) {
-      const dx = ct.pos.x - G.player.pos.x, dz = ct.pos.z - G.player.pos.z;
-      const dist = Math.hypot(dx, dz);
-      if (dist > range) continue;
-      const ang = Math.atan2(dx, -dz) - hdg;
-      const rr = dist / range * R;
-      const x = cx + Math.sin(ang) * rr, y = cy - Math.cos(ang) * rr;
-      switch (ct.kind) {
-        case 'bandit': c.fillStyle = ct.identified === false ? '#8a8a8a' : RED; break;
-        case 'af1': c.fillStyle = '#58d8ff'; break;
-        case 'stolen': c.fillStyle = AMBER; break;
-        case 'carrier': c.fillStyle = '#40d868'; break;
-        case 'raft': c.fillStyle = '#ff8830'; break;
-        case 'missile': c.fillStyle = Math.sin(G.time * 14) > 0 ? RED : '#661108'; break;
-        case 'sub': c.fillStyle = '#ff58c8'; break;
-        default: c.fillStyle = WHITE;
-      }
-      if (ct.kind === 'carrier' || ct.kind === 'sub') {
-        c.beginPath(); c.moveTo(x, y - 5 * s); c.lineTo(x + 5 * s, y + 4 * s); c.lineTo(x - 5 * s, y + 4 * s); c.closePath(); c.fill();
-      } else {
-        c.fillRect(x - 2.4 * s, y - 2.4 * s, 4.8 * s, 4.8 * s);
-      }
-    }
-    // own ship
-    c.fillStyle = GREEN;
-    c.beginPath(); c.moveTo(cx, cy - 6 * s); c.lineTo(cx + 4.4 * s, cy + 5 * s); c.lineTo(cx - 4.4 * s, cy + 5 * s); c.closePath(); c.fill();
-    c.font = `${10 * s}px "Courier New", monospace`;
-    c.fillText(`${G.radarRangeNM}NM`, cx - R, cy + R + 14 * s);
-    c.restore();
-  }
-
-  // ---------- left info block ----------
-  _infoBlock(c, G, P, s) {
-    const x = 26 * s, y = this.h - 250 * s;
-    c.font = `${12 * s}px "Courier New", monospace`;
-    c.fillStyle = GREEN;
-    const thr = Math.round(P.throttle * 100);
-    c.fillText(`THR ${thr}%${P.ab ? ' AB' : ''}`, x, y);
-    // throttle bar
-    c.strokeStyle = GREEN; c.strokeRect(x, y + 5 * s, 90 * s, 7 * s);
-    c.fillRect(x, y + 5 * s, 90 * s * P.throttle, 7 * s);
-    if (P.ab) { c.fillStyle = RED; c.fillRect(x + 90 * s, y + 5 * s, 12 * s, 7 * s); }
-    c.fillStyle = GREEN;
-    c.fillText(`FUEL ${Math.round(P.fuel)}`, x, y + 30 * s);
-    c.fillText(`G ${P.gForce.toFixed(1)}`, x, y + 46 * s);
-    c.fillText(`DMG ${Math.round(P.damage)}%`, x, y + 62 * s);
-    // weapon + stores
-    const wname = { aim120: 'AIM-120 AMRAAM', aim9: 'AIM-9 SIDEWINDER', gun: 'M61 VULCAN' }[P.weapon];
-    c.fillStyle = AMBER;
-    c.fillText(`WPN ${wname}`, x, y + 86 * s);
-    c.fillStyle = GREEN;
-    c.fillText(`A120 ${P.stores.aim120}  A9 ${P.stores.aim9}  GUN ${P.stores.gun}`, x, y + 102 * s);
-    c.fillText(`CHAFF ${P.stores.chaff}  FLARE ${P.stores.flares}`, x, y + 118 * s);
-    // indicators
-    let ix = x;
-    const ind = (label, on, col = GREEN) => {
-      c.strokeStyle = col; c.strokeRect(ix, y + 130 * s, 44 * s, 15 * s);
-      if (on) { c.fillStyle = col; c.fillRect(ix, y + 130 * s, 44 * s, 15 * s); c.fillStyle = '#04140a'; }
-      else c.fillStyle = col;
-      c.fillText(label, ix + 6 * s, y + 141 * s);
-      ix += 50 * s;
-    };
-    ind('GEAR', P.gearDown); ind('HOOK', P.hookDown); ind('BRK', P.brakes); ind('ECM', P.ecm, AMBER);
-    // score
-    c.fillStyle = BLUE; c.font = `bold ${14 * s}px "Courier New", monospace`;
-    c.fillText(`SCORE ${G.score}`, 26 * s, 40 * s);
-    c.fillText(`KILLS ${G.kills}`, 26 * s, 58 * s);
+    c.beginPath();
+    c.moveTo(pr.x, pr.y - r); c.lineTo(pr.x + r, pr.y); c.lineTo(pr.x, pr.y + r); c.lineTo(pr.x - r, pr.y);
+    c.closePath(); c.stroke();
+    c.fillStyle = WHITE; c.font = `${10.5 * s}px "Courier New", monospace`;
+    c.fillText(`WPT ${(G.player.pos.distanceTo(G.waypoint) / NM).toFixed(1)}`, pr.x + r + 4 * s, pr.y + 4 * s);
   }
 
   _messages(c, G, s) {
-    const x = this.cxw, y0 = 96 * s;
+    const x = this.cxw;
+    let y0 = this.h * 0.05;
     c.textAlign = 'center';
     let i = 0;
     for (const m of G.messages) {
       const age = G.time - m.t;
       if (age > 6) continue;
-      const a = age > 5 ? 1 - (age - 5) : 1;
-      c.globalAlpha = a;
-      c.fillStyle = m.kind === 'warn' ? AMBER : m.kind === 'bad' ? RED : m.kind === 'good' ? '#58ff9a' : BLUE;
-      c.font = `${m.kind === 'radio' ? '' : 'bold '}${14 * s}px "Courier New", monospace`;
-      c.fillText(m.text, x, y0 + i * 20 * s);
+      c.globalAlpha = age > 5 ? 1 - (age - 5) : 1;
+      c.fillStyle = m.kind === 'warn' ? AMBER : m.kind === 'bad' ? RED : m.kind === 'good' ? '#9aff9a' : WHITE;
+      c.font = `${12.5 * s}px "Courier New", monospace`;
+      c.fillText(m.text, x, y0 + i * 17 * s);
       i++;
       if (i > 5) break;
     }
     c.globalAlpha = 1; c.textAlign = 'left';
   }
 
-  _warnings(c, G, P, s, w, h) {
-    const cx = this.cxw, cy = this.cyh;
-    c.font = `bold ${20 * s}px "Courier New", monospace`;
+  _warnings(c, G, P, s) {
+    const cx = this.cxw, cy = this.cyh * 0.92;
+    c.font = `bold ${17 * s}px "Courier New", monospace`;
     c.textAlign = 'center';
-    if (P.stalled && Math.sin(G.time * 12) > 0) {
-      c.fillStyle = RED; c.fillText('STALL', cx, cy - 150 * s);
-    }
-    if (G.missileWarning && Math.sin(G.time * 16) > -0.2) {
-      c.fillStyle = RED; c.fillText('! MISSILE !', cx, cy - 120 * s);
-    }
-    if (P.fuel < 2200 && Math.sin(G.time * 6) > 0) {
-      c.fillStyle = AMBER; c.fillText('LOW FUEL', cx, cy + 180 * s);
-    }
-    if (P.fuel <= 0) { c.fillStyle = RED; c.fillText('FLAMEOUT', cx, cy + 180 * s); }
-    if (P.gearDown && P.speedKts > 300) { c.fillStyle = AMBER; c.fillText('GEAR OVERSPEED', cx, cy + 205 * s); }
+    if (P.stalled && Math.sin(G.time * 12) > 0) { c.fillStyle = RED; c.fillText('STALL', cx, cy - 120 * s); }
+    if (G.missileWarning && Math.sin(G.time * 16) > -0.2) { c.fillStyle = RED; c.fillText('! MISSILE !', cx, cy - 95 * s); }
+    if (P.fuel < 2200 && Math.sin(G.time * 6) > 0) { c.fillStyle = AMBER; c.fillText('LOW FUEL', cx, cy + 150 * s); }
+    if (P.fuel <= 0) { c.fillStyle = RED; c.fillText('FLAMEOUT', cx, cy + 150 * s); }
+    if (P.gearDown && P.speedKts > 300) { c.fillStyle = AMBER; c.fillText('GEAR OVERSPEED', cx, cy + 172 * s); }
     c.textAlign = 'left';
+  }
+
+  // ---------------- the Amiga instrument panel ----------------
+  // every box position measured straight off the original cockpit screenshot
+  _panel(c, { G, P, s, sp, alt, pitch, bank, hdg }) {
+    const w = this.w, h = this.h;
+    const yT = this._panelTop();
+    // dithered grey slab + dark top edge
+    c.fillStyle = this.dither; c.fillRect(0, yT, w, h - yT);
+    c.fillStyle = '#777777'; c.fillRect(0, yT, w, 3 * s);
+
+    // riveted display bezel (light frame, dark rivets) + dark screen helpers
+    const bezel = (x0f, y0f, x1f, y1f) => {
+      const x0 = x0f * w, y0 = y0f * h, x1 = x1f * w, y1 = y1f * h;
+      c.fillStyle = '#8a8a8a'; c.fillRect(x0, y0, x1 - x0, y1 - y0);
+      c.fillStyle = '#6a6a6a'; c.fillRect(x0 + 2 * s, y0 + 2 * s, x1 - x0 - 4 * s, y1 - y0 - 4 * s);
+      c.fillStyle = '#2e2e2e';
+      for (let rx = x0 + 4 * s; rx < x1 - 5 * s; rx += 0.011 * w) { c.fillRect(rx, y0 + 1.5 * s, 2.4, 2.4); c.fillRect(rx, y1 - 4 * s, 2.4, 2.4); }
+      for (let ry = y0 + 4 * s; ry < y1 - 5 * s; ry += 0.008 * w) { c.fillRect(x0 + 1.5 * s, ry, 2.4, 2.4); c.fillRect(x1 - 4 * s, ry, 2.4, 2.4); }
+    };
+    const screen = (x0f, y0f, x1f, y1f, col = '#03140a') => {
+      c.fillStyle = col; c.fillRect(x0f * w, y0f * h, (x1f - x0f) * w, (y1f - y0f) * h);
+    };
+
+    // ---- EJECT / BRAKE / GEAR: x .030-.117, three stacked
+    const btn = (label, y0f, y1f, lit, col = '#1a1a1a') => {
+      const bx = 0.030 * w, bw = 0.087 * w, y = y0f * h, bh = (y1f - y0f) * h;
+      c.fillStyle = lit ? '#c8c8c8' : '#9a9a9a'; c.fillRect(bx, y, bw, bh);
+      c.strokeStyle = '#3a3a3a'; c.lineWidth = 1.6 * s; c.strokeRect(bx, y, bw, bh);
+      c.fillStyle = lit ? col : '#2a2a2a';
+      c.font = `bold ${12 * s}px "Courier New", monospace`;
+      c.textAlign = 'center'; c.fillText(label, bx + bw / 2, y + bh * 0.70, bw - 4); c.textAlign = 'left';
+      c.lineWidth = 1.2 * s;
+    };
+    btn('EJECT', 0.758, 0.815, true, GREEN);
+    btn('BRAKE', 0.838, 0.888, P.brakes);
+    btn('GEAR',  0.908, 0.965, P.gearDown);
+
+    // ---- weapons loadout display: bezel x .140-.312, screen x .155-.295
+    bezel(0.140, 0.738, 0.312, 0.995);
+    screen(0.155, 0.758, 0.295, 0.962);
+    this._loadout(c, P, 0.155 * w, 0.758 * h, 0.140 * w, 0.204 * h, s, G.time);
+
+    // ---- FUEL: label, vertical bar, digital number box below
+    c.fillStyle = '#1a1a1a'; c.font = `bold ${11 * s}px "Courier New", monospace`;
+    c.fillText('FUEL', 0.331 * w, 0.770 * h);
+    screen(0.340, 0.782, 0.360, 0.898, '#101010');
+    const frac = clamp(P.fuel / P.cfg.fuel, 0, 1);
+    const bTop = 0.782 * h, bBot = 0.898 * h;
+    c.fillStyle = frac < 0.2 ? RED : '#28c850';
+    c.fillRect(0.341 * w, bBot - (bBot - bTop) * frac, 0.018 * w, (bBot - bTop) * frac);
+    screen(0.325, 0.908, 0.395, 0.958, '#101010');
+    c.strokeStyle = '#3a3a3a'; c.strokeRect(0.325 * w, 0.908 * h, 0.070 * w, 0.050 * h);
+    c.fillStyle = '#c8c8c8'; c.font = `bold ${12 * s}px "Courier New", monospace`;
+    c.textAlign = 'center'; c.fillText(Math.round(P.fuel).toString(), 0.360 * w, 0.944 * h); c.textAlign = 'left';
+
+    // ---- centre radar: bezel x .408-.595 y .718-.928, screen x .420-.583
+    bezel(0.408, 0.718, 0.595, 0.928);
+    screen(0.420, 0.738, 0.583, 0.918);
+    this._radarScope(c, G, 0.420 * w, 0.738 * h, 0.163 * w, 0.180 * h, s);
+
+    // ---- centre-bottom text strip: x .408-.685, y .958-1.0
+    screen(0.408, 0.958, 0.685, 0.998, '#020a05');
+    c.strokeStyle = '#2a6a3a'; c.strokeRect(0.408 * w, 0.958 * h, 0.277 * w, 0.040 * h);
+    const m0 = G.messages[0];
+    if (m0 && G.time - m0.t < 6) {
+      c.globalAlpha = G.time - m0.t > 5 ? 1 - (G.time - m0.t - 5) : 1;
+      c.fillStyle = m0.kind === 'warn' ? AMBER : m0.kind === 'bad' ? RED : m0.kind === 'good' ? '#9aff9a' : GREEN;
+      c.font = `bold ${10 * s}px "Courier New", monospace`;
+      c.textAlign = 'center';
+      c.fillText(m0.text, 0.5465 * w, 0.986 * h, 0.270 * w);
+      c.textAlign = 'left'; c.globalAlpha = 1;
+    }
+
+    // ---- compass: bezel x .598-.708, card window on top, ball below
+    bezel(0.598, 0.738, 0.708, 0.995);
+    screen(0.604, 0.748, 0.702, 0.780, '#141414');
+    const bX = 0.653 * w, bY = 0.878 * h, bR = 0.078 * h;
+    const hd = deg(hdg);
+    c.font = `bold ${11 * s}px "Courier New", monospace`;
+    c.textAlign = 'center';
+    for (const [lbl, ang] of [['N', 0], ['E', 90], ['S', 180], ['W', 270]]) {
+      const rel = wrapAngle((ang - hd) * Math.PI / 180) * 180 / Math.PI;
+      if (Math.abs(rel) > 70) continue;
+      const lx = bX + rel / 70 * (0.045 * w);
+      c.fillStyle = Math.abs(rel) < 25 ? RED : '#c8c8c8';
+      c.fillText(lbl, lx, 0.773 * h);
+      c.fillStyle = '#c8c8c8'; c.fillText('·', lx - 0.008 * w, 0.773 * h);
+    }
+    c.textAlign = 'left';
+    c.save();
+    c.beginPath(); c.arc(bX, bY, bR, 0, Math.PI * 2); c.clip();
+    c.save();
+    c.translate(bX, bY); c.rotate(bank);
+    c.fillStyle = '#8a92eb'; c.fillRect(-bR * 1.2, -bR * 1.2 - pitch * 120 * s, bR * 2.4, bR * 1.2 + pitch * 120 * s);
+    c.fillStyle = '#e82818'; c.fillRect(-bR * 1.2, -pitch * 120 * s, bR * 2.4, bR * 1.2);
+    // white horizon line across the ball, like the original
+    c.strokeStyle = '#f2f2f2'; c.lineWidth = 1.6 * s;
+    c.beginPath(); c.moveTo(-bR * 0.95, -pitch * 120 * s); c.lineTo(bR * 0.95, -pitch * 120 * s); c.stroke();
+    c.lineWidth = 1.2 * s;
+    c.restore();
+    c.restore();
+    c.strokeStyle = '#3a3a3a'; c.beginPath(); c.arc(bX, bY, bR, 0, Math.PI * 2); c.stroke();
+
+    // ---- right data block: bezel x .718-.905, screen x .730-.893
+    bezel(0.718, 0.738, 0.905, 0.995);
+    screen(0.730, 0.758, 0.893, 0.962);
+    const rows = [
+      [`${fmtN(alt)} FT`, GREEN], [`${Math.round(sp).toString().padStart(3, '0')} KTS`, GREEN],
+      [`${Math.round((0.07 + 0.93 * P.throttle) * 100)}% THRST${P.ab ? ' AB' : ''}`, GREEN],
+      [`${(G.xmag || 1).toFixed(1)} XMAG`, GREEN], [`${G.radarRangeNM} MI RNG`, GREEN],
+      [`DMG ${Math.round(P.damage)}%`, P.damage > 50 ? RED : GREEN],
+      [`CHF ${P.stores.chaff} FLR ${P.stores.flares}`, GREEN],
+    ];
+    c.font = `bold ${11 * s}px "Courier New", monospace`;
+    rows.forEach(([txt, col], i) => { c.fillStyle = col; c.fillText(txt, 0.745 * w, (0.795 + i * 0.0272) * h); });
+
+    // ---- two lamp squares above the ECM button
+    screen(0.905, 0.748, 0.968, 0.782, '#181818');
+    c.fillStyle = '#0a0a0a';
+    c.fillRect(0.910 * w, 0.753 * h, 0.024 * w, 0.022 * h);
+    c.fillRect(0.939 * w, 0.753 * h, 0.024 * w, 0.022 * h);
+    // ---- ECM button: x .905-.968, y .815-.868
+    c.fillStyle = P.ecm ? AMBER : '#9a9a9a'; c.fillRect(0.905 * w, 0.815 * h, 0.063 * w, 0.053 * h);
+    c.strokeStyle = '#3a3a3a'; c.strokeRect(0.905 * w, 0.815 * h, 0.063 * w, 0.053 * h);
+    c.fillStyle = P.ecm ? '#1a1a1a' : '#2a2a2a';
+    c.font = `bold ${11 * s}px "Courier New", monospace`;
+    c.textAlign = 'center'; c.fillText('ECM', 0.9365 * w, 0.852 * h); c.textAlign = 'left';
+
+    // ---- coordinates: periwinkle boxes, x .905-.998, lat y .878-.918, lon y .928-.968
+    const lat = 37.7749 - (P.pos.z - 5000) / 111320;
+    const lon = -122.4194 + (P.pos.x - 7000) / (111320 * Math.cos(37.7749 * Math.PI / 180));
+    c.font = `bold ${10.5 * s}px "Courier New", monospace`;
+    for (const [txt, y0f] of [[`${Math.abs(lat).toFixed(1)}${lat >= 0 ? 'N' : 'S'}`, 0.878], [`${Math.abs(lon).toFixed(1)}${lon >= 0 ? 'E' : 'W'}`, 0.928]]) {
+      c.fillStyle = '#8a94c8'; c.fillRect(0.905 * w, y0f * h, 0.093 * w, 0.040 * h);
+      c.strokeStyle = '#3a3a3a'; c.strokeRect(0.905 * w, y0f * h, 0.093 * w, 0.040 * h);
+      c.fillStyle = '#1a2a6a';
+      c.textAlign = 'center'; c.fillText(txt, 0.9515 * w, (y0f + 0.028) * h); c.textAlign = 'left';
+    }
+  }
+
+  _radarScope(c, G, rX, rY, rW, rH, s) {
+    const cx = rX + rW / 2, cy = rY + rH / 2;
+    const range = G.radarRange;
+    const pf = G.player.fwd;
+    const hdg = Math.atan2(pf.x, -pf.z);
+    // faint wedge lines like the original scope
+    c.strokeStyle = '#1c4a28';
+    c.beginPath();
+    c.moveTo(cx, cy + rH * 0.40); c.lineTo(cx - rW * 0.38, cy - rH * 0.36);
+    c.moveTo(cx, cy + rH * 0.40); c.lineTo(cx + rW * 0.38, cy - rH * 0.36);
+    c.stroke();
+    for (const ct of G.radarContacts) {
+      const dx = ct.pos.x - G.player.pos.x, dz = ct.pos.z - G.player.pos.z;
+      const dist = Math.hypot(dx, dz);
+      if (dist > range) continue;
+      const ang = Math.atan2(dx, -dz) - hdg;
+      const rr = dist / range;
+      const x = cx + Math.sin(ang) * rr * rW * 0.46, y = cy - Math.cos(ang) * rr * rH * 0.42;
+      switch (ct.kind) {
+        case 'bandit': c.fillStyle = ct.identified === false ? '#6a6a6a' : RED; break;
+        case 'af1': c.fillStyle = '#58d8ff'; break;
+        case 'stolen': c.fillStyle = AMBER; break;
+        case 'carrier': c.fillStyle = '#40d868'; break;
+        case 'raft': c.fillStyle = '#ff8830'; break;
+        case 'missile': c.fillStyle = Math.sin(G.time * 14) > 0 ? RED : '#4a0d05'; break;
+        case 'sub': c.fillStyle = '#ff58c8'; break;
+        default: c.fillStyle = WHITE;
+      }
+      if (ct.kind === 'carrier' || ct.kind === 'sub') {
+        c.beginPath(); c.moveTo(x, y - 4 * s); c.lineTo(x + 4 * s, y + 3 * s); c.lineTo(x - 4 * s, y + 3 * s); c.closePath(); c.fill();
+      } else {
+        c.fillRect(x - 2 * s, y - 2 * s, 4 * s, 4 * s);
+      }
+    }
+    // own ship
+    c.fillStyle = GREEN;
+    c.beginPath(); c.moveTo(cx, cy - 5 * s); c.lineTo(cx + 4 * s, cy + 4 * s); c.lineTo(cx - 4 * s, cy + 4 * s); c.closePath(); c.fill();
+    c.font = `${9.5 * s}px "Courier New", monospace`;
+    c.fillStyle = GREEN; c.textAlign = 'center';
+    c.fillText(`${G.radarRangeNM} MI`, cx, rY + rH - 6 * s);   // inside the scope, like the original
+    c.textAlign = 'left';
+  }
+
+  // weapons loadout page: top-view silhouette, one mark per hardpoint
+  _loadout(c, P, x, y, wL, hL, s, time) {
+    const cx = x + wL / 2, cy = y + hL / 2, u = Math.min(wL, hL) / 2 * 0.92;
+    c.strokeStyle = GREEN; c.lineWidth = 1.4 * s;
+    // fuselage
+    c.beginPath();
+    c.moveTo(cx, cy - u * 0.46);
+    c.lineTo(cx - u * 0.07, cy - u * 0.30); c.lineTo(cx - u * 0.055, cy + u * 0.34);
+    c.lineTo(cx + u * 0.055, cy + u * 0.34); c.lineTo(cx + u * 0.07, cy - u * 0.30);
+    c.closePath(); c.stroke();
+    // swept wings
+    c.beginPath();
+    c.moveTo(cx - u * 0.05, cy - u * 0.06); c.lineTo(cx - u * 0.46, cy + u * 0.20); c.lineTo(cx - u * 0.46, cy + u * 0.27); c.lineTo(cx - u * 0.05, cy + u * 0.14);
+    c.moveTo(cx + u * 0.05, cy - u * 0.06); c.lineTo(cx + u * 0.46, cy + u * 0.20); c.lineTo(cx + u * 0.46, cy + u * 0.27); c.lineTo(cx + u * 0.05, cy + u * 0.14);
+    c.stroke();
+    // stabilators + twin fins
+    c.beginPath();
+    c.moveTo(cx - u * 0.03, cy + u * 0.30); c.lineTo(cx - u * 0.22, cy + u * 0.44); c.lineTo(cx - u * 0.22, cy + u * 0.48); c.lineTo(cx - u * 0.03, cy + u * 0.38);
+    c.moveTo(cx + u * 0.03, cy + u * 0.30); c.lineTo(cx + u * 0.22, cy + u * 0.44); c.lineTo(cx + u * 0.22, cy + u * 0.48); c.lineTo(cx + u * 0.03, cy + u * 0.38);
+    c.moveTo(cx - u * 0.09, cy + u * 0.20); c.lineTo(cx - u * 0.09, cy + u * 0.33);
+    c.moveTo(cx + u * 0.09, cy + u * 0.20); c.lineTo(cx + u * 0.09, cy + u * 0.33);
+    c.stroke();
+    // hardpoints: wingtip AIM-9 x2, pylon AIM-120 x4 — lit while loaded,
+    // blinking when that weapon is selected
+    const store = (sx, sy, loaded, sel) => {
+      c.fillStyle = !loaded ? '#0a3016' : (sel && Math.sin(time * 8) > -0.4 ? '#9aff9a' : GREEN);
+      c.fillRect(cx + sx * u - 2.5 * s, cy + sy * u - 4 * s, 5 * s, 8 * s);
+    };
+    store(-0.46, 0.14, P.stores.aim9 >= 1, P.weapon === 'aim9');
+    store( 0.46, 0.14, P.stores.aim9 >= 2, P.weapon === 'aim9');
+    store(-0.30, 0.10, P.stores.aim120 >= 1, P.weapon === 'aim120');
+    store(-0.16, 0.05, P.stores.aim120 >= 2, P.weapon === 'aim120');
+    store( 0.16, 0.05, P.stores.aim120 >= 3, P.weapon === 'aim120');
+    store( 0.30, 0.10, P.stores.aim120 >= 4, P.weapon === 'aim120');
+    // selection label like the original's 'ARH AM' / 'IRH AM'
+    c.fillStyle = P.weapon !== 'gun' ? GREEN : AMBER;
+    c.font = `bold ${9.5 * s}px "Courier New", monospace`;
+    c.textAlign = 'center';
+    c.fillText(P.weapon === 'aim120' ? `ARH AM x${P.stores.aim120}` : P.weapon === 'aim9' ? `IRH AM x${P.stores.aim9}` : `GUN ${P.stores.gun}`, cx, y + hL - 4 * s);
+    c.textAlign = 'left';
+  }
+
+  // ---------------- external view: the original's bottom readout ----------------
+  _extBar(c, { P, s, sp, alt, hdg }) {
+    const w = this.w, h = this.h, bH = h * 0.085;
+    c.fillStyle = '#000'; c.fillRect(0, h - bH, w, bH);
+    c.fillStyle = WHITE; c.font = `${13 * s}px "Courier New", monospace`;
+    const y = h - bH * 0.35;
+    c.fillText(`HDG ${Math.round((deg(hdg) + 360) % 360).toString().padStart(3, '0')}`, w * 0.07, y);
+    c.fillText(`${Math.round(sp)} KTS`, w * 0.30, y);
+    c.fillText(`${Math.round(alt)} FT`, w * 0.50, y);
+    c.textAlign = 'right';
+    c.fillText(`THR ${Math.round(P.throttle * 100).toString().padStart(3, '0')}${P.ab ? ' AB' : ''}`, w * 0.93, y);
+    c.textAlign = 'left';
+    // small white score, top left
+    c.fillStyle = WHITE; c.font = `${10.5 * s}px "Courier New", monospace`;
+    c.fillText(`SCORE ${P ? this._score || '' : ''}`, -9999, -9999); // (score shown on menus/debrief)
   }
 
   _mouseStick(c, G, s) {
     if (!G.input.mouseStick) return;
-    const x = this.w - 90 * s, y = this.h - 90 * s, r = 46 * s;
-    c.strokeStyle = 'rgba(58,255,114,0.5)';
+    const x = this.w - 70 * s, y = this.h * 0.62, r = 34 * s;
+    c.strokeStyle = 'rgba(242,242,242,0.55)';
     c.strokeRect(x - r, y - r, r * 2, r * 2);
-    c.fillStyle = GREEN;
-    c.beginPath(); c.arc(x + G.input.mx * r, y + G.input.my * r, 4 * s, 0, Math.PI * 2); c.fill();
-    c.font = `${9 * s}px "Courier New", monospace`;
-    c.fillText('MOUSE STICK (M)', x - r, y + r + 14 * s);
-  }
-  _cockpitFrame(c, w, h, s) {
-    c.strokeStyle = 'rgba(20,28,36,0.95)';
-    c.lineWidth = 10 * s;
-    c.beginPath(); c.moveTo(w * 0.5, h); c.lineTo(w * 0.5, h * 0.62); c.stroke(); // center bow? fa18 has none; keep side bows
-    c.lineWidth = 14 * s;
-    c.beginPath(); c.moveTo(w * 0.12, h); c.lineTo(w * 0.3, h * 0.55); c.stroke();
-    c.beginPath(); c.moveTo(w * 0.88, h); c.lineTo(w * 0.7, h * 0.55); c.stroke();
-    c.fillStyle = 'rgba(16,22,30,0.98)';
-    c.fillRect(0, h * 0.86, w, h * 0.14); // glareshield/dash
-    c.lineWidth = 1.4 * s;
+    c.fillStyle = WHITE;
+    c.beginPath(); c.arc(x + G.input.mx * r, y + G.input.my * r, 3.5 * s, 0, Math.PI * 2); c.fill();
+    c.font = `${8.5 * s}px "Courier New", monospace`;
+    c.fillText('MOUSE STICK (M)', x - r, y + r + 12 * s);
   }
   _centerText(c, txt, s) {
-    c.fillStyle = BLUE; c.font = `${12 * s}px "Courier New", monospace`;
-    c.textAlign = 'center'; c.fillText(txt, this.cxw, this.h - 12 * s); c.textAlign = 'left';
+    c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
+    c.textAlign = 'center'; c.fillText(txt, this.cxw, this.h - 10 * s); c.textAlign = 'left';
   }
 }

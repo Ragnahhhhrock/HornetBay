@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 
 function M(color, opts = {}) {
-  return new THREE.MeshPhongMaterial(Object.assign({ color, flatShading: true, shininess: 18 }, opts));
+  return new THREE.MeshLambertMaterial(Object.assign({ color, flatShading: true }, opts));
 }
 function wingGeo(points, thick) {
   // points: [[span, chordZ], ...] planform outline in XY, extruded in Z then laid flat
@@ -45,12 +45,12 @@ function missileMesh(color = 0xe8e8e8, len = 3, r = 0.14) {
 // ---------------- F/A-18 Hornet ----------------
 export function buildFA18() {
   const g = new THREE.Group();
-  const C = 0x7f8b99, CD = 0x5d6672;
+  const C = 0xa8b4bc, CD = 0x8a98a0;
   const fus = box(2.0, 1.7, 9.5, C); fus.position.z = -0.8; g.add(fus);
   const spine = box(1.5, 0.5, 6, CD); spine.position.set(0, 1.0, -2); g.add(spine);
   const nose = cone(0.85, 4.6, C); nose.scale.set(1.15, 0.9, 1); nose.position.z = 6.2; g.add(nose);
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.85, 10, 8),
-    new THREE.MeshPhongMaterial({ color: 0x1a2c44, shininess: 90, specular: 0x88aaff }));
+    M(0x94a2aa));
   canopy.scale.set(0.85, 0.55, 2.0); canopy.position.set(0, 0.95, 3.1); g.add(canopy);
   // LEX
   const lexG = wingGeo([[0.5, 4.6], [2.1, 0.4], [0.5, 0.4]], 0.12);
@@ -111,11 +111,11 @@ export function buildFA18() {
 // ---------------- F-16 Fighting Falcon ----------------
 export function buildF16() {
   const g = new THREE.Group();
-  const C = 0x8b95a3, CD = 0x626b78;
+  const C = 0xa8b4bc, CD = 0x8a98a0;
   const fus = box(1.7, 1.5, 9, C); fus.position.z = -0.6; g.add(fus);
   const nose = cone(0.75, 3.8, C); nose.position.z = 5.8; g.add(nose);
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 8),
-    new THREE.MeshPhongMaterial({ color: 0x24344c, shininess: 100, specular: 0x88aaff }));
+    M(0x94a2aa));
   canopy.scale.set(0.8, 0.6, 1.8); canopy.position.set(0, 0.85, 2.6); g.add(canopy);
   const intake = box(1.0, 0.6, 2.2, CD); intake.position.set(0, -0.75, 2.2); g.add(intake);
   const wG = wingGeo([[0.7, 1.2], [0.7, -3.2], [5.4, -3.3], [5.4, -2.7]], 0.2);
@@ -159,11 +159,11 @@ export function buildF16() {
 // ---------------- MiG-29 Fulcrum ----------------
 export function buildMiG29() {
   const g = new THREE.Group();
-  const C = 0x8b98a8, CD = 0x68737f;
+  const C = 0x5a626a, CD = 0x4a5258;
   const fus = box(2.6, 1.4, 10, C); fus.position.z = -1; g.add(fus);
   const nose = cone(0.8, 4.8, CD); nose.scale.set(1.2, 0.85, 1); nose.position.z = 6.4; g.add(nose);
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 8),
-    new THREE.MeshPhongMaterial({ color: 0x2c2418, shininess: 100, specular: 0xffdd88 }));
+    M(0x4a5258));
   canopy.scale.set(0.85, 0.55, 1.7); canopy.position.set(0, 0.85, 3.0); g.add(canopy);
   const irst = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), M(0x1a1a1a));
   irst.position.set(0.35, 0.75, 4.6); g.add(irst);
@@ -260,6 +260,33 @@ export function buildRaft() {
   return g;
 }
 
+// surfaced submersible aircraft carrier (mission 6 target)
+export function buildSub() {
+  const g = new THREE.Group();
+  const hullMat = M(0x23282e), deckMat = M(0x31383f);
+  // main hull
+  const hull = new THREE.Mesh(new THREE.CylinderGeometry(6.5, 5.2, 96, 12), hullMat);
+  hull.rotation.x = Math.PI / 2; hull.position.y = 1.6; g.add(hull);
+  // bow taper
+  const bow = new THREE.Mesh(new THREE.SphereGeometry(6.5, 12, 8), hullMat);
+  bow.scale.set(1, 0.82, 2.2); bow.position.set(0, 1.6, -52); g.add(bow);
+  const stern = new THREE.Mesh(new THREE.SphereGeometry(5.6, 12, 8), hullMat);
+  stern.scale.set(1, 0.9, 1.6); stern.position.set(0, 1.6, 50); g.add(stern);
+  // flat flight deck (it's an aircraft carrier sub)
+  const deck = new THREE.Mesh(new THREE.BoxGeometry(13, 1.2, 88), deckMat);
+  deck.position.y = 7.6; g.add(deck);
+  // conning tower / island
+  const sail = new THREE.Mesh(new THREE.BoxGeometry(4.5, 9, 12), hullMat);
+  sail.position.set(5.5, 12.5, -8); g.add(sail);
+  const periscope = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 5, 6), M(0x111417));
+  periscope.position.set(5.5, 19, -10); g.add(periscope);
+  // deck markings
+  const line = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.15, 70), M(0xd8c840));
+  line.position.set(0, 8.3, 0); g.add(line);
+  g.userData = { type: 'sub' };
+  return g;
+}
+
 export function buildModel(type) {
   switch (type) {
     case 'f18': return buildFA18();
@@ -269,6 +296,7 @@ export function buildModel(type) {
     case 'b707': return build707();
     case 'cruise': return buildCruiseMissile();
     case 'raft': return buildRaft();
+    case 'sub': return buildSub();
   }
   return buildFA18();
 }

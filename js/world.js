@@ -2,25 +2,66 @@
 import * as THREE from 'three';
 import { clamp, lerp, fbm, noise2, rand } from './util.js';
 
-// ---------- 2D rounded-box SDF ----------
-function sdBox(x, z, cx, cz, hx, hz, r) {
-  const dx = Math.abs(x - cx) - (hx - r), dz = Math.abs(z - cz) - (hz - r);
-  const ax = Math.max(dx, 0), az = Math.max(dz, 0);
-  return Math.hypot(ax, az) + Math.min(Math.max(dx, dz), 0) - r;
-}
+// ---------- polygon coastline ----------
+// Traced against the original game's satellite map: the Pacific on the west,
+// the Golden Gate strait at the origin, the SF peninsula wrapping under the
+// bay's south tip, Marin headlands to the north, the San Pablo / Suisun lobe
+// reaching northeast and the East Bay shore behind Oakland. x east, z south,
+// listed in kilometers and scaled to meters below.
 const sstep = (e0, e1, v) => { const t = clamp((v - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
+const _UP = new THREE.Vector3(0, 1, 0);
 
-// Landmasses of the Bay (x east, z south; Golden Gate at origin)
-const LANDS = [
-  { cx: 7000,  cz: 16500, hx: 8000,  hz: 14000, r: 2500, peak: 150, f: 0.00016, s: 11 },  // SF peninsula
-  { cx: -3500, cz: -7500, hx: 6500,  hz: 6500,  r: 2200, peak: 290, f: 0.00020, s: 23 },  // Marin headlands
-  { cx: 43000, cz: 8000,  hx: 19000, hz: 28000, r: 3200, peak: 390, f: 0.00014, s: 37 },  // East Bay / Oakland
-  { cx: 25000, cz: 40000, hx: 38000, hz: 14000, r: 4200, peak: 210, f: 0.00018, s: 51 },  // South bay
-  { cx: 32000, cz: -20000, hx: 32000, hz: 11000, r: 4200, peak: 250, f: 0.00017, s: 67 }, // North bay shore
-  { cx: 10000, cz: 0,     hx: 230,   hz: 170,   r: 120,  peak: 44,  f: 0.004,   s: 5  },  // Alcatraz
-  { cx: 16500, cz: -6000, hx: 1000,  hz: 750,   r: 500,  peak: 250, f: 0.0012,  s: 9  },  // Angel Island
-  { cx: -46000, cz: 4200, hx: 750,   hz: 420,   r: 300,  peak: 100, f: 0.005,   s: 3  },  // Farallon Islands
+const PENINSULA = [ // SF peninsula + the land south of the bay (San Jose side)
+  [-2, 1.8], [7, 2.8], [9, 5.5], [10.5, 9], [12, 12.5], [13.8, 16], [15.5, 20],
+  [16.5, 24], [17, 27], [16.8, 31], [17, 35], [19, 37.5], [22, 38.5], [25.5, 37.8],
+  [28, 39.5], [33, 41], [40, 42.5], [55, 44], [75, 46], [100, 47], [125, 48],
+  [125, 130], [6, 130], [3, 90], [1, 76], [-0.5, 66], [-1.8, 57], [-3, 50],
+  [-4, 43], [-4.8, 36], [-5.4, 30], [-5.6, 24], [-5.2, 18], [-4.5, 13],
+  [-3.5, 8], [-2.5, 4],
 ];
+const MARIN_EASTBAY = [ // Marin + north shore + East Bay; the bay itself is a "bite"
+  [-2, -1.8], [-3.5, -5], [-5.5, -10], [-6.5, -16], [-7, -22], [-6, -28],
+  [-4.5, -34], [-3, -40], [-1, -46], [1, -54], [3, -64], [5, -76], [6.5, -92], [7.5, -115],
+  // inland boundary runs a few km SOUTH of the peninsula polygon's, so the
+  // two landmasses overlap — no water seam east of the bay's south tip
+  [130, -115], [130, 52], [100, 51], [75, 50], [55, 48], [40, 46.5], [33, 45], [28, 43.5],
+  [25.5, 37.8], [28, 35], [29.5, 31], [30, 26], [29, 21], [28, 16], [28, 13],
+  [28.5, 8], [29, 2], [30, -4], [32, -10], [36, -12], [40, -14], [46, -16],
+  [52, -17], [60, -18], [70, -20],
+  [74, -23], [72, -27], [64, -29], [54, -30.5], [48, -32], [40, -33], [32, -32], [26, -30], [22, -27],
+  [19, -22], [17.5, -17], [15.5, -12], [14, -9], [9, -4], [2, -2],
+];
+const LAND_POLYS = [PENINSULA, MARIN_EASTBAY].map(p => p.map(([x, z]) => [x * 1000, z * 1000]));
+const POLY_PEAK = [150, 330];
+const POLY_BBOX = LAND_POLYS.map(p => {
+  let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
+  for (const [x, z] of p) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z; }
+  return { x0, x1, z0, z1 };
+});
+const ISLANDS = [
+  { x: 10000,  z: 0,     r: 230,  peak: 44,  f: 0.004,  s: 5 },  // Alcatraz
+  { x: 16500,  z: -6000, r: 1000, peak: 250, f: 0.0012, s: 9 },  // Angel Island
+  { x: -46000, z: 4200,  r: 420,  peak: 100, f: 0.005,  s: 3 },  // Farallon
+];
+function _inPoly(x, z, poly) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const xi = poly[i][0], zi = poly[i][1], xj = poly[j][0], zj = poly[j][1];
+    if ((zi > z) !== (zj > z) && x < (xj - xi) * (z - zi) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+function _distToPoly(x, z, poly) {
+  let best = Infinity;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const x1 = poly[j][0], z1 = poly[j][1], dx = poly[i][0] - x1, dz = poly[i][1] - z1;
+    const t = clamp(((x - x1) * dx + (z - z1) * dz) / (dx * dx + dz * dz), 0, 1);
+    const ex = x - (x1 + dx * t), ez = z - (z1 + dz * t);
+    const dd = ex * ex + ez * ez;
+    if (dd < best) best = dd;
+  }
+  return Math.sqrt(best);
+}
 const FLATS = [
   { x: 7000,  z: 5200,  r: 2600, y: 14 },   // downtown SF
   { x: 13000, z: 20000, r: 2400, y: 4 },    // SFO
@@ -37,15 +78,25 @@ const BUMPS = [
 
 export function groundHeight(x, z) {
   let h = -12;
-  for (let i = 0; i < LANDS.length; i++) {
-    const L = LANDS[i];
-    const d = sdBox(x, z, L.cx, L.cz, L.hx, L.hz, L.r);
-    if (d > 1400) continue;
-    const m = clamp(-d / 1300, 0, 1);
-    if (m <= 0) continue;
+  for (let p = 0; p < LAND_POLYS.length; p++) {
+    const B = POLY_BBOX[p];
+    if (x < B.x0 || x > B.x1 || z < B.z0 || z > B.z1) continue;
+    const poly = LAND_POLYS[p];
+    if (!_inPoly(x, z, poly)) continue;
+    const d = _distToPoly(x, z, poly);            // distance inland from the shore
+    const m = clamp(d / 1300, 0, 1);
     const shore = lerp(-12, 5, Math.min(1, m * 3.2));
-    const hills = m * m * L.peak * (0.25 + 1.5 * fbm(x * L.f + L.s * 7, z * L.f + L.s * 13, 4));
+    // fbm dips negative — clamp the noise term so valleys flatten into
+    // lowland instead of carving below sea level (solid green, like the original)
+    const hills = m * m * POLY_PEAK[p] * Math.max(0, 0.25 + 1.5 * fbm(x * 0.00016 + p * 31.7, z * 0.00016 + p * 17.3, 4));
     const v = shore + hills;
+    if (v > h) h = v;
+  }
+  for (const I of ISLANDS) {
+    const d = Math.hypot(x - I.x, z - I.z);
+    if (d > I.r + 900) continue;
+    const m = clamp(1 - d / (I.r + 900), 0, 1);
+    const v = lerp(-12, 5, Math.min(1, m * 3.2)) + m * m * I.peak * Math.max(0, 0.4 + fbm(x * I.f + I.s, z * I.f + I.s * 2, 3));
     if (v > h) h = v;
   }
   for (const B of BUMPS) {
@@ -128,9 +179,8 @@ export class World {
         float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898,78.233,45.164)))*43758.5453); }
         void main(){
           float h = clamp(vDir.y, 0.0, 1.0);
-          vec3 col = mix(horizon, top, pow(h, 0.55));
-          float s = max(dot(vDir, sunDir), 0.0);
-          col += sunCol * (pow(s, 900.0) * 1.6 + pow(s, 18.0) * 0.22);
+          // Amiga-flat sky: thin horizon band, then solid color — no sun disc
+          vec3 col = mix(horizon, top, smoothstep(0.0, 0.12, h));
           if (night > 0.01 && vDir.y > 0.02) {
             vec3 g = floor(vDir * 220.0);
             float st = step(0.9975, hash(g)) * night * smoothstep(0.02, 0.25, vDir.y);
@@ -146,99 +196,81 @@ export class World {
   }
   setTimeOfDay(mode) {
     const S = this.skyU, F = this.scene.fog;
+    // true Amiga palette, sampled from the original running under emulation:
+    // day sky 0x444477, sea 0x003366 — muted, not the bright web-shot lavender
     const cfg = {
-      day:     { top: 0x2a6fd4, hor: 0xbfd9ef, sun: [0.45, 0.75, -0.35], sunC: 0xfff3d0, i: 2.2, hemi: 0.85, fog: [12000, 130000], night: 0, win: 0.25 },
-      morning: { top: 0x3a6fc0, hor: 0xffd9a8, sun: [0.85, 0.22, -0.25], sunC: 0xffd9a0, i: 1.9, hemi: 0.7,  fog: [10000, 110000], night: 0, win: 0.5 },
-      dusk:    { top: 0x2c2a66, hor: 0xff9a52, sun: [-0.9, 0.12, 0.2],   sunC: 0xffb070, i: 1.4, hemi: 0.5,  fog: [9000, 95000],  night: 0.15, win: 1.2 },
-      night:   { top: 0x050818, hor: 0x101a30, sun: [0.3, 0.5, 0.4],     sunC: 0x9ab,    i: 0.35, hemi: 0.22, fog: [8000, 80000],  night: 1, win: 2.2 },
+      day:     { top: 0x444477, hor: 0x444477, water: 0x003366, sun: [0.45, 0.75, -0.35], i: 1.1,  hemi: 1.0,  fog: [45000, 220000], night: 0 },
+      morning: { top: 0x3c3c6e, hor: 0x6a5f7e, water: 0x0a2c55, sun: [0.85, 0.25, -0.25], i: 1.0,  hemi: 0.85, fog: [45000, 220000], night: 0 },
+      dusk:    { top: 0x2e2842, hor: 0x4a3a4a, water: 0x081226, sun: [-0.9, 0.15, 0.2],   i: 0.9,  hemi: 0.75, fog: [40000, 200000], night: 0.12 },
+      night:   { top: 0x0a0a24, hor: 0x181830, water: 0x060a1c, sun: [0.3, 0.5, 0.4],     i: 0.3,  hemi: 0.25, fog: [35000, 160000], night: 1 },
     }[mode] || {};
-    S.top.value.set(cfg.top); S.horizon.value.set(cfg.hor);
-    S.sunDir.value.set(...cfg.sun).normalize(); S.sunCol.value.set(cfg.sunC); S.night.value = cfg.night;
+    // setRGB bypasses sRGB->linear conversion: the custom sky shader outputs
+    // raw color, so feed it the exact display values (the Amiga palette)
+    const raw = (hex, col) => col.setRGB(((hex >> 16) & 255) / 255, ((hex >> 8) & 255) / 255, (hex & 255) / 255);
+    raw(cfg.top, S.top.value); raw(cfg.hor, S.horizon.value);
+    S.sunDir.value.set(...cfg.sun).normalize(); S.night.value = cfg.night;
     this.sun.position.copy(S.sunDir.value).multiplyScalar(120000);
-    this.sun.intensity = cfg.i; this.sun.color.set(cfg.sunC);
+    this.sun.intensity = cfg.i; this.sun.color.set(0xffffff);
     this.hemi.intensity = cfg.hemi;
     F.color.set(cfg.hor); F.near = cfg.fog[0]; F.far = cfg.fog[1];
-    if (this.waterU) { this.waterU.sunDir.value.copy(S.sunDir.value); this.waterU.sunCol.value.set(cfg.sunC);
-      this.waterU.deep.value.set(mode === 'night' ? 0x06121f : 0x0a3550); this.waterU.sky.value.set(cfg.hor); }
-    if (this.cityMat) this.cityMat.emissiveIntensity = cfg.win;
-    if (this.cloudMat) this.cloudMat.opacity = mode === 'night' ? 0.25 : 0.7;
+    if (this.waterMat) this.waterMat.color.set(cfg.water);
+    if (this.clouds) this.clouds.visible = false;   // the original's sky is cloudless
     this.mode = mode;
   }
 
   _buildOcean() {
-    const u = {
-      time:   { value: 0 },
-      deep:   { value: new THREE.Color(0x0a3550) },
-      sky:    { value: new THREE.Color(0xbfd9ef) },
-      sunDir: { value: new THREE.Vector3(0.5, 0.6, -0.3).normalize() },
-      sunCol: { value: new THREE.Color(0xfff3d0) },
-    };
-    const geo = new THREE.PlaneGeometry(560000, 560000, 96, 96);
+    // the original's sea is one solid sheet of blue — no waves, no glint
+    const geo = new THREE.PlaneGeometry(560000, 560000, 1, 1);
     geo.rotateX(-Math.PI / 2);
-    const mat = new THREE.ShaderMaterial({
-      uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, u]),
-      fog: true,
-      vertexShader: `
-        #include <fog_pars_vertex>
-        uniform float time; varying vec3 vW;
-        void main(){
-          vec4 wp = modelMatrix * vec4(position, 1.0);
-          wp.y += sin(wp.x*0.004 + time*0.9) * cos(wp.z*0.0031 + time*0.7) * 1.4;
-          vW = wp.xyz;
-          vec4 mvPosition = viewMatrix * wp;
-          gl_Position = projectionMatrix * mvPosition;
-          #include <fog_vertex>
-        }`,
-      fragmentShader: `
-        #include <fog_pars_fragment>
-        uniform vec3 deep, sky, sunCol; uniform vec3 sunDir; uniform float time;
-        varying vec3 vW;
-        void main(){
-          vec3 V = normalize(cameraPosition - vW);
-          float n1 = sin(vW.x*0.031 + time*0.9) * sin(vW.z*0.027 - time*0.7);
-          float n2 = sin(vW.x*0.013 - time*0.5 + vW.z*0.019);
-          float n3 = sin((vW.x + vW.z)*0.041 + time*1.3);
-          vec3 N = normalize(vec3(n1*0.055 + n3*0.03, 1.0, n2*0.05 - n1*0.035));
-          float fres = pow(1.0 - max(dot(V, N), 0.0), 3.0);
-          vec3 col = mix(deep, sky, fres*0.75 + 0.06);
-          vec3 R = reflect(-sunDir, N);
-          col += sunCol * pow(max(dot(R, V), 0.0), 240.0) * 2.2;
-          col += vec3(0.02) * smoothstep(0.75, 1.0, n3);
-          gl_FragColor = vec4(col, 1.0);
-          #include <fog_fragment>
-        }`,
-    });
-    this.waterU = mat.uniforms;
-    const mesh = new THREE.Mesh(geo, mat);
+    this.waterMat = new THREE.MeshBasicMaterial({ color: 0x003366, fog: true });
+    const mesh = new THREE.Mesh(geo, this.waterMat);
     mesh.position.set(5000, 0, 8000);
     this.scene.add(mesh);
+    // sparse whitecap specks, like the original's sea texture
+    const n = 2600, wp = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) {
+      // keep the specks on the sea — the original's land is clean
+      let x = 0, z = 0, tries = 0;
+      do {
+        x = 5000 + (Math.random() - 0.5) * 240000;
+        z = 8000 + (Math.random() - 0.5) * 240000;
+      } while (groundHeight(x, z) > -1 && tries++ < 6);
+      wp[i * 3] = x; wp[i * 3 + 1] = 0.6; wp[i * 3 + 2] = z;
+    }
+    const wgeo = new THREE.BufferGeometry();
+    wgeo.setAttribute('position', new THREE.BufferAttribute(wp, 3));
+    const wpts = new THREE.Points(wgeo, new THREE.PointsMaterial({
+      color: 0xffffff, size: 5, sizeAttenuation: true, transparent: true, opacity: 0.55, fog: true }));
+    this.scene.add(wpts);
   }
 
   _buildTerrain() {
-    const W = 230000, SEG = 300, CX = 5000, CZ = 8000;
+    const W = 230000, SEG = 480, CX = 5000, CZ = 8000;
     const geo = new THREE.PlaneGeometry(W, W, SEG, SEG);
     geo.rotateX(-Math.PI / 2);
     const pos = geo.attributes.position;
     const colors = new Float32Array(pos.count * 3);
-    const cGrass = new THREE.Color(0x4d7c3c), cRock = new THREE.Color(0x7d7a70),
-          cSand = new THREE.Color(0xc9b98a), cCity = new THREE.Color(0x8f9296),
-          cDeep = new THREE.Color(0x0a3550), cShallow = new THREE.Color(0x1a5a70), tmp = new THREE.Color();
+    // flat Amiga land colors, sampled from the original: green 0x115511, grey city
+    const cGrass = new THREE.Color(0x115511), cRock = new THREE.Color(0x0e4a0e),
+          cSand = new THREE.Color(0x777755), cCity = new THREE.Color(0x555555),
+          cDeep = new THREE.Color(0x003366), cShallow = new THREE.Color(0x003366), tmp = new THREE.Color();
     for (let i = 0; i < pos.count; i++) {
       const x = pos.getX(i) + CX, z = pos.getZ(i) + CZ;
       const h = groundHeight(x, z);
-      pos.setY(i, h);
+      // sink submerged verts well below the water plane so distant depth
+      // buffer imprecision never lets the seafloor z-fight through the sea
+      pos.setY(i, h < 0 ? h - 25 : h);
       const dCity = Math.hypot(x - 7000, z - 5000);
       if (h < -4) tmp.copy(cDeep);
       else if (h < 1.5) tmp.copy(cSand);
       else if (h < 3) tmp.copy(cShallow).lerp(cSand, sstep(-2, 1.5, h));
       else if (dCity < 2800) tmp.copy(cCity).lerp(cGrass, sstep(1600, 2800, dCity));
       else tmp.copy(cGrass).lerp(cRock, sstep(170, 320, h));
-      const v = 0.92 + 0.16 * noise2(x * 0.002, z * 0.002);
-      colors[i * 3] = tmp.r * v; colors[i * 3 + 1] = tmp.g * v; colors[i * 3 + 2] = tmp.b * v;
+      colors[i * 3] = tmp.r; colors[i * 3 + 1] = tmp.g; colors[i * 3 + 2] = tmp.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    geo.computeVertexNormals();
-    const mat = new THREE.MeshLambertMaterial({ vertexColors: true });
+    // unlit: the original's terrain is flat-filled polygons with no shading
+    const mat = new THREE.MeshBasicMaterial({ vertexColors: true, fog: true });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(CX, 0, CZ);
     this.scene.add(mesh);
@@ -281,8 +313,8 @@ export class World {
     return new THREE.CanvasTexture(c);
   }
   _buildCity() {
-    const tex = this._windowTexture();
-    this.cityMat = new THREE.MeshLambertMaterial({ map: tex, emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.25 });
+    // flat light-grey boxes, like the original's untextured downtown
+    this.cityMat = new THREE.MeshLambertMaterial({ color: 0x777777, flatShading: true });
     const box = new THREE.BoxGeometry(1, 1, 1);
     box.translate(0, 0.5, 0);
     const N = 130;
@@ -304,7 +336,7 @@ export class World {
     }
     this.scene.add(this.cityMesh);
     const g1 = groundHeight(7300, 4600);
-    const pyr = new THREE.Mesh(new THREE.ConeGeometry(26, 260, 4), new THREE.MeshLambertMaterial({ color: 0xd8d4c8 }));
+    const pyr = new THREE.Mesh(new THREE.ConeGeometry(26, 260, 4), new THREE.MeshLambertMaterial({ color: 0x888888 }));
     pyr.position.set(7300, g1 + 130, 4600); pyr.rotation.y = Math.PI / 4;
     this.scene.add(pyr); this.addCollider(7300, g1 + 130, 4600, 24, 132, 24);
     const g2 = groundHeight(8300, 4000);
@@ -329,7 +361,8 @@ export class World {
   }
 
   _buildGoldenGate() {
-    const orange = new THREE.MeshLambertMaterial({ color: 0xc24a2e });
+    // unlit: the original's bridge is a flat, unmistakable dark red silhouette
+    const orange = new THREE.MeshBasicMaterial({ color: 0x880000, fog: true });
     const g = new THREE.Group();
     const DECK_Y = 67, HALF = 1750;
     const deck = new THREE.Mesh(new THREE.BoxGeometry(30, 8, HALF * 2), orange);
@@ -361,20 +394,25 @@ export class World {
     }
     const lg = new THREE.BufferGeometry();
     lg.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
-    g.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0xd86a4a })));
+    g.add(new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0x883333 })));
     this.scene.add(g);
   }
 
   _buildBayBridge() {
+    // two gray spans like the original's map: Bay Bridge (SF->Oakland) and
+    // the San Mateo crossing further south — each drawn shore to shore
+    this._bridgeSpan(new THREE.Vector3(9800, 56, 6000), new THREE.Vector3(28000, 56, 8800));
+    this._bridgeSpan(new THREE.Vector3(16800, 48, 24000), new THREE.Vector3(29600, 48, 24200));
+  }
+  _bridgeSpan(a, b) {
     const gray = new THREE.MeshLambertMaterial({ color: 0x9aa2a8 });
     const g = new THREE.Group();
-    const a = new THREE.Vector3(15500, 56, 6600), b = new THREE.Vector3(24500, 56, 8500);
     const dir = b.clone().sub(a), len = dir.length(), ang = Math.atan2(dir.x, dir.z);
     const deck = new THREE.Mesh(new THREE.BoxGeometry(24, 6, len), gray);
     deck.position.copy(a).add(b).multiplyScalar(0.5); deck.rotation.y = ang;
     g.add(deck);
     const mid = a.clone().add(b).multiplyScalar(0.5);
-    this.addCollider(mid.x, 56, mid.z, Math.abs(dir.x) / 2 + 12, 5, Math.abs(dir.z) / 2 + 12);
+    this.addCollider(mid.x, mid.y, mid.z, Math.abs(dir.x) / 2 + 12, 5, Math.abs(dir.z) / 2 + 12);
     for (const t of [0.25, 0.5, 0.75]) {
       const p = a.clone().lerp(b, t);
       const tw = new THREE.Mesh(new THREE.BoxGeometry(10, 160, 10), gray);
@@ -420,13 +458,17 @@ export class World {
   }
 
   _buildAirports() {
+    this.towerViews = [];   // viewpoints for the tower camera
     const mkStrip = (rw) => {
       const c = document.createElement('canvas'); c.width = 64; c.height = 512;
       const g2 = c.getContext('2d');
-      g2.fillStyle = '#33373c'; g2.fillRect(0, 0, 64, 512);
+      g2.fillStyle = '#5a5e63'; g2.fillRect(0, 0, 64, 512);
       g2.fillStyle = '#e8e8e8';
       for (let y = 30; y < 500; y += 42) g2.fillRect(30, y, 4, 22);
-      g2.fillRect(4, 6, 56, 8); g2.fillRect(4, 498, 56, 8);
+      // piano-key thresholds like the original's runways
+      for (let k = 0; k < 6; k++) {
+        g2.fillRect(5 + k * 9.5, 4, 5, 14); g2.fillRect(5 + k * 9.5, 494, 5, 14);
+      }
       const t = new THREE.CanvasTexture(c);
       const m = new THREE.Mesh(new THREE.PlaneGeometry(rw.wid, rw.len), new THREE.MeshLambertMaterial({ map: t }));
       m.rotation.x = -Math.PI / 2; m.rotation.z = -rw.hdg;
@@ -437,13 +479,21 @@ export class World {
       const cab = new THREE.Mesh(new THREE.CylinderGeometry(8, 6, 10, 8), new THREE.MeshLambertMaterial({ color: 0x30414f }));
       cab.position.set(rw.x + 300, rw.elev + 44, rw.z + 300); this.scene.add(cab);
       this.addCollider(rw.x + 300, rw.elev + 24, rw.z + 300, 9, 26, 9);
+      this.towerViews.push({ name: `${rw.name} TOWER`, pos: new THREE.Vector3(rw.x + 300, rw.elev + 50, rw.z + 300) });
     };
     for (const rw of this.runways) mkStrip(rw);
   }
 
+  // carrier island cab — computed live since the ship is underway
+  carrierTowerPos(out) {
+    const c = this.carrier, ci = c.islandOffset;
+    out.set(ci.x, c.deckY + 24, ci.z).applyAxisAngle(_UP, Math.PI - c.heading);
+    return out.add(c.group.position);
+  }
+
   update(dt, camPos) {
     this.time += dt;
-    if (this.waterU) this.waterU.time.value = this.time;
+    // ocean is flat — nothing to animate
     if (this.skyMesh) this.skyMesh.position.copy(camPos);
     this.carrier.update(dt);
     this.enemySub.update(dt);
@@ -471,7 +521,7 @@ export class Carrier {
   _deckTexture() {
     const c = document.createElement('canvas'); c.width = 256; c.height = 1024;
     const g = c.getContext('2d');
-    g.fillStyle = '#3d4248'; g.fillRect(0, 0, 256, 1024);
+    g.fillStyle = '#22252a'; g.fillRect(0, 0, 256, 1024);
     g.strokeStyle = '#e8e8e8'; g.lineWidth = 3;
     g.setLineDash([30, 24]);
     g.beginPath(); g.moveTo(128, 40); g.lineTo(128, 984); g.stroke();
@@ -539,7 +589,8 @@ export class Carrier {
     }
     if (this.isSub) { this.group.rotation.y = Math.PI - this.heading; return; }
     const p = this.group.position;
-    if (this.turning === 0 && Math.abs(Math.sin(this.heading)) > 0.5 && (p.x > 6000 || p.x < -56000)) this.turning = Math.PI;
+    // stay well out in the Pacific — the coast at this latitude is ~-4 km
+    if (this.turning === 0 && Math.abs(Math.sin(this.heading)) > 0.5 && (p.x > -14000 || p.x < -56000)) this.turning = Math.PI;
     if (this.turning > 0) { const tr = 0.06 * dt; this.heading += tr; this.turning -= tr; if (this.turning <= 0) this.turning = 0; }
     p.x += Math.sin(this.heading) * this.speed * dt;
     p.z += -Math.cos(this.heading) * this.speed * dt;

@@ -4,11 +4,14 @@ import { clamp, lerp, damp, KTS, FT, flightQuat, wrapAngle } from './util.js';
 import { groundHeight } from './world.js';
 import { buildModel } from './models.js';
 
+// numbers tuned against the original running in FS-UAE: ~600kt SL mil top,
+// 1000+ kt at altitude on burner, hard ceiling 40,960 ft, stall ~185kt,
+// 25,000 lbs of fuel that lasts ~2.5 min at full throttle, 7% idle thrust
 export const PLANES = {
-  f18: { label: 'F/A-18 HORNET', maxThrust: 14.0, abBoost: 11.0, dragK: 0.000105, maxRoll: 3.4,
-         gMax: 10, stall: 62, rotate: 72, fuel: 10800, burnMil: 0.85, burnAB: 7.0 },
-  f16: { label: 'F-16 FALCON',   maxThrust: 13.0, abBoost: 10.0, dragK: 0.000100, maxRoll: 4.6,
-         gMax: 11, stall: 58, rotate: 68, fuel: 7100, burnMil: 0.7, burnAB: 6.0 },
+  f18: { label: 'F/A-18 HORNET', maxThrust: 11.5, abBoost: 13.0, dragK: 0.000114, maxRoll: 3.4,
+         gMax: 10, stall: 95, rotate: 80, fuel: 25000, burnMil: 160, burnAB: 380, ceiling: 12487 },
+  f16: { label: 'F-16 FALCON',   maxThrust: 11.0, abBoost: 12.0, dragK: 0.000108, maxRoll: 4.6,
+         gMax: 11, stall: 90, rotate: 76, fuel: 18000, burnMil: 150, burnAB: 350, ceiling: 12487 },
 };
 
 const _e = new THREE.Euler(), _dq = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
@@ -27,9 +30,9 @@ export class Player {
     this.cfg = PLANES[this.type];
     this.model = buildModel(this.type);
     this.scene.add(this.model);
-    this.throttle = 0; this.ab = false;
+    this.throttle = 0; this.ab = false; this.abLatch = false; this._mach = 0;
     this.pitchRate = 0; this.rollRate = 0; this.yawRate = 0;
-    this.gearDown = true; this.hookDown = false; this.brakes = true; this.ecm = false;
+    this.gearDown = true; this.hookDown = false; this.brakes = false; this.ecm = false;
     this.fuel = this.cfg.fuel; this.damage = 0; this.gForce = 1;
     this.stores = { aim9: 2, aim120: 4, gun: 500, chaff: 14, flares: 14 };
     this.weapon = 'aim120';
@@ -73,7 +76,9 @@ export class Player {
     if (this.dead) { this._updateDead(dt, G); return; }
     // throttle
     this.throttle = clamp(this.throttle + inp.throttleDelta * dt * 0.6, 0, 1);
-    this.ab = inp.ab && this.throttle > 0.5 && this.fuel > 0;
+    // AB: hold SHIFT, or the original's latch — F10 twice at max throttle
+    this.ab = (inp.ab || this.abLatch) && this.throttle > 0.9 && this.fuel > 0;
+    if (this.throttle <= 0.9) this.abLatch = false;
     // fuel
     const burn = this.throttle * this.cfg.burnMil * (this.onGround ? 0.6 : 1) + (this.ab ? this.cfg.burnAB : 0);
     this.fuel = Math.max(0, this.fuel - burn * dt);
@@ -87,9 +92,18 @@ export class Player {
     const og = this.onGround;
     const cfg = this.cfg;
     const carrier = og.type === 'carrier' ? this.world.carrier : null;
-    const thrustA = cfg.maxThrust * this.throttle + (this.ab ? cfg.abBoost : 0);
+    // engines idle at 7% like the original
+    const thrEff = 0.07 + 0.93 * this.throttle;
+    let thrustA = cfg.maxThrust * thrEff + (this.ab ? cfg.abBoost : 0);
+    // catapult: deck launch flings the jet off the bow — F/A-18 only;
+    // the F-16 has no catapult bridle (and no hook) so it can't work the boat
+    if (og.type === 'carrier' && this.type === 'f18' && this.throttle > 0.85 && !og.trapped) thrustA += 20;
     const brakeA = this.brakes ? (og.trapped ? 34 : 9) : 0;
-    og.speedRel = Math.max(0, og.speedRel + (thrustA - brakeA - 0.4) * dt * (this.fuel > 0 ? 1 : 0));
+    let acc = thrustA - brakeA - 0.4;
+    // brakes are OFF at spawn — so chock the wheels at idle, or the 7%
+    // idle thrust would slowly taxi the jet off the deck by itself
+    if (og.speedRel === 0 && this.throttle < 0.05 && !og.trapped) acc = Math.min(acc, 0);
+    og.speedRel = Math.max(0, og.speedRel + acc * dt * (this.fuel > 0 ? 1 : 0));
     // rolling friction stops the jet when throttle idle
     if (this.throttle < 0.02 && !this.brakes) og.speedRel = Math.max(0, og.speedRel - 1.2 * dt);
     const dir = _v.set(Math.sin(this.heading), 0, -Math.cos(this.heading));
@@ -152,10 +166,14 @@ export class Player {
     // ---- speed dynamics
     const hasFuel = this.fuel > 0;
     const dmgFactor = this.damage > 60 ? 0.65 : 1;
-    let thrustA = hasFuel ? (cfg.maxThrust * this.throttle + (this.ab ? cfg.abBoost : 0)) * (0.35 + 0.65 * rho) * dmgFactor : 0;
+    const thrEff = 0.07 + 0.93 * this.throttle;
+    let thrustA = hasFuel ? (cfg.maxThrust * thrEff + (this.ab ? cfg.abBoost : 0)) * (0.35 + 0.65 * rho) * dmgFactor : 0;
+    // the original pins out at exactly 40,960 ft — fade thrust to nothing there
+    if (this.pos.y > 11000) thrustA *= clamp(1 - (this.pos.y - 11000) / 1487, 0, 1);
     let drag = cfg.dragK * rho * speed * speed;
     if (this.gearDown) drag += cfg.dragK * rho * speed * speed * 0.9 + 0.5;
     if (this.brakes) drag += cfg.dragK * rho * speed * speed * 1.4; // speedbrake
+    drag += Math.abs(this.pitchRate) * speed * 0.06;                 // turn bleed (induced)
     const gAlong = -9.81 * fwd.y;
     let newSpeed = Math.max(0, speed + (thrustA - drag + gAlong) * dt);
     // ---- control rates
@@ -166,8 +184,10 @@ export class Player {
     let pitchIn = inp.pitch * pitchMax;
     if (this.stalled) pitchIn -= 0.5 * (1 - newSpeed / cfg.stall); // nose drops
     this.pitchRate = damp(this.pitchRate, -pitchIn, 7, dt);           // -X = nose up
-    this.rollRate  = damp(this.rollRate, -inp.roll * rollMax, 7, dt); // -Z = right roll
-    this.yawRate   = damp(this.yawRate, inp.yaw * 0.35 * authority, 6, dt);
+    // nose = +Z convention: the pilot's right hand is local -X, so a
+    // positive rotation about +Z raises the +X (left) wing = bank right
+    this.rollRate  = damp(this.rollRate, inp.roll * rollMax, 7, dt);  // +Z = right roll
+    this.yawRate   = damp(this.yawRate, -inp.yaw * 0.35 * authority, 6, dt); // -Y = nose right
     _e.set(this.pitchRate * dt, this.yawRate * dt, this.rollRate * dt, 'XYZ');
     _dq.setFromEuler(_e);
     this.quat.multiply(_dq).normalize();
@@ -182,6 +202,22 @@ export class Player {
     // G estimate for HUD / blackout / contrails
     this.gForce = 1 + Math.abs(this.pitchRate) * newSpeed / 9.81 * 0.9;
     this.pos.addScaledVector(this.vel, dt);
+    // mach meter + sonic boom on the transition
+    const a = Math.max(295, 340.3 - 3.2 * (this.pos.y / 1000));  // speed of sound, m/s
+    const mach = newSpeed / a;
+    if (G && ((this._mach < 1 && mach >= 1) || (this._mach >= 1 && mach < 1)) && !this.dead) G.onMachCross(mach >= 1);
+    this._mach = mach;
+    // the original pins out at exactly 40,960 ft
+    if (this.pos.y > cfg.ceiling) { this.pos.y = cfg.ceiling; if (this.vel.y > 0) this.vel.y = 0; }
+    // wingtip contrails when pulling hard — a signature of the original's demo
+    this.contrailT -= dt;
+    if (this.gForce > 2.3 && this.speed > 90 && this.contrailT <= 0 && G && G.fx) {
+      this.contrailT = 0.045;
+      for (const s of [-1, 1]) {
+        _v.set(s * 4.3, 0.25, -1.2).applyQuaternion(this.quat).add(this.pos);
+        G.fx.contrail(_v);
+      }
+    }
     this._collide(G);
   }
 

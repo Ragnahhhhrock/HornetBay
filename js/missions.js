@@ -13,61 +13,58 @@ export const MISSIONS = [
 {
   id: 'qual', num: 0, title: 'CARRIER QUALIFICATION', code: 'TRAINING COMMAND',
   time: 'day', planeChoice: true,
-  briefing:
-`Welcome to the squadron. Before you fly active duty you must
-qualify on the boat.
-
-1. Launch from USS ENTERPRISE (full power + afterburner,
-   rotate at 150 KTS).
-2. Fly the pattern: pass each WHITE DIAMOND checkpoint.
-3. Return and TRAP on the deck — gear (L), hook (A),
-   30-40% throttle, ~140 KTS, aim for the wires.
-
-Do this cleanly and you go on the mission board.`,
+  brief: [
+    'QUALIFICATION', '',
+    'PERFORM A SUCCESSFUL CARRIER LANDING.', '',
+    'FLY AROUND, RETURN, THEN LAND ON CARRIER.', '',
+    'FULL POWER + AFTERBURNER, ROTATE AT 150 KTS.',
+    'GEAR (L), HOOK (A), 30-40% THROTTLE, ~140 KTS,',
+    'AIM FOR THE WIRES.', '',
+    '- ESC RE-POSITION ON CATAPULT -',
+  ],
+  briefing: 'Carrier qualification.',
   loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
-    this.gates = [
-      V(-22000, 400, 10000), V(-8000, 600, 6000), V(0, 500, 0), V(-16000, 400, 9000),
-    ];
-    this.gate = 0; this.phase = 0;
-    G.waypoint = this.gates[0];
+    this.phase = 0;
     G.radio('ENTERPRISE TOWER: WIND IS DOWN THE DECK. CLEARED TO LAUNCH, VIPER 1-1.');
   },
   update(G, dt) {
-    if (this.phase === 0 && !G.player.onGround) { this.phase = 1; G.radio('TOWER: GOOD LAUNCH. FLY THE PATTERN.'); }
-    if (this.gate < this.gates.length) {
-      const g = this.gates[this.gate];
-      if (near(G.player.pos, g, 1200)) {
-        this.gate++;
-        G.audio.kill();
-        if (this.gate < this.gates.length) { G.waypoint = this.gates[this.gate]; G.msg(`CHECKPOINT ${this.gate}/${this.gates.length}`, 'good'); }
-        else { G.waypoint = G.world.carrier.pos.clone().add(V(0, 40, 0)); G.msg('ALL GATES — RETURN AND TRAP', 'good'); G.radio('TOWER: PATTERN COMPLETE. CLEARED TO LAND.'); }
-      }
-    } else if (G.trappedThisSortie) {
-      G.completeMission('QUALIFIED!', `Carrier qualification complete.\n\nYou are cleared for active duty, pilot.\n\nSCORE +2000 (QUAL + TRAP)`);
+    if (this.phase === 0 && !G.player.onGround) {
+      this.phase = 1;
+      G.waypoint = G.world.carrier.pos.clone().add(V(0, 40, 0));
+      G.radio('TOWER: GOOD LAUNCH. FLY AROUND, RETURN, THEN LAND ON THE CARRIER.');
+    }
+    if (this.phase === 1 && G.trappedThisSortie) {
       G.addScore(2000);
+      G.completeMission('LANDING SUCCESSFUL', 'YOU ARE NOW QUALIFIED FOR MISSIONS.\n\nWelcome to the squadron, pilot.\n\nSCORE +2000 (QUAL + TRAP)');
     }
   },
 },
 // ------------------------------------------------ M1 VISUAL CONFIRMATION
 {
-  id: 'm1', num: 1, title: 'VISUAL CONFIRMATION', code: 'SEPT 1, 1994 — 0630 HRS',
-  time: 'morning', planeChoice: true,
-  briefing:
-`Two unidentified bogeys have entered the defense zone,
-heading for San Francisco at 20,000 FT.
-
-Scramble from the Enterprise, intercept, and close to
-VISUAL RANGE (under 0.5 NM) to identify each contact.
-
-RULES OF ENGAGEMENT: DO NOT FIRE UNLESS FIRED UPON.
-If they are hostile and engage you — weapons free.
-
-Return to the boat when the sky is sorted.`,
+  id: 'm1', num: 1, title: 'VISUAL CONFIRMATION', code: 'SEPTEMBER 6, 1994',
+  time: 'day', planeChoice: true,
+  brief: [
+    'NORAD STRATEGIC COMMAND',
+    'LOCATION: SAN FRANCISCO',
+    'DATE: SEPTEMBER 6, 1994', '',
+    'VISUAL CONFIRMATION OPERATION',
+    'ALERT STATUS: UNKNOWN AIRCRAFT IN YOUR SECTOR',
+    'INBOUND BOGEY CLOSING ON ENTERPRISE', '',
+    '- CLEARANCE CONFIRMED -',
+    'SCRAMBLE IMMEDIATELY',
+    'INTERCEPT AIRCRAFT FOR AERIAL RECON',
+    'CONFIRM IF FRIEND OR FOE',
+    'AND RETURN TO BASE',
+    'DO NOT ENGAGE UNLESS FIRED UPON',
+    'REPEAT: DO NOT FIRE UNLESS FIRED UPON',
+  ],
+  briefing: 'Visual confirmation operation.',
   loadout: '2× AIM-9 SIDEWINDER · 4× AIM-120 AMRAAM · 500× 20MM',
   setup(G) {
-    G.setPlayerStart({ onCarrier: true });
+    G.setPlayerStart({ runway: G.world.runways[0] });   // original F1 scrambles from SFO
+    G.vectorText = 'YOUR VECTOR 290 FOR BOGEY';
     const hostile = Math.random() < 0.65;
     this.hostile = hostile;
     this.bogeys = [];
@@ -93,6 +90,11 @@ Return to the boat when the sky is sorted.`,
     // waypoint to nearest unidentified bogey
     let next = this.bogeys.find(b => !b.dead && !b.identified);
     G.waypoint = next ? next.pos : null;
+    // tower vector call, like the original's "YOUR VECTOR nnn FOR BOGEY"
+    if (next) {
+      const h = Math.round((Math.atan2(next.pos.x - G.player.pos.x, -(next.pos.z - G.player.pos.z)) * 180 / Math.PI + 360) % 360 / 5) * 5;
+      G.vectorText = `YOUR VECTOR ${String(h).padStart(3, '0')} FOR BOGEY`;
+    } else G.vectorText = null;
     for (const b of this.bogeys) {
       if (!b.dead && !b.identified && near(G.player.pos, b.pos, 900)) {
         b.identified = true; b.label = b.name;
@@ -141,15 +143,17 @@ Return to the boat when the sky is sorted.`,
 {
   id: 'm2', num: 2, title: 'EMERGENCY DEFENSE', code: 'SEPT 3, 1994 — 0915 HRS',
   time: 'day', planeChoice: true,
-  briefing:
-`AIR FORCE ONE is inbound to San Francisco International
-with the President aboard. Its fighter escort has just been
-bounced and destroyed by TWO MIG-29s.
-
-Scramble immediately. Intercept and destroy the hostiles
-before they reach the President's aircraft.
-
-Air Force One must survive.`,
+  brief: [
+    'EMERGENCY DEFENSE STATUS:', '',
+    'WE HAVE HOSTILE AIRCRAFT IN YOUR SECTOR',
+    'AIR FORCE ONE CURRENTLY ON COURSE TO SFO',
+    'INBOUND BOGEY CLOSING ON AIR FORCE ONE',
+    'AT 630 KNOTS', '',
+    'SCRAMBLE IMMEDIATELY',
+    'INTERCEPT AND DESTROY ATTACKING AIRCRAFT.',
+    'REPEAT: THIS IS A TKO, ENGAGE AND TERMINATE',
+  ],
+  briefing: 'Emergency defense.',
   loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — HOT SCRAMBLE',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
@@ -159,6 +163,7 @@ Air Force One must survive.`,
       waypoints: [V(2000, 1500, 20000), V(9000, 300, 20000), V(11300, 6, 20000)],
     });
     this.af1.kind = 'af1';
+    this.af1.onEvent = (ev) => { if (ev === 'landed') this.af1Down = true; };
     this.migs = [];
     for (let i = 0; i < 2; i++) {
       const m = G.spawnAI('mig29', {
@@ -168,17 +173,32 @@ Air Force One must survive.`,
       m.target = this.af1; m.kind = 'bandit'; m.identified = true; m.fireCooldown = 12 + i * 8;
       this.migs.push(m);
     }
-    this.warned = false;
+    this.warned = false; this.damaged = false; this.af1Down = false; this.cleared = false;
     G.waypoint = this.migs[0].pos;
     G.radio('NORAD: VIPER 1-1, AIR FORCE ONE IS UNDER ATTACK! SCRAMBLE, SCRAMBLE, SCRAMBLE!');
   },
   update(G, dt) {
     G.waypoint = this.migs.find(m => !m.dead)?.pos || this.af1.pos;
-    if (this.af1.dead) { G.failMission('THE PRESIDENT IS DOWN', 'Air Force One was destroyed.\nThis is the darkest day in the nation\'s history.'); return; }
+    if (this.af1.dead) {
+      G.failMission('THE PRESIDENT IS DOWN', 'AIR FORCE ONE HAS BEEN DESTROYED.\n\nGOOD THING THIS IS ONLY A SIMULATION!');
+      return;
+    }
+    // original mid-mission update
+    if (!this.damaged && this.af1.hp < 700) {
+      this.damaged = true;
+      G.msg('AIR FORCE ONE DAMAGED BY MISSILE', 'bad');
+      G.radio('AIR FORCE ONE: WE\'RE HIT! ATTEMPTING EMERGENCY LANDING AT SFO!');
+      G.radio('NORAD: ESCORT AIRCRAFT HAS BEEN DESTROYED. VIPER, YOU\'RE ALL THEY HAVE.');
+    }
     if (!this.warned && this.migs.some(m => m.dead)) { this.warned = true; G.radio('AIR FORCE ONE: WE SEE THE SPLASH! KEEP THEM OFF US!'); }
-    if (this.migs.every(m => m.dead)) {
+    if (!this.cleared && this.migs.every(m => m.dead)) {
+      this.cleared = true;
+      G.msg('HOSTILES DOWN — COVER AF1 TO TOUCHDOWN', 'good');
+      G.radio('NORAD: AIRSPACE CLEAR. AIR FORCE ONE IS ON FINAL FOR SFO.');
+    }
+    if (this.cleared && this.af1Down) {
       G.addScore(2500);
-      G.completeMission('MISSION COMPLETE', 'Both MiGs destroyed.\nAir Force One is on final approach to SFO.\nThe President sends his thanks.\n\nSCORE +2500 + KILL BONUSES');
+      G.completeMission('MISSION COMPLETE', 'AIR FORCE ONE HAS SAFELY LANDED AT\nSAN FRANCISCO INTERNATIONAL.\nTHE PRESIDENT IS UNHARMED.\n\nWELL DONE!\n\nSCORE +2500 + KILL BONUSES');
     }
   },
 },
@@ -186,16 +206,19 @@ Air Force One must survive.`,
 {
   id: 'm3', num: 3, title: 'STOLEN AIRCRAFT', code: 'SEPT 6, 1994 — 1400 HRS',
   time: 'day', planeChoice: true,
-  briefing:
-`Two F-16s carrying SECRET ECM EQUIPMENT have been stolen
-by defecting pilots. They are heading west over the Pacific
-with two MiG-29s flying top cover.
-
-Intercept and order them to turn back to Moffett Field.
-Close to 0.7 NM to make the radio challenge.
-
-If they refuse to turn — they must NOT reach enemy hands.
-Weapons free on my mark.`,
+  brief: [
+    'STOLEN AIRCRAFT', '',
+    'TWO AMERICAN F-16 TEST AIRCRAFT HAVE BEEN',
+    'STOLEN FROM MOFFETT FIELD BY TERRORISTS',
+    'CURRENTLY ON COURSE TOWARD SOVIET UNION',
+    'THEY HAVE AIR SUPPORT: PAIR OF MIGS', '',
+    'INTERCEPT STOLEN AIRCRAFT AND ATTEMPT TO',
+    'FORCE THEIR RETURN WITHOUT CONFLICT',
+    'CLOSE TO 0.7 NM TO MAKE THE RADIO CHALLENGE.', '',
+    'F-16S EQUIPPED WITH TOP SECRET ECM SYSTEMS',
+    'SAFE RETURN OF HARDWARE IS TOP PRIORITY',
+  ],
+  briefing: 'Stolen aircraft.',
   loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
@@ -232,7 +255,7 @@ Weapons free on my mark.`,
         setTimeout(() => { if (!G.over) { G.radio('RENEGADE: NEGATIVE. WE\'RE NOT GOING BACK.'); G.msg('THEY REFUSE TO TURN', 'bad'); } }, 3500);
       }
       // escaped?
-      if (f.pos.x < -85000) { G.failMission('THEY ESCAPED', 'The stolen F-16s reached enemy hands\nwith our secret ECM equipment.'); return; }
+      if (f.pos.x < -85000) { G.failMission('THEY ESCAPED', 'STOLEN AIRCRAFT ARE NOW BEYOND RECOVERY RANGE.\n\nThe secret ECM hardware is lost.'); return; }
     }
     if (!this.weaponsFree && (this.contacted >= 2 || (this.contacted > 0 && this.f16s.some(f => f.pos.x < -60000)))) {
       this.weaponsFree = true;
@@ -251,21 +274,27 @@ Weapons free on my mark.`,
 {
   id: 'm4', num: 4, title: 'SEARCH AND RESCUE', code: 'SEPT 9, 1994 — 1930 HRS',
   time: 'dusk', planeChoice: true,
-  briefing:
-`One of our F/A-18s was shot down this afternoon. The pilot
-bailed out and is in a raft near the FARALLON ISLANDS,
-30 miles west of the Golden Gate. Two MiG-29s patrol the area.
-
-Fly low over the raft and drop a rescue pod:
-below 1,500 FT, within 0.7 NM — press SHIFT+P.
-
-You carry THREE pods. The pilot is marking his position
-with orange smoke. Bring him home.`,
+  brief: [
+    'RESCUE OPERATION:', '',
+    'WE HAVE MULTIPLE BOGEYS AT 25 MILES',
+    '480 KNOTS CLOSURE', '',
+    'ONE OF OUR PILOTS HAS BEEN HIT AND DOWNED',
+    'BAILED OUT NEAR THE FARALLON ISLANDS', '',
+    'SCRAMBLE IMMEDIATELY FOR RESCUE OPERATION',
+    '- WARNING: TENSION IS HIGH -',
+    'ENGAGE BANDITS IF NECESSARY',
+    'THEN SEARCH FOR DOWNED PILOT',
+    'AND DEPLOY EMERGENCY RESCUE POD AT SITE', '',
+    'POD DROP: BELOW 1,500 FT, WITHIN 0.7 NM — SHIFT+P',
+    'YOU CARRY THREE PODS. HE MARKS WITH ORANGE SMOKE.', '',
+    '- WARNING: DOWNED PILOT HAS LIMITED TIME -',
+  ],
+  briefing: 'Rescue operation.',
   loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM · 3× RESCUE PODS',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
     this.raftPos = V(-45800, 1, 3900);
-    this.raft = G.spawnAI('raft', { pos: this.raftPos.clone(), speed: 0, name: 'PILOT RAFT', label: 'RAFT', mode: 'straight', noEvade: true, hp: 9999 });
+    this.raft = G.spawnAI('raft', { pos: this.raftPos.clone(), speed: 0, name: 'PILOT RAFT', label: 'RAFT', mode: 'straight', noEvade: true, hp: 9999, surface: true });
     this.raft.kind = 'raft';
     this.raft.targetSpeed = 0; this.raft.speed = 0;
     this.migs = [];
@@ -279,6 +308,7 @@ with orange smoke. Bring him home.`,
       this.migs.push(m);
     }
     this.pods = 3; this.hostileNow = false; this.smokeT = 0; this.podDropped = false;
+    this.pilotT = 480; this.warned4 = false; this.warned1 = false;   // downed pilot has limited time
     G.waypoint = this.raftPos;
     G.radio('RESCUE COORD: PILOT IS ALIVE AND SIGNALING. WATCH FOR MIGS.');
   },
@@ -287,6 +317,13 @@ with orange smoke. Bring him home.`,
     this.smokeT -= dt;
     if (this.smokeT <= 0 && !this.podDropped) { this.smokeT = 0.25; G.fx.smoke(this.raftPos.clone().add(V(0, 2, 0)), 2.5, 4, 0xff6a20); }
     G.waypoint = this.raftPos;
+    // limited time
+    if (!this.podDropped) {
+      this.pilotT -= dt;
+      if (!this.warned4 && this.pilotT < 240) { this.warned4 = true; G.msg('PILOT FADING — 4 MINUTES LEFT', 'warn'); G.radio('RESCUE COORD: HE\'S GOING INTO SHOCK. STEP ON IT, VIPER.'); }
+      if (!this.warned1 && this.pilotT < 60) { this.warned1 = true; G.msg('ONE MINUTE TO SAVE THE PILOT', 'bad'); }
+      if (this.pilotT <= 0) { G.failMission('TOO LATE', 'THE DOWNED PILOT WAS LOST AT SEA\nBEFORE THE POD REACHED HIM.'); return; }
+    }
     // migs go hostile if player closes or fires
     if (!this.hostileNow && (G.player.pos.distanceTo(this.raftPos) < 16000 || G.shotsFired > 0)) {
       this.hostileNow = true;
@@ -305,7 +342,7 @@ with orange smoke. Bring him home.`,
         G.msg('POD AWAY — PILOT SECURED!', 'good');
         G.radio('RESCUE COORD: HE\'S GOT THE POD! PICKUP EN ROUTE. RTB, VIPER.');
         G.addScore(1500);
-        setTimeout(() => { if (!G.over) G.completeMission('MISSION COMPLETE', 'The rescue pod is secure and the pilot\nwill be home for breakfast.\n\nSCORE +1500 + KILL BONUSES'); }, 5000);
+        setTimeout(() => { if (!G.over) G.completeMission('MISSION COMPLETE', 'EMERGENCY RESCUE POD DEPLOYED CLOSE ENOUGH.\nTHE PILOT WILL BE RECOVERED.\n\nWELL DONE!\n\nSCORE +1500 + KILL BONUSES'); }, 5000);
       } else {
         this.pods--;
         G.audio.podDrop();
@@ -319,98 +356,151 @@ with orange smoke. Bring him home.`,
 {
   id: 'm5', num: 5, title: 'CRUISE MISSILE INBOUND', code: 'SEPT 12, 1994 — 0510 HRS',
   time: 'morning', planeChoice: true,
-  briefing:
-`A nuclear-armed CRUISE MISSILE has been launched at
-San Francisco. It is flying at 200 FEET at over 500 KNOTS —
-terrain-following, radar-invisible until you are close.
-
-Scramble NOW. Every second counts. Intercept over the water
-and kill it before it reaches the city.
-
-It is small, fast and low. Use AMRAAMs head-on or get
-behind it with the gun. Good hunting.`,
+  brief: [
+    'ALERT: NORAD HAS ENTERED DEFCON 3', '',
+    'INCOMING CRUISE MISSILE',
+    'BEARING 170 AT 30 MILES',
+    '680 KNOTS CLOSURE', '',
+    'ETA DELIVERY AT MOFFETT FIELD: 9 MINUTES', '',
+    'SCRAMBLE IMMEDIATELY',
+    'INTERCEPT AND DESTROY THE CRUISE MISSILE',
+    'BEFORE IT REACHES MOFFETT FIELD', '',
+    'IT FLIES AT 200 FT, TERRAIN-FOLLOWING.',
+    'USE AMRAAMS HEAD-ON OR GET BEHIND IT WITH THE GUN.',
+  ],
+  briefing: 'Cruise missile inbound.',
   loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — HOT SCRAMBLE',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
+    this.moffett = V(10000, 70, 34000);
     this.cm = G.spawnAI('cruise', {
-      pos: V(-44000, 70, 5500), heading: Math.atan2(7000 - (-44000), -(5000 - 5500)), speed: 258,
+      pos: V(17500, 70, 80000), heading: Math.atan2(this.moffett.x - 17500, -(this.moffett.z - 80000)), speed: 300,
       name: 'CRUISE MISSILE', label: 'CRUISE MSL', mode: 'straight', noEvade: true, hp: 60,
       terrainFollow: true, hostile: true,
     });
     this.cm.kind = 'bandit'; this.cm.identified = true;
-    this.warnT = 0;
+    this.warnT = 0; this.t = 0; this.defcon2 = false; this.migs = [];
     G.waypoint = this.cm.pos;
     G.radio('NORAD: VIPER 1-1, CRUISE MISSILE INBOUND! FULL BURNER — GO!');
   },
   update(G, dt) {
+    this.t += dt;
     if (this.cm.dead) {
       G.addScore(3000);
-      G.completeMission('MISSION COMPLETE', 'Cruise missile destroyed over the Pacific.\nThe city never even woke up.\n\nSCORE +3000');
+      G.completeMission('MISSION COMPLETE', 'CRUISE MISSILE DESTROYED SHORT OF MOFFETT FIELD.\n\nWELL DONE!\n\nSCORE +3000');
       return;
     }
     G.waypoint = this.cm.pos;
-    const d = this.cm.pos.distanceTo(V(7000, 70, 5000));
+    // original mid-mission escalation
+    if (!this.defcon2 && this.t > 45) {
+      this.defcon2 = true;
+      G.msg('NORAD HAS ENTERED DEFCON 2', 'bad');
+      G.radio('NORAD: MULTIPLE BANDITS PROVIDING AIR SUPPORT FOR THE MISSILE.');
+      for (let i = 0; i < 2; i++) {
+        const m = G.spawnAI('mig29', {
+          pos: this.cm.pos.clone().add(V(-1500 - i * 800, 800 + i * 400, 1200 + i * 900)),
+          heading: Math.PI, speed: 280, hostile: true, name: 'MIG-29', label: 'MIG-29',
+          mode: 'attack', skill: 0.95, agility: 1.1,
+        });
+        m.target = G.player; m.kind = 'bandit'; m.identified = true;
+        this.migs.push(m);
+      }
+      G.msg('BANDITS LAUNCHING — THEY\'RE DEFENDING THE MISSILE', 'warn');
+    }
+    const d = this.cm.pos.distanceTo(this.moffett);
     this.warnT -= dt;
-    if (this.warnT <= 0) { this.warnT = 10; G.msg(`MISSILE ${(d / 1852).toFixed(0)} NM FROM THE CITY`, 'warn'); }
+    if (this.warnT <= 0) { this.warnT = 10; G.msg(`MISSILE ${(d / 1852).toFixed(0)} NM FROM MOFFETT FIELD`, 'warn'); }
     if (d < 2600) {
       G.explode(this.cm.pos, 3);
-      G.failMission('THE CITY IS HIT', 'The cruise missile reached San Francisco.\nYou were seconds too late.');
+      G.failMission('MOFFETT FIELD DESTROYED', 'ENEMY CRUISE MISSILE HAS EXPLODED NORTH OF MOFFETT FIELD.\nNUCLEAR DESTRUCTION WIDESPREAD.\n\nGOOD THING THIS IS ONLY A SIMULATION!');
     }
   },
 },
 // ------------------------------------------------ M6 CARRIER SUB
 {
-  id: 'm6', num: 6, title: 'THE CARRIER SUB', code: 'SEPT 15, 1994 — 1745 HRS',
+  id: 'm6', num: 6, title: 'SHADOW SUB', code: 'SEPT 15, 1994 — 1745 HRS',
   time: 'dusk', planeChoice: true,
-  briefing:
-`This is no longer a crisis — it is WAR.
-
-An enemy SUBMERSIBLE AIRCRAFT CARRIER has surfaced
-60 miles west of the Golden Gate and is launching
-strike aircraft at the coast.
-
-Destroy EVERY aircraft it launches. The carrier itself
-cannot be sunk by your missiles — kill its air wing and
-it will be forced to flee.
-
-This is the big one, pilot. The city is counting on you.`,
+  brief: [
+    'SHADOW SUB DETECTION:', '',
+    'C-19 INTELLIGENCE REPORTS:',
+    'SUBMERSIBLE AIRCRAFT CARRIER',
+    'POINT OF ORIGIN OF ALL ENEMY AIRCRAFT', '',
+    'SCRAMBLE AND INTERCEPT SHADOW SUB',
+    '- FLY IN BELOW 100 FT TO AVOID RADAR -',
+    'DESTROY SUB WHILE NOW SURFACED',
+  ],
+  briefing: 'Shadow sub.',
   loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — LAND TO REARM ANYTIME',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
-    this.sub = G.world.enemySub;
-    this.sub.group.visible = true;
-    this.total = 6; this.spawned = 0; this.killed = 0; this.spawnT = 8;
-    this.migs = [];
-    G.waypoint = this.sub.pos.clone().add(V(0, 500, 0));
-    G.radio('FLEET COM: ALL HOSTILE AIRCRAFT MUST BE DESTROYED. GOOD HUNTING.');
+    const sp = G.world.enemySub.pos;   // 60 mi west of the Golden Gate
+    this.sub = G.spawnAI('sub', {
+      pos: V(sp.x, 0, sp.z), heading: Math.PI / 2, speed: 0, hp: 500,
+      name: 'SHADOW SUB', label: 'SHADOW SUB', mode: 'straight', noEvade: true,
+      hostile: true, surface: true,
+    });
+    this.sub.kind = 'bandit'; this.sub.identified = true; this.sub.targetSpeed = 0;
+    this.migs = []; this.detectT = 0; this.diveT = -1; this.migLaunched = false; this.done = false;
+    G.waypoint = this.sub.pos;
+    G.radio('FLEET COM: SHADOW SUB IS SURFACED AND LAUNCHING AIRCRAFT. STAY BELOW 100 FT ON THE RUN-IN.');
   },
   update(G, dt) {
-    G.waypoint = this.migs.find(m => !m.dead)?.pos || this.sub.pos.clone().add(V(0, 500, 0));
-    // launch schedule
-    this.spawnT -= dt;
-    if (this.spawned < this.total && this.spawnT <= 0) {
-      this.spawnT = 26;
-      this.spawned++;
-      const m = G.spawnAI('mig29', {
-        pos: this.sub.pos.clone().add(V(rand(-40, 40), 60, rand(-40, 40))),
-        heading: Math.atan2(G.player.pos.x - this.sub.pos.x, -(G.player.pos.z - this.sub.pos.z)),
-        speed: 240, hostile: true, name: 'MIG-29', label: 'MIG-29', mode: 'attack',
-        skill: 0.9 + this.spawned * 0.05, agility: 1.1,
-      });
-      m.target = G.player; m.kind = 'bandit'; m.identified = true;
-      this.migs.push(m);
-      G.msg(`BOGEY LAUNCHED FROM THE SUB! (${this.spawned}/${this.total})`, 'warn');
-      G.audio.radioClick();
+    if (this.sub.dead) {
+      if (!this.done) {
+        this.done = true;
+        G.addScore(4000);
+        G.radio('FLEET COM: DIRECT HITS! THE SHADOW SUB IS GOING DOWN!');
+        setTimeout(() => {
+          if (!G.over) G.completeMission('MISSION COMPLETE', 'THE SHADOW SUB IS SUNK.\nTHE SOURCE OF ALL ENEMY AIRCRAFT IS DESTROYED.\n\nWELL DONE!\n\nSCORE +4000 + KILL BONUSES');
+        }, 6000);
+      }
+      return;
     }
-    const deadCount = this.migs.filter(m => m.dead).length;
-    if (this.spawned >= this.total && deadCount >= this.total && !this.done) {
-      this.done = true;
-      this.sub.submerge();
-      G.radio('FLEET COM: THE SUB IS CRASH-DIVING! IT\'S OVER — YOU DID IT!');
-      G.addScore(4000);
-      setTimeout(() => {
-        if (!G.over) G.completeMission('VICTORY!', 'The enemy air wing is destroyed and the\ncarrier sub has fled beneath the waves.\n\nTHE BAY IS SAFE. THE WAR IS OVER.\nYou are a legend of the squadron.\n\nSCORE +4000 + KILL BONUSES');
-      }, 6000);
+    G.waypoint = this.sub.pos;
+    const dist = G.player.pos.distanceTo(this.sub.pos);
+    // sub radar: detect the player high inside 25 km — it will dive and escape
+    if (dist < 25000 && G.player.altFt > 100 && !G.player.onGround) {
+      this.detectT += dt;
+      if (this.detectT > 1.5 && !this.spotted) {
+        this.spotted = true;
+        G.msg('SPOTTED BY SUB RADAR — GET BELOW 100 FT!', 'bad');
+        G.radio('FLEET COM: THEY\'VE MADE YOU! GET LOW OR SHE\'LL DIVE!');
+      }
+      if (this.detectT > 6) {
+        G.failMission('THE SUB ESCAPED', 'THE SHADOW SUB HAS SUBMERGED AND ESCAPED.\nYOU MUST MAKE YOUR RUN-IN BELOW 100 FT.');
+        return;
+      }
+    } else if (this.spotted) {
+      this.detectT = Math.max(1.2, this.detectT - dt * 2);
+    }
+    // first hit → crash-dive countdown
+    if (this.sub.hp < 500 && this.diveT < 0) {
+      this.diveT = 25;
+      G.msg('THE SUB IS PREPARING TO DIVE!', 'warn');
+      G.radio('FLEET COM: SHE\'S CRASH-DIVING — FINISH HER IN 25 SECONDS!');
+    }
+    if (this.diveT > 0) {
+      this.diveT -= dt;
+      if (this.diveT <= 0) {
+        G.failMission('THE SUB ESCAPED', 'THE SHADOW SUB SUBMERGED BEFORE YOU\nCOULD FINISH IT OFF.');
+        return;
+      }
+    }
+    // defensive fighter launches
+    if (!this.migLaunched && (dist < 18000 || this.sub.hp < 500)) {
+      this.migLaunched = true;
+      for (let i = 0; i < 2; i++) {
+        const m = G.spawnAI('mig29', {
+          pos: this.sub.pos.clone().add(V(rand(-40, 40), 60, rand(-40, 40))),
+          heading: Math.atan2(G.player.pos.x - this.sub.pos.x, -(G.player.pos.z - this.sub.pos.z)),
+          speed: 240, hostile: true, name: 'MIG-29', label: 'MIG-29', mode: 'attack',
+          skill: 1.0, agility: 1.1,
+        });
+        m.target = G.player; m.kind = 'bandit'; m.identified = true;
+        this.migs.push(m);
+      }
+      G.msg('FIGHTERS LAUNCHING FROM THE SUB!', 'warn');
+      G.audio.radioClick();
     }
   },
 },
@@ -418,37 +508,25 @@ This is the big one, pilot. The city is counting on you.`,
 {
   id: 'free', num: 99, title: 'FREE FLIGHT', code: 'NO ENEMY ACTIVITY',
   time: 'day', planeChoice: true,
-  briefing:
-`The Bay is yours. Fly anywhere, buzz the bridges, practice
-carrier traps, or rent your skills against the range drone.
-
-A single MiG-29 flies an aerobatic circuit over the Bay —
-it will not shoot back, but it WILL evade if you lock it up.
-
-Press X to eject and respawn at your start point.`,
+  brief: [
+    'FREE FLIGHT, NO ENEMY CONFRONTATION', '',
+    'THE BAY IS YOURS. FLY ANYWHERE, BUZZ THE BRIDGES,',
+    'PRACTICE CARRIER TRAPS AND LANDINGS.', '',
+    'ESC REPOSITIONS AT THE START POINT',
+    'SHIFT+ESC RETURNS TO THE MENU',
+  ],
+  briefing: 'Free flight — no enemy confrontation.',
   loadout: 'FULL LOADOUT — UNLIMITED RESPAWNS',
   setup(G) {
     const start = G.freeFlightStart || 'carrier';
     if (start === 'carrier') G.setPlayerStart({ onCarrier: true });
     else if (start === 'sfo') G.setPlayerStart({ runway: G.world.runways[0] });
+    else if (start === 'oakland') G.setPlayerStart({ runway: G.world.runways[1] });
+    else if (start === 'moffett') G.setPlayerStart({ runway: G.world.runways[2] });
     else G.setPlayerStart({ pos: V(-6000, 1200, 0), heading: Math.PI / 2, speed: 180 });
-    this.mig = this._spawnDrone(G);
+    // the original's free flight has NO enemies at all
     this.respawnT = 0;
   },
-  _spawnDrone(G) {
-    const m = G.spawnAI('mig29', {
-      pos: V(5000, 1500, 5000), heading: 0, speed: 230, name: 'RANGE DRONE', label: 'DRONE',
-      mode: 'route', loop: true, skill: 1.2, agility: 1.3, hp: 100,
-      waypoints: [V(0, 800, 0), V(7000, 1200, 5000), V(10000, 600, 0), V(0, 1500, -6000), V(-4000, 900, 3000)],
-    });
-    m.kind = 'bandit'; m.identified = true; m.noAttack = true;
-    return m;
-  },
-  update(G, dt) {
-    if (this.mig.dead || this.mig.removeMe) {
-      this.respawnT += dt;
-      if (this.respawnT > 18) { this.respawnT = 0; this.mig = this._spawnDrone(G); G.msg('RANGE DRONE AIRBORNE AGAIN', 'good'); }
-    }
-  },
+  update(G, dt) {},
 },
 ];

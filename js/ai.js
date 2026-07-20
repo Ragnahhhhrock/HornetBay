@@ -32,6 +32,7 @@ export class AIAircraft {
     this.landed = false; this.landSpeed = 0;
     this.bank = 0; this.pitch = 0;
     this.terrainFollow = opts.terrainFollow ?? false;
+    this.surface = opts.surface ?? false;      // sits on the water (raft, sub)
     this.gunsOnly = opts.gunsOnly ?? false;
     this.noEvade = opts.noEvade ?? false;
     this.onEvent = opts.onEvent || null;     // cb(name, data) for missions
@@ -89,7 +90,7 @@ export class AIAircraft {
     this.pos.addScaledVector(this.vel, dt);
     if (this.landed) this.pos.y = this.landY;
     // ground collision (non-landing)
-    if (this.mode !== 'land') {
+    if (this.mode !== 'land' && !this.surface) {
       const gh = groundHeight(this.pos.x, this.pos.z);
       if (this.pos.y < gh + 4 || this.pos.y < 2) {
         if (this.terrainFollow) this.pos.y = Math.max(gh + 4, 3);
@@ -234,6 +235,16 @@ export class AIAircraft {
   }
   _updateDead(dt, G) {
     this.deadT += dt;
+    if (this.type === 'sub') {
+      // the sub sinks stern-first under the waves
+      this.vel.set(0, 0, 0);
+      this.pos.y -= (3.5 + this.deadT) * dt;
+      this.model.rotation.z += 0.04 * dt;
+      if (Math.random() < 0.5) G.fx.smoke(this.pos.clone().setY(1), 1.2, 3, 0x333333);
+      if (Math.random() < 0.3) G.fx.fire(this.pos.clone().setY(6), 0.8);
+      if (this.pos.y < -30) { G.explode(this.pos.clone().setY(0), 2.5); this.removeMe = true; }
+      return;
+    }
     // flat spin down with smoke & fire
     _e.set(0.9 * dt, 0.2 * dt, this.spinDir * 3.0 * dt, 'XYZ');
     _dq.setFromEuler(_e); this.quat.multiply(_dq).normalize();

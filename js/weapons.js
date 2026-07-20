@@ -43,6 +43,10 @@ export class FXPool {
   trail(pos, size = 1.6, color = 0xdddddd, life = 1.6) {
     this.spawn(pos, _v.set(0, 0.4, 0), life, size, color, false, 1.4);
   }
+  // long-lived faint white puff for wingtip contrails
+  contrail(pos) {
+    this.spawn(pos, _v.set(0, 0.2, 0), 3.2, 1.5, 0xf0f0f0, false, 1.7);
+  }
   explosion(pos, scale = 1) {
     this.flash(pos, 26 * scale, 0xfff4c0, 0.22);
     this.flash(pos, 60 * scale, 0xff9840, 0.35);
