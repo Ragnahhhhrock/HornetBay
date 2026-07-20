@@ -129,7 +129,7 @@ function buildMenu(mode = 'main') {
     startBriefing(next);
   });
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
-  addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { $('controls').classList.remove('hidden'); });
+  addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
   $('pilot-record').textContent =
     `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
 }
@@ -194,7 +194,23 @@ window.addEventListener('keydown', (e) => {
 });
 $('debrief-menu').onclick = () => { $('debrief').classList.add('hidden'); showMenu(); };
 $('debrief-next').onclick = () => { $('debrief').classList.add('hidden'); showMenu(); };
-$('controls-back').onclick = () => $('controls').classList.add('hidden');
+// flight manual on demand — corner button or ? key; auto-pauses the sim while open
+G._manualPaused = false;
+G.openManual = () => {
+  if (G.state === 'flying') { togglePause(); G._manualPaused = true; }
+  $('controls').classList.remove('hidden');
+  $('pause').classList.add('hidden');          // manual reads above the PAUSED card
+};
+G.closeManual = () => {
+  $('controls').classList.add('hidden');
+  if (G._manualPaused && G.state === 'paused') togglePause();
+  G._manualPaused = false;
+  if (G.state === 'paused') $('pause').classList.remove('hidden');
+};
+$('controls-back').onclick = () => G.closeManual();
+$('manual-btn').addEventListener('mousedown', (e) => e.stopPropagation());  // don't fire the gun
+$('manual-btn').addEventListener('click', (e) => { e.stopPropagation(); G.openManual(); });
+$('controls').addEventListener('click', (e) => { if (e.target.id === 'controls') G.closeManual(); });
 $('pause-resume').onclick = () => togglePause();
 $('pause-restart').onclick = () => { $('pause').classList.add('hidden'); launchMission(G.missionDef); };
 $('pause-quit').onclick = () => { $('pause').classList.add('hidden'); showMenu(); };
@@ -552,7 +568,11 @@ function updateRadarContacts() {
 function handleDiscreteInput(dt) {
   const I = G.input, P = G.player;
   if (G.state !== 'flying') {
-    if (I.pressed('Escape') || I.pressed('KeyP')) { if (G.state === 'paused') togglePause(); }
+    if (I.pressed('Slash')) { $('controls').classList.contains('hidden') ? G.openManual() : G.closeManual(); }
+    else if ((I.pressed('Escape') || I.pressed('KeyP')) && G.state === 'paused') {
+      if (!$('controls').classList.contains('hidden')) G.closeManual();   // ESC closes the manual first
+      else togglePause();
+    }
     return;
   }
   if (I.pressed('Escape')) {
@@ -604,7 +624,7 @@ function handleDiscreteInput(dt) {
     G.msg(`${G.xmag.toFixed(1)} XMAG`, 'info');
   }
 
-  if (I.pressed('Slash')) $('controls').classList.toggle('hidden');
+  if (I.pressed('Slash')) { $('controls').classList.contains('hidden') ? G.openManual() : G.closeManual(); }
   // original: F10 twice at max throttle lights the burner
   if (I.pressed('F10') && P.throttle >= 0.99 && !P.abLatch) {
     P.abLatch = true; G.msg('AFTERBURNER', 'warn'); G.audio.radioClick();
@@ -747,6 +767,9 @@ function frame() {
   updateCamera(dt);
   renderer.render(scene, camera);
   G.input.postUpdate();
+  // the MANUAL button is only offered while flying (or paused), manual closed
+  $('manual-btn').classList.toggle('hidden',
+    !((G.state === 'flying' || G.state === 'paused') && $('controls').classList.contains('hidden')));
   if (FIXDT > 0) {
     const Pf = G.player.fwd;
     const hdg = Math.round(((Math.atan2(Pf.x, -Pf.z)) * 180 / Math.PI + 360) % 360);
@@ -911,6 +934,7 @@ if (auto && warpT > 0) {
   }
   window.__warped = true;
   if (G.state === 'flying') snapCamera();
+  if (params.has('manual')) G.openManual();   // test hook: open the flight manual
   if (params.has('dbgroll') && G.player) {   // numeric bank readout for sign tests
     const xr = new THREE.Vector3(1, 0, 0).applyQuaternion(G.player.quat);
     const d = document.createElement('div');
