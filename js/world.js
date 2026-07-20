@@ -25,8 +25,8 @@ const MARIN_EASTBAY = [ // Marin + north shore + East Bay; the bay itself is a "
   // inland boundary runs a few km SOUTH of the peninsula polygon's, so the
   // two landmasses overlap — no water seam east of the bay's south tip
   [130, -115], [130, 52], [100, 51], [75, 50], [55, 48], [40, 46.5], [33, 45], [28, 43.5],
-  [25.5, 37.8], [28, 35], [29.5, 31], [30, 26], [29, 21], [28, 16], [28, 13],
-  [28.5, 8], [29, 2], [30, -4], [32, -10], [36, -12], [40, -14], [46, -16],
+  [25.5, 37.8], [28, 35], [29.5, 31], [30, 26], [24.5, 21], [24, 16], [24, 13],
+  [24.5, 8], [29, 2], [30, -4], [32, -10], [36, -12], [40, -14], [46, -16],
   [52, -17], [60, -18], [70, -20],
   [74, -23], [72, -27], [64, -29], [54, -30.5], [48, -32], [40, -33], [32, -32], [26, -30], [22, -27],
   [19, -22], [17.5, -17], [15.5, -12], [14, -9], [9, -4], [2, -2],
@@ -224,7 +224,8 @@ export class World {
     geo.rotateX(-Math.PI / 2);
     this.waterMat = new THREE.MeshBasicMaterial({ color: 0x003366, fog: true });
     const mesh = new THREE.Mesh(geo, this.waterMat);
-    mesh.position.set(5000, 0, 8000);
+    mesh.position.set(5000, -2.5, 8000);   // a touch below the beaches, less grazing z-fight
+    this.oceanMesh = mesh;
     this.scene.add(mesh);
     // sparse whitecap specks, like the original's sea texture
     const n = 2600, wp = new Float32Array(n * 3);
@@ -269,7 +270,9 @@ export class World {
       colors[i * 3] = tmp.r; colors[i * 3 + 1] = tmp.g; colors[i * 3 + 2] = tmp.b;
     }
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-    // unlit: the original's terrain is flat-filled polygons with no shading
+    // unlit: the original's terrain is flat-filled polygons with no shading.
+    // (depth separation from the ocean is handled by the renderer's
+    // logarithmic depth buffer — polygonOffset can't span 1.5m..320km)
     const mat = new THREE.MeshBasicMaterial({ vertexColors: true, fog: true });
     const mesh = new THREE.Mesh(geo, mat);
     mesh.position.set(CX, 0, CZ);
@@ -470,7 +473,8 @@ export class World {
         g2.fillRect(5 + k * 9.5, 4, 5, 14); g2.fillRect(5 + k * 9.5, 494, 5, 14);
       }
       const t = new THREE.CanvasTexture(c);
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(rw.wid, rw.len), new THREE.MeshLambertMaterial({ map: t }));
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(rw.wid, rw.len),
+        new THREE.MeshLambertMaterial({ map: t }));
       m.rotation.x = -Math.PI / 2; m.rotation.z = -rw.hdg;
       m.position.set(rw.x, rw.elev + 0.3, rw.z);
       this.scene.add(m);

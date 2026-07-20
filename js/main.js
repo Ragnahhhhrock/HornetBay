@@ -17,7 +17,9 @@ const $ = (id) => document.getElementById(id);
 window.addEventListener('error', (e) => { $('errbox').textContent += `\n${e.message}`; });
 
 // ---------------- renderer ----------------
-const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: false });
+// logarithmic depth buffer: kills ocean/terrain z-fighting at map altitude and
+// giant-triangle depth artifacts near the camera (standard depth can't span 1.5m..320km)
+const renderer = new THREE.WebGLRenderer({ canvas: $('gl'), antialias: false, logarithmicDepthBuffer: true });
 // Amiga-authentic chunky pixels: render small, upscale with nearest-neighbor
 const RETRO_SCALE = 0.36;
 renderer.setPixelRatio(1);
@@ -767,6 +769,61 @@ function frame() {
   updateCamera(dt);
   renderer.render(scene, camera);
   G.input.postUpdate();
+  if (window.__probeFrames !== undefined && --window.__probeFrames <= 0) {
+    delete window.__probeFrames;
+    const rc = new THREE.Raycaster(), hits = [];
+    for (const ny of [-0.2, -0.4, -0.6]) {
+      rc.setFromCamera(new THREE.Vector2(0, ny), camera);
+      hits.push({ ny, list: rc.intersectObjects(scene.children, true).slice(0, 3).map(h2 => ({ d: Math.round(h2.distance), y: Math.round(h2.point.y), t: h2.object.geometry ? h2.object.geometry.type : h2.object.type, col: h2.object.material && h2.object.material.color ? h2.object.material.color.getHexString() : null })) });
+    }
+    // depth-buffer capture: render with a depth-override material, read back
+    // and decode true fragment depths at probe pixels
+    let depth = null;
+    try {
+      const W2 = 320, H2 = 180;
+      const rt = new THREE.WebGLRenderTarget(W2, H2);
+      const prev = scene.overrideMaterial;
+      scene.overrideMaterial = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+      renderer.setRenderTarget(rt); renderer.render(scene, camera);
+      const buf = new Uint8Array(W2 * H2 * 4);
+      renderer.readRenderTargetPixels(rt, 0, 0, W2, H2, buf);
+      renderer.setRenderTarget(null); scene.overrideMaterial = prev; rt.dispose();
+      const n = camera.near, f = camera.far;
+      depth = [];
+      for (const [fx, fy] of [[0.5, 0.30], [0.5, 0.46], [0.5, 0.52], [0.5, 0.60], [0.5, 0.68], [0.2, 0.60], [0.8, 0.60]]) {
+        const px = Math.floor(fx * W2), py = Math.floor((1 - fy) * H2), i = (py * W2 + px) * 4;
+        const r = buf[i] / 255, g = buf[i + 1] / 255, b2 = buf[i + 2] / 255, a = buf[i + 3] / 255;
+        const z01 = r + g / 255 + b2 / 65025 + a / 16581375;
+        const zndc = 2 * z01 - 1;
+        const dist = (2 * n * f) / (f + n - zndc * (f - n));
+        depth.push({ at: [fx, fy], z01: Math.round(z01 * 10000) / 10000, m: Math.round(dist) });
+      }
+    } catch (e) { depth = String(e); }
+    const objs = [];
+    scene.traverse(o => {
+      if (!o.isMesh && !o.isSprite) return;
+      const m = o.material || {};
+      objs.push({ n: o.name || '', t: o.geometry ? o.geometry.type : o.type, vis: o.visible, ro: o.renderOrder,
+        p: o.getWorldPosition(new THREE.Vector3()).toArray().map(v => Math.round(v)),
+        s: o.scale.toArray().map(v => Math.round(v * 100) / 100),
+        col: m.color ? m.color.getHexString() : null, op: m.opacity, tr: !!m.transparent, dw: m.depthWrite !== false, dt: m.depthTest !== false,
+        fog: m.fog !== false, vc: !!m.vertexColors, side: m.side, po: m.polygonOffset || false });
+    });
+    // live material uniform state for the ocean (the actual uploaded fog values)
+    let oceanU = null;
+    try {
+      const wm = G.world.waterMat;
+      const props = renderer.properties.get(wm);
+      oceanU = { fog: wm.fog, color: wm.color.getHexString(),
+        fogNear: props.uniforms && props.uniforms.fogNear ? props.uniforms.fogNear.value : null,
+        fogFar: props.uniforms && props.uniforms.fogFar ? props.uniforms.fogFar.value : null,
+        fogColor: props.uniforms && props.uniforms.fogColor ? props.uniforms.fogColor.value : null,
+        version: wm.version, hasProgram: !!props.currentProgram };
+    } catch (e) { oceanU = String(e); }
+    const d = document.createElement('div'); d.id = 'probe'; d.style.display = 'none';
+    d.textContent = JSON.stringify({ cam: { pos: camera.position.toArray().map(v => Math.round(v)), near: camera.near, far: camera.far }, fog: { c: scene.fog.color.getHexString(), n: scene.fog.near, f: scene.fog.far }, info: renderer.info.render, oceanU, depth, hits, objs });
+    document.body.appendChild(d);
+  }
   // the MANUAL button is only offered while flying (or paused), manual closed
   $('manual-btn').classList.toggle('hidden',
     !((G.state === 'flying' || G.state === 'paused') && $('controls').classList.contains('hidden')));
@@ -935,6 +992,72 @@ if (auto && warpT > 0) {
   window.__warped = true;
   if (G.state === 'flying') snapCamera();
   if (params.has('manual')) G.openManual();   // test hook: open the flight manual
+  if (params.has('noocean') && G.world.oceanMesh) G.world.oceanMesh.visible = false;  // layer-isolation probe
+  // layer-isolation probes: hide=sky|terrain|ocean (comma-separated), plus a
+  // raycast dump of what geometry below-horizon rays actually hit
+  for (const h of (params.get('hide') || '').split(',')) {
+    if (h === 'sky' && G.world.skyMesh) G.world.skyMesh.visible = false;
+    if (h === 'ocean' && G.world.oceanMesh) G.world.oceanMesh.visible = false;
+    if (h === 'terrain') G.scene.traverse(o => { if (o.geometry && o.geometry.attributes.position && o.geometry.attributes.position.count > 200000) o.visible = false; });
+    if (h === 'model' && G.player) G.player.model.visible = false;
+    if (h === 'rwy') G.scene.traverse(o => { if (o.geometry && o.geometry.type === 'PlaneGeometry' && o.material && o.material.map) o.visible = false; });
+    if (h === 'wcaps') G.scene.traverse(o => { if (o.isPoints) o.visible = false; });
+    if (h === 'city') G.scene.traverse(o => { if (o.geometry && (o.geometry.type === 'BoxGeometry' || o.geometry.type === 'CylinderGeometry' || o.geometry.type === 'ConeGeometry') && o.getWorldPosition(new THREE.Vector3()).distanceTo(G.camera.position) > 100) o.visible = false; });
+  }
+  if (params.has('wfnofog') && G.world.waterMat) { G.world.waterMat.fog = false; G.world.waterMat.needsUpdate = true; }  // probe: defog the sea
+  if (params.has('planesel')) G.intro.planeSelect();   // test: jump to the start-spot map view
+  if (params.has('only')) {   // bisect: keep only terrain/ocean/sky/runways
+    const keep = new Set();
+    G.scene.traverse(o => {
+      if (o === G.world.oceanMesh || o === G.world.skyMesh) keep.add(o);
+      if (o.geometry && o.geometry.attributes.position && o.geometry.attributes.position.count > 200000) keep.add(o);
+      if (o.geometry && o.geometry.type === 'PlaneGeometry' && o.material && o.material.map) keep.add(o);
+    });
+    G.scene.traverse(o => { if ((o.isMesh || o.isPoints || o.isSprite || o.isLine) && !keep.has(o)) o.visible = false; });
+  }
+  if (params.has('seay') && G.world.oceanMesh) G.world.oceanMesh.position.y = parseFloat(params.get('seay'));  // probe: move the sea
+  if (params.has('nan') && G.scene) {   // probe: NaN audit of all vertex buffers
+    let bad = 0, tot = 0;
+    G.scene.traverse(o => {
+      if (!o.geometry || !o.geometry.attributes.position) return;
+      const a = o.geometry.attributes.position.array;
+      for (let i = 0; i < a.length; i++) { tot++; if (!Number.isFinite(a[i])) bad++; }
+    });
+    const d = document.createElement('div'); d.id = 'nanprobe'; d.style.display = 'none';
+    d.textContent = JSON.stringify({ bad, tot }); document.body.appendChild(d);
+  }
+  if (params.has('depthviz')) {   // probe: log-depth visualization override
+    G.scene.overrideMaterial = new THREE.ShaderMaterial({
+      vertexShader: 'varying float vZ; void main(){ vec4 mv = modelViewMatrix * vec4(position,1.0); vZ = -mv.z; gl_Position = projectionMatrix * mv; }',
+      fragmentShader: 'varying float vZ; void main(){ float d = clamp(log(max(vZ,1.5)/1.5)/log(320000.0/1.5), 0.0, 1.0); gl_FragColor = vec4(d, fract(d*6.0)*0.6, 1.0-d, 1.0); }'
+    });
+  }
+  if (params.has('probe')) window.__probeFrames = 5;   // run after 5 real frames (matrices fresh)
+  const dye = params.get('dye');   // test hook: paint the Nth textured plane red
+  if (dye !== null) {
+    let di = 0;
+    G.scene.traverse(o => {
+      if (o.geometry && o.geometry.type === 'PlaneGeometry' && o.material && o.material.map) {
+        if (String(di) === dye) { o.material = new THREE.MeshBasicMaterial({ color: 0xff0000, fog: false, side: THREE.DoubleSide }); o.material.needsUpdate = true; }
+        di++;
+      }
+    });
+    window.__dyeCount = di;
+  }
+  if (params.has('gh') && G.player) {         // test hook: terrain height probe around the player
+    const P = G.player, gh = (dx, dz) => groundHeight(P.pos.x + dx, P.pos.z + dz).toFixed(1);
+    const d = document.createElement('div');
+    d.style.cssText = 'position:fixed;top:34px;left:8px;color:#0f0;font:18px monospace;z-index:99;text-shadow:1px 1px 0 #000';
+    let grid = '';
+    for (let dz = -1200; dz <= 1200; dz += 400) {
+      const row = [];
+      for (let dx = -1200; dx <= 1200; dx += 400) row.push(gh(dx, dz).padStart(6));
+      grid += `z${dz >= 0 ? '+' : ''}${dz}:${row.join('')}\n`;
+    }
+    d.style.whiteSpace = 'pre';
+    d.textContent = grid;
+    document.body.appendChild(d);
+  }
   if (params.has('dbgroll') && G.player) {   // numeric bank readout for sign tests
     const xr = new THREE.Vector3(1, 0, 0).applyQuaternion(G.player.quat);
     const d = document.createElement('div');
