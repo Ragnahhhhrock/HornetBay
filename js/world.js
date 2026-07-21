@@ -1069,24 +1069,6 @@ export class Carrier {
         const wp = new THREE.Mesh(whipG, dM);
         wp.position.set(37 * s, deckY + 3, -140 + i * 74); this.group.add(wp);
       }
-      // parked aircraft, clear of the landing strip, catapult tracks and cat start (-6,-120)
-      const spots = [[-28, 92, 0.3], [-28, 112, 0.1], [-28, 132, -0.2], [-16, 122, 0.6], [4, 140, 3.1], [30, 20, -1.4], [24, -64, 2.8]];
-      for (const [jx, jz, jr] of spots) {
-        const jet = new THREE.Group();
-        const jm = LM(0x9aa0a8), jd = LM(0x767c84);
-        const fu = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.7, 11), jm); fu.position.y = 1.2; jet.add(fu);
-        const no = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.85, 3.4, 6), jm);
-        no.rotation.x = Math.PI / 2; no.position.set(0, 1.25, 7); jet.add(no);
-        const ca = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 2.6), jd); ca.position.set(0, 2.2, 3.6); jet.add(ca);
-        const wf = new THREE.Mesh(new THREE.BoxGeometry(0.45, 3.6, 4.5), jm); // folded wings, upright
-        wf.position.set(-1.1, 3.0, -1); wf.rotation.x = -0.15; jet.add(wf);
-        const wf2 = wf.clone(); wf2.position.x = 1.1; jet.add(wf2);
-        const st = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.25, 1.6), jm); st.position.set(0, 1.6, -4.6); jet.add(st);
-        const fi = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.0, 1.8), jm); fi.position.set(-0.75, 2.4, -4.8); jet.add(fi);
-        const fi2 = fi.clone(); fi2.position.x = 0.75; jet.add(fi2);
-        jet.position.set(jx, deckY, jz); jet.rotation.y = jr;
-        this.group.add(jet);
-      }
       // deck edge lights
       const lm2 = new THREE.MeshBasicMaterial({ color: 0xbfd9ff });
       for (let z = -160; z <= 160; z += 40) for (const s of [-1, 1]) {

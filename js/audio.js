@@ -180,6 +180,8 @@ export class AudioEngine {
   hook() { this._tone(160, 0.25, 0.25, 'square', 80); }
   trap() { this._noiseHit(0.7, 0.6, 800, 0.8, 100); this._tone(120, 0.5, 0.4, 'sawtooth', 45); }
   radioClick() { this._noiseHit(0.04, 0.18, 3500, 3); }
+  // C-13 steam catapult: a rising white-steam roar for the length of the stroke
+  catapult() { this._noiseHit(1.7, 0.55, 1400, 0.5, 220); }
   // air rushing past during the satellite-map dive down to the cockpit —
   // a noise swell that climbs with the dive, then settles as you arrive
   zoomRush(dur = 4.5) {

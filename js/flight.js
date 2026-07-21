@@ -44,8 +44,9 @@ export class Player {
     this.vel.set(0, 0, 0);
     if (cfg.onCarrier) {
       const c = this.world.carrier;
-      this.onGround = { type: 'carrier', speedRel: 0 };
-      this.deckLocal = new THREE.Vector3(cfg.deckX ?? -6, 2.2, cfg.deckZ ?? -120);
+      // on the Cat 1 shuttle toward the bow, holdback bar engaged
+      this.onGround = { type: 'carrier', speedRel: 0, cat: true };
+      this.deckLocal = new THREE.Vector3(cfg.deckX ?? -13, 2.2, cfg.deckZ ?? 30);
       this.heading = c.heading; this.pitch = 0; this.bank = 0;
       const w = carrierLocalToWorld(c, this.deckLocal.x, this.deckLocal.y, this.deckLocal.z);
       this.pos.copy(w);
@@ -67,7 +68,9 @@ export class Player {
     }
     this._syncVisual(0);
   }
-  get speed() { return this.vel.length(); }
+  // on the deck the roll speed lives in onGround.speedRel — report it so the
+  // HUD speed tape winds up during the takeoff roll / catapult stroke
+  get speed() { return this.onGround ? this.onGround.speedRel : this.vel.length(); }
   get speedKts() { return this.speed / KTS; }
   get altFt() { return this.pos.y / FT; }
   get fwd() { return _v.set(0, 0, 1).applyQuaternion(this.quat); }
@@ -97,11 +100,27 @@ export class Player {
     // engines idle at 7% like the original
     const thrEff = 0.07 + 0.93 * this.throttle;
     let thrustA = cfg.maxThrust * thrEff + (this.ab ? cfg.abBoost : 0);
-    // catapult: deck launch flings the jet off the bow — F/A-18 only;
-    // the F-16 has no catapult bridle (and no hook) so it can't work the boat
-    if (og.type === 'carrier' && this.type === 'f18' && this.throttle > 0.85 && !og.trapped) thrustA += 20;
+    // ad-hoc deck roll (bolter / taxi launch): deck crew flings you off the bow —
+    // F/A-18 only; the F-16 has no catapult bridle (and no hook)
+    if (og.type === 'carrier' && !og.cat && this.type === 'f18' && this.throttle > 0.85 && !og.trapped) thrustA += 20;
     const brakeA = this.brakes ? (og.trapped ? 34 : 9) : 0;
     let acc = thrustA - brakeA - 0.4;
+    // C-13 steam catapult: the holdback bar pins the jet until the pilot calls
+    // the shot with 90%+ thrust, then ~3 g of steam on top of the engines
+    // throws it down the 250-ft stroke — 0 to 265 km/h in under two seconds
+    if (og.cat && og.type === 'carrier') {
+      if (!og.catFired) {
+        if (!og.hinted) { og.hinted = true; G.msg('CAT 1 HOLDBACK — 90% THRUST FOR THE SHOT', 'info'); }
+        acc = Math.min(acc, 0);              // straining against the holdback
+        if (this.throttle >= 0.9 && this.fuel > 0) {
+          og.catFired = true;
+          G.msg('CATAPULT SHOT!', 'good');
+          if (G.audio.catapult) G.audio.catapult();
+        }
+      } else {
+        acc += 30;
+      }
+    }
     // brakes are OFF at spawn — so chock the wheels at idle, or the 7%
     // idle thrust would slowly taxi the jet off the deck by itself
     if (og.speedRel === 0 && this.throttle < 0.05 && !og.trapped) acc = Math.min(acc, 0);
