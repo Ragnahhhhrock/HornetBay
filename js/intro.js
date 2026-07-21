@@ -60,6 +60,14 @@ export class Intro {
     const G = this.G;
     this.t += dt;
     if (this.active === 'zoom') {
+      // any key skips the dive — straight to the cockpit, like the original
+      if (G.input.justPressed.size > 0) {
+        const cb = this.onDone; this.active = null; this.onDone = null;
+        G.view = 'cockpit';
+        G.audio.stopZoomRush && G.audio.stopZoomRush();
+        cb && cb();
+        return;
+      }
       const k = clamp(this.t / 4.5, 0, 1);
       const e = k * k * (3 - 2 * k);
       // dive from map height down to just behind/above the player

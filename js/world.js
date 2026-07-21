@@ -133,13 +133,13 @@ export const ROADS = [
   { n: 'I-80',   pts: [[32000,-8000],[30500,-3000],[29500,1500],[28500,5000],[28000,8500],[28000,8800,59.5],[9800,6000,59.5],[9000,6400],[8600,7000]] },
   { n: 'I-880',  pts: [[28000,9500],[27200,12000],[26600,13500],[25800,15000],[24000,15500],[23600,17000],[28000,19000],[28500,22000],[30000,23500],[30500,26000],[30500,29000],[30000,32000],[29500,36000],[28500,39500],[26500,42000],[24000,43500],[20000,44500]] },
   { n: 'I-580',  pts: [[28000,10000],[30000,12500],[32000,16000],[34000,20000],[35500,24000],[37000,28000]] },
-  { n: 'HWY-24', pts: [[28100,8000],[31000,8500],[34000,9000],[37000,9800]], w: 14 },
+  { n: 'HWY-24', pts: [[28100,8000],[31000,8500],[34000,9000],[37000,9800]], w: 24 },
   { n: 'HWY-92', pts: [[13400,25700],[15000,24300],[16800,24000,51.5],[29600,24200,51.5],[29300,24300]] },
   { n: 'HWY-84', pts: [[13000,29000],[14800,29800],[16800,30500,45.5],[29500,30600,45.5],[30000,32000]] },
-  { n: 'HWY-237',pts: [[8600,32300],[10000,32400],[13000,32600],[16500,32700]], w: 14 },
+  { n: 'HWY-237',pts: [[8600,32300],[10000,32400],[13000,32600],[16500,32700]], w: 24 },
   { n: 'HWY-85', pts: [[9800,38300],[10000,43000],[14000,45000],[17500,44000]] },
-  { n: 'HWY-17', pts: [[15000,43000],[13000,47000],[10000,52000],[8000,58000]], w: 14 },
-  { n: 'HWY-1',  pts: [[-2500,-16000],[-2000,-10000],[-1500,-5000],[-800,-2500],[0,-1750,71.5],[0,1750,71.5],[-800,2800],[-1500,6000],[-2200,12000],[-2800,18000],[-3200,24000],[-3000,30000],[-2200,36000],[-800,42000]], w: 14 },
+  { n: 'HWY-17', pts: [[15000,43000],[13000,47000],[10000,52000],[8000,58000]], w: 24 },
+  { n: 'HWY-1',  pts: [[-2500,-16000],[-2000,-10000],[-1500,-5000],[-800,-2500],[0,-1750,71.5],[0,1750,71.5],[-800,2800],[-1500,6000],[-2200,12000],[-2800,18000],[-3200,24000],[-3000,30000],[-2200,36000],[-800,42000]], w: 24 },
   { n: 'I-680',  pts: [[35500,24000],[35000,30000],[34000,36000],[32000,43000],[30000,45000]] },
 ];
 // --- the surface the camera actually shows: barycentric interpolation of
@@ -350,22 +350,78 @@ export class World {
     mesh.frustumCulled = false;            // it follows the camera — always visible
     this.oceanMesh = mesh;
     this.scene.add(mesh);
-    // sparse whitecap specks, like the original's sea texture
-    const n = 2600, wp = new Float32Array(n * 3);
-    for (let i = 0; i < n; i++) {
-      // keep the specks on the sea — the original's land is clean
-      let x = 0, z = 0, tries = 0;
-      do {
-        x = 5000 + (Math.random() - 0.5) * 240000;
-        z = 8000 + (Math.random() - 0.5) * 240000;
-      } while (groundHeight(x, z) > -1 && tries++ < 6);
-      wp[i * 3] = x; wp[i * 3 + 1] = 0.6; wp[i * 3 + 2] = z;
+    // camera-following specks: whitecaps on the sea + low-altitude land flecks
+    this._buildSpecks();
+  }
+
+  // Wrapped point grids that stay centred on the camera, straight from the
+  // original: white wave-cap dots over the sea everywhere, and black flecks
+  // over land that fade in below ~2500 ft for low-level speed sensation.
+  _buildSpecks() {
+    const mk = (K, S, color, size, opacity, atten) => {
+      const n = K * K;
+      const arr = new Float32Array(n * 3);
+      const jit = new Float32Array(n * 2);
+      for (let i = 0; i < n; i++) { jit[i * 2] = Math.random(); jit[i * 2 + 1] = Math.random(); arr[i * 3 + 1] = -500; }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+      const mat = new THREE.PointsMaterial({ color, size, sizeAttenuation: atten, transparent: true, opacity, fog: true });
+      const pts = new THREE.Points(geo, mat);
+      pts.frustumCulled = false;
+      this.scene.add(pts);
+      return { K, S, geo, mat, pts, jit, lcx: 1e9, lcz: 1e9 };
+    };
+    this.caps = mk(52, 190, 0xffffff, 5, 0.62, true);    // ~10 km span of wave caps
+    // fixed 2.5px flecks like the original's screen-space ground specks
+    this.flecks = mk(30, 150, 0x101010, 2.5, 0, false);
+  }
+
+  _reflowSpecks(cam, playerY = cam.y) {
+    // wave caps — always on, but only over water
+    const g = this.caps;
+    const cellX = Math.floor(cam.x / g.S), cellZ = Math.floor(cam.z / g.S);
+    if (cellX !== g.lcx || cellZ !== g.lcz) {
+      g.lcx = cellX; g.lcz = cellZ;
+      const a = g.geo.attributes.position.array, j = g.jit;
+      let n = 0;
+      for (let ix = 0; ix < g.K; ix++) for (let iz = 0; iz < g.K; iz++, n++) {
+        const x = (cellX - g.K / 2 + ix + j[n * 2]) * g.S;
+        const z = (cellZ - g.K / 2 + iz + j[n * 2 + 1]) * g.S;
+        a[n * 3] = x; a[n * 3 + 2] = z;
+        a[n * 3 + 1] = groundHeight(x, z) < -1 ? 0.6 : -500;
+      }
+      g.geo.attributes.position.needsUpdate = true;
     }
-    const wgeo = new THREE.BufferGeometry();
-    wgeo.setAttribute('position', new THREE.BufferAttribute(wp, 3));
-    const wpts = new THREE.Points(wgeo, new THREE.PointsMaterial({
-      color: 0xffffff, size: 5, sizeAttenuation: true, transparent: true, opacity: 0.55, fog: true }));
-    this.scene.add(wpts);
+    // land flecks — fade in below 2500 ft; skipped entirely when high
+    const f = this.flecks;
+    const op = clamp((2500 - playerY * 3.28084) / 400, 0, 1) * 0.85;
+    f.mat.opacity = op;
+    const on = op > 0.02;
+    f.pts.visible = on;
+    if (!on) { f.lcx = 1e9; return; }   // force a reflow on the next low pass
+    const fcx = Math.floor(cam.x / f.S), fcz = Math.floor(cam.z / f.S);
+    if (fcx === f.lcx && fcz === f.lcz) return;
+    f.lcx = fcx; f.lcz = fcz;
+    const a = f.geo.attributes.position.array, j = f.jit;
+    let n = 0;
+    for (let ix = 0; ix < f.K; ix++) for (let iz = 0; iz < f.K; iz++, n++) {
+      const x = (fcx - f.K / 2 + ix + j[n * 2]) * f.S;
+      const z = (fcz - f.K / 2 + iz + j[n * 2 + 1]) * f.S;
+      a[n * 3] = x; a[n * 3 + 2] = z;
+      let y = -500;
+      const h = surfaceHeight(x, z);
+      if (h > 0.3) {
+        // keep the airfields clean — no flecks on the pads
+        let onPad = false;
+        for (const F of FLATS) {
+          const dx = x - F.x, dz = z - F.z;
+          if (dx * dx + dz * dz < F.r * F.r * 1.21) { onPad = true; break; }
+        }
+        if (!onPad) y = h + 0.4;
+      }
+      a[n * 3 + 1] = y;
+    }
+    f.geo.attributes.position.needsUpdate = true;
   }
 
   _buildTerrain() {
@@ -569,14 +625,16 @@ export class World {
   }
 
   _buildRoads() {
-    // dark asphalt ribbons draped over the terrain, like the original's map
+    // near-black asphalt ribbons draped over the terrain — the original drew
+    // its highways as plain dark lines on the green, always readable from altitude
     const c = document.createElement('canvas'); c.width = 32; c.height = 128;
     const g2 = c.getContext('2d');
-    g2.fillStyle = '#4b4f54'; g2.fillRect(0, 0, 32, 128);
-    g2.fillStyle = '#dcdcc8'; g2.fillRect(15, 10, 2, 44);   // dashed centreline
+    g2.fillStyle = '#1a1c20'; g2.fillRect(0, 0, 32, 128);
+    g2.fillStyle = '#c8c8b0'; g2.fillRect(15, 10, 2, 44);   // dashed centreline
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    const mat = new THREE.MeshLambertMaterial({ map: tex });
+    const mat = new THREE.MeshBasicMaterial({ map: tex });   // unlit, like the original
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x101010, fog: true });
     for (let ri = 0; ri < ROADS.length; ri++) {
       const R = ROADS[ri];
       // resample every ~45 m so ribbons hug the draped ground smoothly
@@ -599,7 +657,7 @@ export class World {
           S.push([x, y, z, (a.length === 3 || b.length === 3) ? 1 : 0]);
         }
       }
-      const w = (R.w || 20) / 2;
+      const w = (R.w || 40) / 2;   // wide enough to survive the retro render scale
       const verts = new Float32Array(S.length * 6), uvs = new Float32Array(S.length * 4);
       const idx = [];
       let cum = 0;
@@ -630,6 +688,16 @@ export class World {
       const m = new THREE.Mesh(geo, mat);
       m.frustumCulled = false;   // one long ribbon: culling by bounds would pop whole highways
       this.scene.add(m);
+      // plus a constant 1px line along the centreline — the retro render scale
+      // shrinks even a 40 m ribbon to nothing at 3 km, but the original's
+      // highways were screen-space lines readable from any altitude
+      const lv = new Float32Array(S.length * 3);
+      for (let i = 0; i < S.length; i++) lv.set([S[i][0], S[i][1] + 0.2, S[i][2]], i * 3);
+      const lgeo = new THREE.BufferGeometry();
+      lgeo.setAttribute('position', new THREE.BufferAttribute(lv, 3));
+      const line = new THREE.Line(lgeo, lineMat);
+      line.frustumCulled = false;
+      this.scene.add(line);
     }
   }
   _bridgeSpan(a, b) {
@@ -814,11 +882,12 @@ export class World {
     return out.add(c.group.position);
   }
 
-  update(dt, camPos) {
+  update(dt, camPos, playerY = camPos.y) {
     this.time += dt;
     // ocean is flat — nothing to animate
     if (this.skyMesh) this.skyMesh.position.copy(camPos);
     if (this.oceanMesh) this.oceanMesh.position.set(camPos.x, -2.5, camPos.z);
+    this._reflowSpecks(camPos, playerY);
     this.carrier.update(dt);
     this.enemySub.update(dt);
   }

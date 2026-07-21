@@ -162,6 +162,16 @@ export class AudioEngine {
     g.gain.exponentialRampToValueAtTime(0.001, t + dur + 0.3);
     s.connect(f); f.connect(g); g.connect(this.sfx);
     s.start(t); s.stop(t + dur + 0.45);
+    this._zr = { s, g };   // handle so a skipped zoom can cut the rush short
+  }
+  stopZoomRush() {
+    if (!this._zr || !this.ctx) return;
+    const { s, g } = this._zr, t = this.ctx.currentTime;
+    g.gain.cancelScheduledValues(t);
+    g.gain.setValueAtTime(Math.max(g.gain.value, 0.001), t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.12);
+    try { s.stop(t + 0.15); } catch (e) { /* already stopped */ }
+    this._zr = null;
   }
   // one click per printed character — the original's briefing teletype chatter
   teletype() {

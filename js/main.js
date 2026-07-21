@@ -10,6 +10,7 @@ import { Input } from './input.js';
 import { AudioEngine } from './audio.js';
 import { MISSIONS } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
+import { MapView } from './mapview.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -83,6 +84,7 @@ G.input = new Input();
 G.intro = new Intro(G);
 const hud = new HUD($('hud'));
 G.hud = hud;
+G.mapview = new MapView();   // N toggles the live tactical map
 
 // world is heavy — build lazily on first load but before menu demo
 G.world = new World(scene);
@@ -370,6 +372,7 @@ G.completeMission = (title, text) => {
   save.best = Math.max(save.best, G.score);
   persist();
   setTimeout(() => {
+    if (G.state === 'menu') return;   // player bailed to the menu first
     $('debrief-title').textContent = title;
     $('debrief-title').className = 'good';
     $('debrief-body').textContent = text + `\n\nFINAL SCORE: ${G.score} · KILLS: ${G.kills}`;
@@ -384,6 +387,7 @@ G.failMission = (title, text) => {
   G.over = true;
   save.best = Math.max(save.best, G.score); persist();
   setTimeout(() => {
+    if (G.state === 'menu') return;   // player bailed to the menu first
     $('debrief-title').textContent = title;
     $('debrief-title').className = 'bad';
     $('debrief-body').textContent = text + `\n\nSCORE: ${G.score}`;
@@ -431,6 +435,13 @@ function stopDemo() {
 function togglePause() {
   if (G.state === 'flying') { G.state = 'paused'; $('pause').classList.remove('hidden'); }
   else if (G.state === 'paused') { G.state = 'flying'; $('pause').classList.add('hidden'); }
+}
+// Q — bail straight back to the main menu from flying / paused / dead
+function quitToMenu() {
+  G._manualPaused = false;
+  $('controls').classList.add('hidden');
+  $('pause').classList.add('hidden');
+  showMenu();
 }
 
 // ---------------- cameras ----------------
@@ -591,14 +602,20 @@ function updateRadarContacts() {
 // ---------------- per-frame input handling ----------------
 function handleDiscreteInput(dt) {
   const I = G.input, P = G.player;
+  // N toggles the live map — works from the cockpit and the pause card
+  if (I.pressed('KeyN') && (G.state === 'flying' || G.state === 'paused')) {
+    G.msg(G.mapview.toggle() ? 'MAP ON' : 'MAP OFF', 'info');
+  }
   if (G.state !== 'flying') {
     if (I.pressed('Slash')) { $('controls').classList.contains('hidden') ? G.openManual() : G.closeManual(); }
     else if ((I.pressed('Escape') || I.pressed('KeyP')) && G.state === 'paused') {
       if (!$('controls').classList.contains('hidden')) G.closeManual();   // ESC closes the manual first
       else togglePause();
     }
+    else if (I.pressed('KeyQ') && (G.state === 'paused' || G.state === 'dead')) quitToMenu();
     return;
   }
+  if (I.pressed('KeyQ')) { quitToMenu(); return; }
   if (I.pressed('Escape')) {
     // original behavior: ESC re-positions on the catapult during qual / free flight
     if ((G.missionDef.id === 'qual' || G.missionDef.id === 'free') && !I.ab) {
@@ -879,7 +896,7 @@ function stepGame(dt) {
   if (G.state === 'menu' && demoJet) {
     G.time += dt;
     demoJet.update(dt, G);
-    G.world.update(dt, camera.position);
+    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
     G.fx.update(dt);
   } else if (G.intro.active) {
     // satellite map / briefing / plane select / zoom intro states
@@ -889,7 +906,7 @@ function stepGame(dt) {
       for (const b of G.bandits) b.update(dt, G);
     }
     G.intro.update(dt);
-    G.world.update(dt, camera.position);
+    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
     G.fx.update(dt);
     hud.draw(G, dt);
   } else if (G.state === 'flying' || G.state === 'dead') {
@@ -941,7 +958,7 @@ function stepGame(dt) {
         G.fx.trail(_v2.copy(P.pos).addScaledVector(r, -6), 1.1, 0xffffff, 1.2);
       }
     }
-    G.world.update(dt, camera.position);
+    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
     G.fx.update(dt);
     updateRadarContacts();
     // audio
@@ -999,15 +1016,18 @@ const warpT = parseFloat(params.get('t') || '0');
 if (auto && warpT > 0) {
   const step = 1 / 60;
   const burn = params.has('burn');   // test hook: firewalled throttle + rotate pitch during warp
-  // test hook: hold keys (e.g. keys=ArrowRight@10 starts 10 s into the warp)
+  // test hook: hold keys (e.g. keys=ArrowRight@10 starts 10 s into the warp;
+  // separate timed batches with ';', e.g. keys=KeyP@0.5;KeyQ@1.5)
   const holdKeys = params.get('keys');
-  let keyList = null, keyAt = 0;
-  if (holdKeys) { const [kl, at] = holdKeys.split('@'); keyList = kl.split(','); keyAt = parseFloat(at || '0'); }
+  const keySegs = holdKeys ? holdKeys.split(';').map(seg => {
+    const [kl, at] = seg.split('@');
+    return { list: kl.split(','), at: parseFloat(at || '0') };
+  }) : [];
   for (let i = 0; i < warpT * 60; i++) {
     if (burn && G.player) {
       G.player.throttle = 1; G.player.abLatch = true; G.player.brakes = false;
     }
-    if (keyList && i * step >= keyAt) for (const k of keyList) G.input.keys.add(k);
+    for (const seg of keySegs) if (i * step >= seg.at) for (const k of seg.list) { if (!G.input.keys.has(k)) G.input.justPressed.add(k); G.input.keys.add(k); }
     stepGame(step);
     G.input.postUpdate();   // mirror the real frame loop, or justPressed sticks
     if (G.state === 'debrief' || G.state === 'menu') break;

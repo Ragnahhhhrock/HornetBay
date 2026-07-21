@@ -80,6 +80,7 @@ export class HUD {
       c.textAlign = 'center'; c.fillText(`${vlabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
     }
     this._mouseStick(c, G, s);
+    if (G.mapview) G.mapview.draw(c, w, h, G);   // live map rides above the HUD
   }
 
   // ---------------- HUD combiner glass frame ----------------
