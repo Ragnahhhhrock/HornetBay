@@ -163,19 +163,34 @@ function buildMenu(mode = 'main') {
     stopDemo();
     G.gallery.enter();
   });
+  addBtn('T', `TIME OF DAY: ${{ mission: 'MISSION DEFAULT', day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, '', () => cycleMenuDayNight());
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
   $('pilot-record').textContent =
     `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
 }
-// number keys drive the menu like the original
+// number keys drive the menu like the original (plus T for the time-of-day row)
 window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : null;
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : e.code === 'KeyT' ? 'T' : null;
   if (!d) return;
   const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
   if (btn && btn.onclick) { G.audio.ensure(); btn.onclick(); }
 });
+
+// T on the main menu: cycle MISSION/DAY/NIGHT — the change is applied to the
+// demo scenery behind the menu immediately and saved for the next mission
+function cycleMenuDayNight() {
+  G.dayNightSel = { mission: 'day', day: 'night', night: 'mission' }[G.dayNightSel] || 'mission';
+  save.dayNight = G.dayNightSel;
+  persist();
+  G.audio.radioClick();
+  applyMenuTimeOfDay();
+  buildMenu();   // refresh the row label
+}
+function applyMenuTimeOfDay() {
+  G.world.setTimeOfDay(G.dayNightSel === 'mission' ? 'day' : G.dayNightSel);
+}
 
 function showMenu() {
   G.state = 'menu';
@@ -187,6 +202,7 @@ function showMenu() {
   $('pause').classList.add('hidden');
   buildMenu();
   startDemo();
+  applyMenuTimeOfDay();   // menu backdrop reflects the selected time of day
 }
 
 // ---------------- briefing / debrief (map + typed text + zoom, like the original)

@@ -26,7 +26,7 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
     radial-gradient(1px 1px at 55% 45%, #fff, transparent),
     radial-gradient(1px 1px at 33% 12%, #9cf, transparent);
   background-repeat:repeat; background-size:640px 640px; }
-.title-block { text-align:center; margin-bottom:34px; z-index:1; }
+.title-block { text-align:center; margin-bottom:18px; z-index:1; }
 .title-top { font-size:11px; letter-spacing:4px; color:#5f86b8; margin-bottom:14px; }
 .game-title { font-size:64px; line-height:.95; letter-spacing:6px; color:#fff;
   text-shadow:0 0 18px #2f7dff, 0 0 60px #1a3c8f; font-weight:700; font-style:italic; }
@@ -36,17 +36,19 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
 .menu-mode-title { font-size:15px; letter-spacing:4px; color:#ffd75e; margin-bottom:10px; z-index:1;
   text-shadow:0 0 10px #8f6a00; }
 .menu-mode-title:empty { display:none; }
-.menu-list { display:flex; flex-direction:column; gap:8px; z-index:1; min-width:420px; max-height:52vh; overflow-y:auto; padding:4px; }
-.mbtn { font-family:inherit; font-size:15px; letter-spacing:2px; text-align:left;
+.menu-list { display:flex; flex-direction:column; gap:6px; z-index:1; min-width:420px; max-height:62vh; overflow-y:auto; padding:4px; }
+.mbtn { font-family:inherit; font-size:14px; letter-spacing:2px; text-align:left;
   background:linear-gradient(90deg, rgba(20,50,110,.85), rgba(8,18,40,.85));
-  color:#cfe8ff; border:1px solid #2f5f9f; padding:10px 18px; cursor:pointer;
+  color:#cfe8ff; border:1px solid #2f5f9f; padding:8px 16px; cursor:pointer;
   transition:all .12s; position:relative; }
 .mbtn:hover:not(:disabled) { background:linear-gradient(90deg, #ffb437, #d98a12); color:#081020; border-color:#ffd580; }
 .mbtn:disabled { opacity:.32; cursor:default; }
+.mbtn .mnum { margin-right:14px; color:#ffd75e; }
+.mbtn:hover:not(:disabled) .mnum { color:#081020; }
 .mbtn .tag { float:right; font-size:11px; color:#ffb437; margin-left:24px; }
 .mbtn:hover:not(:disabled) .tag { color:#081020; }
 .mbtn.center { text-align:center; }
-.menu-footer { margin-top:30px; text-align:center; z-index:1; }
+.menu-footer { margin-top:16px; text-align:center; z-index:1; }
 #pilot-record { font-size:12px; color:#7fa8d8; letter-spacing:1px; margin-bottom:10px; }
 .hint { font-size:11px; letter-spacing:2px; color:#46648c; }
 
