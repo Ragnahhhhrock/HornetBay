@@ -51,6 +51,9 @@ export class Intro {
     this.zoomFrom.copy(this.G.camera.position);
     this.onDone = cb;
     this.G.state = 'zoom';
+    // the key that confirmed the plane/location is still sitting in justPressed —
+    // clear it so the dive isn't skipped on its very first frame
+    this.G.input.justPressed.clear();
     this.G.audio.zoomRush(4.5);   // air rushing past during the dive (matches zoom time)
   }
 

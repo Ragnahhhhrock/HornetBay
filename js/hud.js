@@ -55,8 +55,15 @@ export class HUD {
     const st = { G, P, s, sp: P.speedKts, alt: P.altFt, pitch, bank, hdg };
 
     c.lineWidth = 1.2 * s;
+    if (G.chute) {                       // ejected — external view only, no cockpit/HUD
+      this._messages(c, G, s);
+      if (G.mapview) G.mapview.draw(c, w, h, G);
+      return;
+    }
     if (G.view === 'cockpit') {
       this._hudGlass(c, st);
+      c.save();
+      c.clip(this._glassPath());         // all symbology stays on the combiner glass
       this._pitchTicks(c, st);
       this._hudNumbers(c, st);
       this._vectorText(c, G, s);
@@ -65,6 +72,7 @@ export class HUD {
       this._targetBox(c, G, s);
       this._waypoint(c, G, s);
       this._warnings(c, G, P, s);
+      c.restore();
       this._panel(c, st);   // messages print in the panel's centre-bottom strip
     } else {
       this._flightPathMarker(c, G, P);
@@ -84,15 +92,20 @@ export class HUD {
   }
 
   // ---------------- HUD combiner glass frame ----------------
-  _hudGlass(c, { s }) {
+  _glassPath() {
     const w = this.w, h = this.h;
     // chamfered top corners, exactly like the original's combiner glass
     const x1 = w * 0.265, x2 = w * 0.735, xt1 = w * 0.29, xt2 = w * 0.71;
     const yT = h * 0.165, yC = h * 0.185, yB = this._panelTop();
+    const p = new Path2D();
+    p.moveTo(x1, yB); p.lineTo(x1, yC); p.lineTo(xt1, yT); p.lineTo(xt2, yT); p.lineTo(x2, yC); p.lineTo(x2, yB);
+    p.closePath();
+    return p;
+  }
+  _hudGlass(c, { s }) {
+    const p = this._glassPath();
     c.strokeStyle = '#202020'; c.lineWidth = 2.4 * s;
-    c.beginPath();
-    c.moveTo(x1, yB); c.lineTo(x1, yC); c.lineTo(xt1, yT); c.lineTo(xt2, yT); c.lineTo(x2, yC); c.lineTo(x2, yB);
-    c.stroke();
+    c.stroke(p);
     c.lineWidth = 1.2 * s;
   }
   _panelTop() { return this.h * 0.72; }   // measured from the original cockpit
@@ -120,16 +133,16 @@ export class HUD {
       const x = cx + off / 20 * hspan;
       if (Math.abs(x - cx) > hspan + 4) continue;
       const lbl = (((ah % 360) + 360) % 360) / 10;
-      c.fillText(lbl.toString().padStart(2, '0'), x, hy);
-      c.beginPath(); c.moveTo(x, hy + 4 * s); c.lineTo(x, hy + 9 * s); c.stroke();
+      c.fillText(lbl.toString().padStart(2, '0'), x, hy + 10 * s);
+      c.beginPath(); c.moveTo(x, hy + 13 * s); c.lineTo(x, hy + 18 * s); c.stroke();
     }
     // caret
-    c.beginPath(); c.moveTo(cx, hy + 11 * s); c.lineTo(cx, hy + 17 * s); c.stroke();
+    c.beginPath(); c.moveTo(cx, hy + 20 * s); c.lineTo(cx, hy + 26 * s); c.stroke();
     // speed left, altitude right — the F-16 has tape-style side scales,
     // the Hornet the original's stacked number-over-unit blocks
     if (P.type === 'f16') {
-      this._tape(c, w * 0.288, h * 0.40, sp, 20, 110, v => Math.round(v).toString(), 'KT', s, -1);
-      this._tape(c, w * 0.712, h * 0.40, alt, 100, 550, v => fmtN(Math.round(v)), 'FT', s, 1);
+      this._tape(c, w * 0.33, h * 0.40, sp, 20, 110, v => Math.round(v).toString(), 'KT', s, -1);
+      this._tape(c, w * 0.67, h * 0.40, alt, 100, 550, v => fmtN(Math.round(v)), 'FT', s, 1);
     } else {
       c.textAlign = 'center';
       c.font = `bold ${17 * s}px "Courier New", monospace`;
@@ -354,9 +367,9 @@ export class HUD {
     c.textAlign = 'center';
     if (P.stalled && Math.sin(G.time * 12) > 0) { c.fillStyle = RED; c.fillText('STALL', cx, cy - 120 * s); }
     if (G.missileWarning && Math.sin(G.time * 16) > -0.2) { c.fillStyle = RED; c.fillText('! MISSILE !', cx, cy - 95 * s); }
-    if (P.fuel < 2200 && Math.sin(G.time * 6) > 0) { c.fillStyle = AMBER; c.fillText('LOW FUEL', cx, cy + 150 * s); }
-    if (P.fuel <= 0) { c.fillStyle = RED; c.fillText('FLAMEOUT', cx, cy + 150 * s); }
-    if (P.gearDown && P.speedKts > 300) { c.fillStyle = AMBER; c.fillText('GEAR OVERSPEED', cx, cy + 172 * s); }
+    if (P.fuel < 2200 && Math.sin(G.time * 6) > 0) { c.fillStyle = AMBER; c.fillText('LOW FUEL', cx, cy + 118 * s); }
+    if (P.fuel <= 0) { c.fillStyle = RED; c.fillText('FLAMEOUT', cx, cy + 118 * s); }
+    if (P.gearDown && P.speedKts > 300) { c.fillStyle = AMBER; c.fillText('GEAR OVERSPEED', cx, cy + 94 * s); }
     c.textAlign = 'left';
   }
 

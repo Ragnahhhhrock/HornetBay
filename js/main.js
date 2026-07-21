@@ -276,7 +276,7 @@ function launchMission(def, opts = {}) {
   G.msg(def.title, 'info');
   G.audio.ensure();
   if (opts.zoom) {
-    G.intro.zoomToAircraft(() => { G.state = 'flying'; snapCamera(); });
+    G.intro.zoomToAircraft(() => { G.view = 'cockpit'; G.state = 'flying'; snapCamera(); });
   } else {
     G.state = 'flying';
     snapCamera();
@@ -1015,6 +1015,8 @@ else if (auto && auto.startsWith('planesel:')) {
 else if (auto && auto.startsWith('zoom:')) {
   const def = MISSIONS.find(m => m.id === auto.slice(5));
   pendingMission = def; $('menu').classList.add('hidden'); stopDemo();
+  // start the dive from the satellite-map camera, like the real menu flow
+  G.camera.position.set(6000, 95000, 4000 + 95000 * 0.28);
   launchMission(def, { zoom: true });
 }
 else if (auto) {
