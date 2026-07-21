@@ -94,7 +94,7 @@ G.player.isPlayer = true;
 const gun = new GunSystem(G);
 
 // ---------------- persistence ----------------
-const SAVE_KEY = 'fa18-interceptor-v1';
+const SAVE_KEY = 'hornet-bay-v1';
 let save = { qualified: false, done: {}, best: 0, kills: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
