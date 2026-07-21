@@ -63,7 +63,7 @@ export const MISSIONS = [
   briefing: 'Visual confirmation operation.',
   loadout: '2× AIM-9 SIDEWINDER · 4× AIM-120 AMRAAM · 500× 20MM',
   setup(G) {
-    G.setPlayerStart({ runway: G.world.runways[0] });   // original F1 scrambles from SFO
+    G.setPlayerStart({ runway: G.world.runwayById('sfo') });   // original F1 scrambles from SFO
     G.vectorText = 'YOUR VECTOR 290 FOR BOGEY';
     const hostile = Math.random() < 0.65;
     this.hostile = hostile;
@@ -520,9 +520,10 @@ export const MISSIONS = [
   setup(G) {
     const start = G.freeFlightStart || 'carrier';
     if (start === 'carrier') G.setPlayerStart({ onCarrier: true });
-    else if (start === 'sfo') G.setPlayerStart({ runway: G.world.runways[0] });
-    else if (start === 'oakland') G.setPlayerStart({ runway: G.world.runways[1] });
-    else if (start === 'moffett') G.setPlayerStart({ runway: G.world.runways[2] });
+    else if (start === 'sfo') G.setPlayerStart({ runway: G.world.runwayById('sfo') });
+    else if (start === 'oakland') G.setPlayerStart({ runway: G.world.runwayById('oakland') });
+    else if (start === 'moffett') G.setPlayerStart({ runway: G.world.runwayById('moffett') });
+    else if (start === 'alameda') G.setPlayerStart({ runway: G.world.runwayById('alameda') });
     else G.setPlayerStart({ pos: V(-6000, 1200, 0), heading: Math.PI / 2, speed: 180 });
     // the original's free flight has NO enemies at all
     this.respawnT = 0;

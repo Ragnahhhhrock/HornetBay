@@ -31,8 +31,13 @@ const MARIN_EASTBAY = [ // Marin + north shore + East Bay; the bay itself is a "
   [74, -23], [72, -27], [64, -29], [54, -30.5], [48, -32], [40, -33], [32, -32], [26, -30], [22, -27],
   [19, -22], [17.5, -17], [15.5, -12], [14, -9], [9, -4], [2, -2],
 ];
-const LAND_POLYS = [PENINSULA, MARIN_EASTBAY].map(p => p.map(([x, z]) => [x * 1000, z * 1000]));
-const POLY_PEAK = [150, 330];
+const ALAMEDA = [ // Alameda island: a low, flat fill island in the bay, west
+  // tip toward SF, estuary channel separating it from the East Bay shore
+  [19.2, 12.5], [19.6, 11.8], [21.5, 11.68], [22.9, 12.0], [23.0, 12.6],
+  [22.6, 13.15], [20.8, 13.35], [19.4, 13.1],
+];
+const LAND_POLYS = [PENINSULA, MARIN_EASTBAY, ALAMEDA].map(p => p.map(([x, z]) => [x * 1000, z * 1000]));
+const POLY_PEAK = [150, 330, 6];
 const POLY_BBOX = LAND_POLYS.map(p => {
   let x0 = 1e9, x1 = -1e9, z0 = 1e9, z1 = -1e9;
   for (const [x, z] of p) { if (x < x0) x0 = x; if (x > x1) x1 = x; if (z < z0) z0 = z; if (z > z1) z1 = z; }
@@ -65,9 +70,10 @@ function _distToPoly(x, z, poly) {
 const FLATS = [
   { x: 7000,  z: 5200,  r: 2600, y: 14 },   // downtown SF
   { x: 13000, z: 20000, r: 2400, y: 4 },    // SFO
-  { x: 26500, z: 16000, r: 2200, y: 3 },    // Oakland Intl
+  { x: 26500, z: 16000, r: 2600, y: 3 },    // Oakland Intl (south + north fields)
   { x: 10000, z: 34000, r: 2000, y: 10 },   // Moffett Field
   { x: 14000, z: 23500, r: 900,  y: 8 },    // San Mateo (EA HQ)
+  { x: 21000, z: 12500, r: 1600, y: 4 },    // NAS Alameda
 ];
 const BUMPS = [
   { x: 4800, z: 9200, r: 900, h: 240 },  // Twin Peaks N
@@ -117,6 +123,75 @@ export function groundHeight(x, z) {
   return h;
 }
 
+// ---- major Bay Area roads (topology per the AAA bay-area road map) ----
+// pts: [x, z] drapes over the terrain; [x, z, y] is fixed height (bridge
+// decks sit on the bridge structures: GG deck top 71, Bay Bridge 59,
+// San Mateo 51, Dumbarton 45). The original 1988 game drew the major roads.
+export const ROADS = [
+  { n: 'US-101', pts: [[11000,-30000],[12000,-21000],[10000,-15000],[6000,-8000],[1000,-2500],[0,-1750,71.5],[0,1750,71.5],[1500,2900],[5000,3800],[8600,7000],[9500,9000],[10200,11500],[10800,14000],[10700,17500],[10800,20000],[11000,22000],[12500,24500],[14000,26500],[13000,29000],[11500,31000],[10200,32000],[8600,32300],[8300,33800],[8600,35500],[10000,38500],[12000,41000],[15000,43000],[19000,44500]] },
+  { n: 'I-280',  pts: [[8600,7000],[6000,9000],[4800,14000],[4500,19000],[5000,24000],[5800,29000],[6800,34000],[8000,39000],[11000,42000],[15000,43000]] },
+  { n: 'I-80',   pts: [[32000,-8000],[30500,-3000],[29500,1500],[28500,5000],[28000,8500],[28000,8800,59.5],[9800,6000,59.5],[9000,6400],[8600,7000]] },
+  { n: 'I-880',  pts: [[28000,9500],[27200,12000],[26600,13500],[25800,15000],[24000,15500],[23600,17000],[28000,19000],[28500,22000],[30000,23500],[30500,26000],[30500,29000],[30000,32000],[29500,36000],[28500,39500],[26500,42000],[24000,43500],[20000,44500]] },
+  { n: 'I-580',  pts: [[28000,10000],[30000,12500],[32000,16000],[34000,20000],[35500,24000],[37000,28000]] },
+  { n: 'HWY-24', pts: [[28100,8000],[31000,8500],[34000,9000],[37000,9800]], w: 14 },
+  { n: 'HWY-92', pts: [[13400,25700],[15000,24300],[16800,24000,51.5],[29600,24200,51.5],[29300,24300]] },
+  { n: 'HWY-84', pts: [[13000,29000],[14800,29800],[16800,30500,45.5],[29500,30600,45.5],[30000,32000]] },
+  { n: 'HWY-237',pts: [[8600,32300],[10000,32400],[13000,32600],[16500,32700]], w: 14 },
+  { n: 'HWY-85', pts: [[9800,38300],[10000,43000],[14000,45000],[17500,44000]] },
+  { n: 'HWY-17', pts: [[15000,43000],[13000,47000],[10000,52000],[8000,58000]], w: 14 },
+  { n: 'HWY-1',  pts: [[-2500,-16000],[-2000,-10000],[-1500,-5000],[-800,-2500],[0,-1750,71.5],[0,1750,71.5],[-800,2800],[-1500,6000],[-2200,12000],[-2800,18000],[-3200,24000],[-3000,30000],[-2200,36000],[-800,42000]], w: 14 },
+  { n: 'I-680',  pts: [[35500,24000],[35000,30000],[34000,36000],[32000,43000],[30000,45000]] },
+];
+// --- the surface the camera actually shows: barycentric interpolation of
+// the coarse mesh grid and the airfield pads. Road ribbons drape over THIS
+// (not the raw ground function), so they can never sink into a hill whose
+// coarse triangles deviate from the true height — they follow the rendered
+// terrain exactly, 35 cm up, on any rasterizer.
+const COARSE_W = 230000, COARSE_SEG = 480, COARSE_CX = 5000, COARSE_CZ = 8000;
+const _cgCache = new Map();
+function _coarseVertexY(ix, iz) {   // value assigned to coarse vertex (ix,iz)
+  const key = ix * 1000 + iz;
+  let y = _cgCache.get(key);
+  if (y === undefined) {
+    const x = -COARSE_W / 2 + ix * (COARSE_W / COARSE_SEG) + COARSE_CX;
+    const z = -COARSE_W / 2 + iz * (COARSE_W / COARSE_SEG) + COARSE_CZ;
+    y = groundHeight(x, z);
+    y = y < 0 ? y - 25 : y;
+    for (const F of FLATS) {
+      const d = Math.hypot(x - F.x, z - F.z);
+      if (d < F.r * 2.8) y -= 5 * sstep(F.r * 2.8, F.r * 0.5, d);
+    }
+    _cgCache.set(key, y);
+  }
+  return y;
+}
+export function surfaceHeight(x, z) {
+  const cell = COARSE_W / COARSE_SEG;
+  const gx = (x - COARSE_CX + COARSE_W / 2) / cell, gz = (z - COARSE_CZ + COARSE_W / 2) / cell;
+  const ix = Math.floor(gx), iz = Math.floor(gz);
+  let h = null;
+  if (ix >= 0 && iz >= 0 && ix < COARSE_SEG && iz < COARSE_SEG) {
+    const fx = gx - ix, fz = gz - iz;
+    const ya = _coarseVertexY(ix, iz), yb = _coarseVertexY(ix + 1, iz);
+    const yc = _coarseVertexY(ix + 1, iz + 1), yd = _coarseVertexY(ix, iz + 1);
+    h = (fx + fz <= 1) ? ya + (yb - ya) * fx + (yd - ya) * fz
+                       : yc + (yd - yc) * (1 - fx) + (yb - yc) * (1 - fz);
+  }
+  for (const F of FLATS) {   // airfield pads (84 x 84 grid, exact true surface)
+    const S = (F.r + 400) * 2, segs = 84, c = S / segs;
+    const px = (x - F.x + S / 2) / c, pz = (z - F.z + S / 2) / c;
+    const pi = Math.floor(px), pj = Math.floor(pz);
+    if (pi < 0 || pj < 0 || pi >= segs || pj >= segs) continue;
+    const fx = px - pi, fz = pz - pj;
+    const y = (i, k) => { const g = groundHeight(F.x - S / 2 + i * c, F.z - S / 2 + k * c); return g < 0 ? g - 25 : g; };
+    const ya = y(pi, pj), yb = y(pi + 1, pj), yc = y(pi + 1, pj + 1), yd = y(pi, pj + 1);
+    const ph = (fx + fz <= 1) ? ya + (yb - ya) * fx + (yd - ya) * fz
+                              : yc + (yd - yc) * (1 - fx) + (yb - yc) * (1 - fz);
+    if (h === null || ph > h) h = ph;
+  }
+  return h;   // null outside the world grid
+}
+
 // ============================================================
 export class World {
   constructor(scene) {
@@ -130,14 +205,30 @@ export class World {
       sfo:        new THREE.Vector3(13000, 4, 20000),
       oakland:    new THREE.Vector3(26500, 3, 16000),
       moffett:    new THREE.Vector3(10000, 10, 34000),
+      alameda:    new THREE.Vector3(21000, 4, 12500),
       farallon:   new THREE.Vector3(-46000, 60, 4200),
       ea:         new THREE.Vector3(14000, 8, 23500),
     };
+    // Real airfield layouts (headings = runway designators, lengths ~real):
+    // SFO: two crossing pairs — 01L/R (010°) x 10L/R (103°); OAK: big 12/30
+    // south field + north-field 10/28 pair and short 15/33; Moffett: 14/32
+    // pair; NAS Alameda: crossing 07/25 and 13/31.
+    const D = Math.PI / 180;
     this.runways = [
-      { name: 'SFO INTL',     x: 13000, z: 20000, hdg: Math.PI / 2, len: 3200, wid: 60, elev: 4 },
-      { name: 'OAKLAND INTL', x: 26500, z: 16000, hdg: 0,           len: 3000, wid: 55, elev: 3 },
-      { name: 'MOFFETT FLD',  x: 10000, z: 34000, hdg: Math.PI / 2, len: 2800, wid: 55, elev: 10 },
+      { id: 'sfo',      name: 'SFO INTL 01L', x: 12887, z: 19980, hdg: 10 * D,  len: 3400, wid: 61, elev: 4 },
+      {                   name: 'SFO INTL 01R', x: 13113, z: 20020, hdg: 10 * D,  len: 3300, wid: 61, elev: 4 },
+      {                   name: 'SFO INTL 10L', x: 13026, z: 19888, hdg: 103 * D, len: 2900, wid: 61, elev: 4 },
+      {                   name: 'SFO INTL 10R', x: 12974, z: 20112, hdg: 103 * D, len: 2300, wid: 61, elev: 4 },
+      { id: 'oakland',  name: 'OAKLAND 12',   x: 25900, z: 16600, hdg: 120 * D, len: 3200, wid: 46, elev: 3 },
+      {                   name: 'OAKLAND 10L',  x: 27013, z: 15227, hdg: 100 * D, len: 1700, wid: 46, elev: 3 },
+      {                   name: 'OAKLAND 10R',  x: 26987, z: 15374, hdg: 100 * D, len: 1700, wid: 46, elev: 3 },
+      {                   name: 'OAKLAND 15',   x: 26600, z: 15600, hdg: 150 * D, len: 1030, wid: 30, elev: 3 },
+      { id: 'moffett',  name: 'MOFFETT 14L',  x: 10081, z: 33932, hdg: 140 * D, len: 2800, wid: 61, elev: 10 },
+      {                   name: 'MOFFETT 14R',  x: 9919,  z: 34068, hdg: 140 * D, len: 2450, wid: 61, elev: 10 },
+      { id: 'alameda',  name: 'ALAMEDA 07',   x: 21000, z: 12500, hdg: 70 * D,  len: 2400, wid: 55, elev: 4 },
+      {                   name: 'ALAMEDA 13',   x: 21000, z: 12500, hdg: 130 * D, len: 2150, wid: 55, elev: 4 },
     ];
+    this.runwayById = (id) => this.runways.find(r => r.id === id);
     this._buildLights();
     this._buildSky();
     this._buildOcean();
@@ -150,6 +241,7 @@ export class World {
     this._buildAirports();
     this._buildFarallon();
     this._buildEA();
+    this._buildRoads();
     this.carrier = new Carrier(this, new THREE.Vector3(-30000, 0, 10000), Math.PI / 2, false);
     this.enemySub = new Carrier(this, new THREE.Vector3(-42000, 0, -14000), Math.PI / 2, true);
     this.enemySub.group.visible = false;
@@ -468,10 +560,77 @@ export class World {
   }
 
   _buildBayBridge() {
-    // two gray spans like the original's map: Bay Bridge (SF->Oakland) and
-    // the San Mateo crossing further south — each drawn shore to shore
+    // gray spans like the original's map: Bay Bridge (SF->Oakland), the San
+    // Mateo crossing further south, and the Dumbarton (Hwy 84) near the
+    // south end of the bay — each drawn shore to shore
     this._bridgeSpan(new THREE.Vector3(9800, 56, 6000), new THREE.Vector3(28000, 56, 8800));
     this._bridgeSpan(new THREE.Vector3(16800, 48, 24000), new THREE.Vector3(29600, 48, 24200));
+    this._bridgeSpan(new THREE.Vector3(16800, 42, 30500), new THREE.Vector3(29500, 42, 30600));
+  }
+
+  _buildRoads() {
+    // dark asphalt ribbons draped over the terrain, like the original's map
+    const c = document.createElement('canvas'); c.width = 32; c.height = 128;
+    const g2 = c.getContext('2d');
+    g2.fillStyle = '#4b4f54'; g2.fillRect(0, 0, 32, 128);
+    g2.fillStyle = '#dcdcc8'; g2.fillRect(15, 10, 2, 44);   // dashed centreline
+    const tex = new THREE.CanvasTexture(c);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    const mat = new THREE.MeshLambertMaterial({ map: tex });
+    for (let ri = 0; ri < ROADS.length; ri++) {
+      const R = ROADS[ri];
+      // resample every ~45 m so ribbons hug the draped ground smoothly
+      const S = [];
+      for (let i = 0; i < R.pts.length - 1; i++) {
+        const a = R.pts[i], b = R.pts[i + 1];
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz);
+        const n = Math.max(1, Math.round(L / 45));
+        for (let k = (i === 0 ? 0 : 1); k <= n; k++) {
+          const t = k / n, x = a[0] + dx * t, z = a[1] + dz * t;
+          // drape over the RENDERED surface (coarse mesh + pads), 35 cm up,
+          // staggered per road so crossings read as overpasses
+          const sh = surfaceHeight(x, z);
+          const gy = (sh === null ? groundHeight(x, z) : sh) + 0.35 + (ri % 5) * 0.05;
+          let y;
+          if (a.length === 3 && b.length === 3) y = lerp(a[2], b[2], t);
+          else if (a.length === 3) y = lerp(a[2], gy, t);
+          else if (b.length === 3) y = lerp(gy, b[2], t);
+          else y = gy;
+          S.push([x, y, z, (a.length === 3 || b.length === 3) ? 1 : 0]);
+        }
+      }
+      const w = (R.w || 20) / 2;
+      const verts = new Float32Array(S.length * 6), uvs = new Float32Array(S.length * 4);
+      const idx = [];
+      let cum = 0;
+      for (let i = 0; i < S.length; i++) {
+        const p = S[i], q = S[Math.min(i + 1, S.length - 1)], pr = S[Math.max(i - 1, 0)];
+        let dx = q[0] - pr[0], dz = q[2] - pr[2];
+        const dl = Math.hypot(dx, dz) || 1; dx /= dl; dz /= dl;
+        if (i > 0) cum += Math.hypot(p[0] - S[i - 1][0], p[2] - S[i - 1][2]);
+        // per-vertex heights: each ribbon edge hugs the surface beneath it,
+        // so cross-slopes never bury an edge (deck samples stay on the deck)
+        let yL = p[1], yR = p[1];
+        if (!p[3]) {
+          const drape = (vx, vz) => {
+            const s = surfaceHeight(vx, vz);
+            return s === null ? p[1] : s + 0.35 + (ri % 5) * 0.05;
+          };
+          yL = drape(p[0] - dz * w, p[2] + dx * w);
+          yR = drape(p[0] + dz * w, p[2] - dx * w);
+        }
+        verts.set([p[0] - dz * w, yL, p[2] + dx * w,  p[0] + dz * w, yR, p[2] - dx * w], i * 6);
+        uvs.set([0, cum / 90, 1, cum / 90], i * 4);
+        if (i > 0) { const b0 = i * 2; idx.push(b0 - 2, b0 - 1, b0, b0 - 1, b0 + 1, b0); }
+      }
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(verts, 3));
+      geo.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+      geo.setIndex(idx);
+      const m = new THREE.Mesh(geo, mat);
+      m.frustumCulled = false;   // one long ribbon: culling by bounds would pop whole highways
+      this.scene.add(m);
+    }
   }
   _bridgeSpan(a, b) {
     const gray = new THREE.MeshLambertMaterial({ color: 0x9aa2a8 });
@@ -528,7 +687,7 @@ export class World {
 
   _buildAirports() {
     this.towerViews = [];   // viewpoints for the tower camera
-    const mkStrip = (rw) => {
+    const rwyTex = (() => {
       const c = document.createElement('canvas'); c.width = 64; c.height = 512;
       const g2 = c.getContext('2d');
       g2.fillStyle = '#5a5e63'; g2.fillRect(0, 0, 64, 512);
@@ -538,24 +697,114 @@ export class World {
       for (let k = 0; k < 6; k++) {
         g2.fillRect(5 + k * 9.5, 4, 5, 14); g2.fillRect(5 + k * 9.5, 494, 5, 14);
       }
-      const t = new THREE.CanvasTexture(c);
-      // subdivided along the length: a 3 km two-triangle strip straddles
-      // ground-level cameras and breaks weak rasterizers — 75 m segments clip cleanly
-      const smat = new THREE.MeshLambertMaterial({ map: t });
-      const m = new THREE.Mesh(new THREE.PlaneGeometry(rw.wid, rw.len, 1, 40), smat);
-      m.rotation.x = -Math.PI / 2; m.rotation.z = -rw.hdg;
-      // 20 cm above the pad (which is exactly the true surface): wins the
-      // depth contest everywhere without visible float
-      m.position.set(rw.x, rw.elev + 0.2, rw.z);
+      return new THREE.CanvasTexture(c);
+    })();
+    // flat paved rectangle (runway/taxiway/apron); subdivided along its length
+    // so no single triangle can straddle a ground-level camera
+    const mkPaved = (x, z, wid, len, hdg, y, mat) => {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(wid, len, 1, Math.max(1, Math.round(len / 80))), mat);
+      m.rotation.x = -Math.PI / 2; m.rotation.z = -hdg;
+      m.position.set(x, y, z);
       this.scene.add(m);
-      const tw = new THREE.Mesh(new THREE.CylinderGeometry(4, 6, 40, 8), new THREE.MeshLambertMaterial({ color: 0xb8c0c8 }));
-      tw.position.set(rw.x + 300, rw.elev + 20, rw.z + 300); this.scene.add(tw);
-      const cab = new THREE.Mesh(new THREE.CylinderGeometry(8, 6, 10, 8), new THREE.MeshLambertMaterial({ color: 0x30414f }));
-      cab.position.set(rw.x + 300, rw.elev + 44, rw.z + 300); this.scene.add(cab);
-      this.addCollider(rw.x + 300, rw.elev + 24, rw.z + 300, 9, 26, 9);
-      this.towerViews.push({ name: `${rw.name} TOWER`, pos: new THREE.Vector3(rw.x + 300, rw.elev + 50, rw.z + 300) });
+      return m;
     };
-    for (const rw of this.runways) mkStrip(rw);
+    const rwyMat = new THREE.MeshLambertMaterial({ map: rwyTex });
+    const taxiMat = new THREE.MeshLambertMaterial({ color: 0x606468 });
+    const apronMat = new THREE.MeshLambertMaterial({ color: 0x565a5e });
+    // paved-layer heights above the pad (which is exactly the true surface):
+    // aprons 18 cm, taxiways 22 cm, runways 30 cm — taller layers win
+    // crossings, and 30 cm clears the small pad rise where two FLATS zones
+    // overlap (San Mateo's ramp reaches SFO's 01R threshold)
+    const Y_APRON = 0.18, Y_TAXI = 0.22, Y_RWY = 0.3;
+    const hangarMat = new THREE.MeshLambertMaterial({ color: 0xb9bcae });
+    const hangarDark = new THREE.MeshLambertMaterial({ color: 0x8f9484 });
+    // arched dirigible hangar (Moffett's Hangar One/Two/Three): a half-pipe
+    const mkArch = (x, z, hdg, len, r, h, mat) => {
+      const geo = new THREE.CylinderGeometry(r, r, len, 20, 1, false, 0, Math.PI);
+      const m = new THREE.Mesh(geo, mat);
+      m.rotation.z = Math.PI / 2;              // axis along X, shell facing up
+      m.rotation.y = -hdg + Math.PI / 2;       // align axis with the field
+      m.scale.y = h / r;                       // taller than a true semicircle
+      const gy = groundHeight(x, z);
+      m.position.set(x, gy, z);
+      this.scene.add(m);
+      // rotated AABB: arch axis runs along (sin h, -cos h), width r across it
+      this.addCollider(x, gy + h / 2, z,
+        len / 2 * Math.abs(Math.sin(hdg)) + r * Math.abs(Math.cos(hdg)), h / 2,
+        len / 2 * Math.abs(Math.cos(hdg)) + r * Math.abs(Math.sin(hdg)));
+      return m;
+    };
+    const mkBox = (x, z, w, h, l, hdg, mat) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, l), mat);
+      const gy = groundHeight(x, z);
+      m.position.set(x, gy + h / 2, z); m.rotation.y = -hdg;
+      this.scene.add(m);
+      this.addCollider(x, gy + h / 2, z,
+        w / 2 * Math.abs(Math.cos(hdg)) + l / 2 * Math.abs(Math.sin(hdg)) + 2, h / 2,
+        w / 2 * Math.abs(Math.sin(hdg)) + l / 2 * Math.abs(Math.cos(hdg)) + 2);
+      return m;
+    };
+    const mkTower = (x, z, elev, name) => {
+      const tw = new THREE.Mesh(new THREE.CylinderGeometry(4, 6, 40, 8), new THREE.MeshLambertMaterial({ color: 0xb8c0c8 }));
+      tw.position.set(x, elev + 20, z); this.scene.add(tw);
+      const cab = new THREE.Mesh(new THREE.CylinderGeometry(8, 6, 10, 8), new THREE.MeshLambertMaterial({ color: 0x30414f }));
+      cab.position.set(x, elev + 44, z); this.scene.add(cab);
+      this.addCollider(x, elev + 24, z, 9, 26, 9);
+      this.towerViews.push({ name, pos: new THREE.Vector3(x, elev + 50, z) });
+    };
+    // tiny parked jets on the apron: fuselage + wing + tail boxes
+    const mkParked = (x, z, hdg, color) => {
+      const g = new THREE.Group();
+      const mat = new THREE.MeshLambertMaterial({ color });
+      const fus = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2, 15), mat); fus.position.y = 1.6; g.add(fus);
+      const wing = new THREE.Mesh(new THREE.BoxGeometry(11, 0.4, 3.4), mat); wing.position.set(0, 1.8, 1); g.add(wing);
+      const tail = new THREE.Mesh(new THREE.BoxGeometry(0.4, 3, 2.4), mat); tail.position.set(0, 3, 6.4); g.add(tail);
+      g.position.set(x, groundHeight(x, z) + 0.1, z); g.rotation.y = -hdg;
+      this.scene.add(g);
+    };
+    for (const rw of this.runways) mkPaved(rw.x, rw.z, rw.wid, rw.len, rw.hdg, rw.elev + Y_RWY, rwyMat);
+
+    // ---- per-airfield ground layout: taxiways, aprons, hangars, towers ----
+    const D = Math.PI / 180;
+    // SFO — terminal core south of the crossing, tower on it, taxiways along
+    // both pairs (the real field sits on bay fill at the water's edge)
+    mkPaved(13150, 20950, 350, 620, 10 * D, 4 + Y_APRON, apronMat);           // terminal apron
+    mkPaved(13360, 20200, 18, 2300, 10 * D, 4 + Y_TAXI, taxiMat);             // taxiway along 01 pair
+    mkPaved(13000, 20550, 18, 2500, 103 * D, 4 + Y_TAXI, taxiMat);            // taxiway along 10/28
+    mkBox(12950, 21100, 120, 18, 60, 10 * D, hangarDark);                     // terminal block
+    mkBox(13100, 21250, 90, 15, 50, 10 * D, hangarDark);
+    mkBox(13350, 21100, 70, 14, 200, 10 * D, hangarMat);                      // concourse fingers
+    mkBox(13000, 20920, 60, 13, 160, 103 * D, hangarMat);
+    mkTower(13150, 20750, 4, 'SFO TOWER');
+    mkParked(13220, 20980, 100 * D, 0xd8dde2); mkParked(13080, 21010, 100 * D, 0xcfd6da);
+    mkParked(13260, 20860, 10 * D, 0xe2e6ea);
+    // OAKLAND — apron complex between the south field (12/30) and north field
+    mkPaved(26450, 15950, 380, 900, 120 * D, 3 + Y_APRON, apronMat);
+    mkPaved(26200, 16100, 18, 2900, 120 * D, 3 + Y_TAXI, taxiMat);            // taxiway parallel 12/30
+    mkPaved(26800, 15550, 18, 1500, 100 * D, 3 + Y_TAXI, taxiMat);            // north-field taxiway
+    mkBox(26650, 15900, 90, 16, 60, 120 * D, hangarMat);                      // hangars along the apron
+    mkBox(26750, 16050, 70, 13, 55, 120 * D, hangarMat);
+    mkBox(26250, 15750, 80, 14, 60, 120 * D, hangarDark);
+    mkTower(26500, 15800, 3, 'OAKLAND TOWER');
+    mkParked(26420, 15920, 30 * D, 0xd8dde2); mkParked(26520, 16020, 30 * D, 0xc9ced4);
+    // MOFFETT — Hangar One west, Hangars Two & Three east, aprons both sides
+    mkPaved(9700, 34200, 260, 420, 140 * D, 10 + Y_APRON, apronMat);          // west apron
+    mkPaved(10500, 33550, 300, 520, 140 * D, 10 + Y_APRON, apronMat);         // east apron
+    mkPaved(10000, 34000, 18, 2700, 140 * D, 10 + Y_TAXI, taxiMat);           // taxiway between parallels
+    mkArch(9550, 34400, 140 * D, 345, 47, 60, hangarMat);                     // Hangar One
+    mkArch(10450, 33700, 140 * D, 180, 30, 36, hangarMat);                    // Hangar Two
+    mkArch(10560, 33820, 140 * D, 180, 30, 36, hangarMat);                    // Hangar Three
+    mkTower(9750, 34100, 10, 'MOFFETT TOWER');
+    mkParked(9760, 34260, 50 * D, 0xb9c0c6); mkParked(10520, 33620, 140 * D, 0xb9c0c6);
+    // NAS ALAMEDA — apron and hangars on the north side, carrier pier feel
+    mkPaved(21100, 12000, 320, 760, 70 * D, 4 + Y_APRON, apronMat);
+    mkPaved(21100, 12250, 18, 2100, 70 * D, 4 + Y_TAXI, taxiMat);             // taxiway along 07/25
+    mkBox(20900, 11800, 110, 15, 70, 70 * D, hangarMat);
+    mkBox(21150, 11750, 90, 14, 60, 70 * D, hangarMat);
+    mkBox(21400, 11850, 80, 13, 60, 70 * D, hangarDark);
+    mkTower(20800, 12050, 4, 'ALAMEDA TOWER');
+    mkParked(21000, 12050, 70 * D, 0xd8dde2); mkParked(21180, 12120, 70 * D, 0xc9ced4);
+    mkParked(20920, 12140, 340 * D, 0xe2e6ea);
   }
 
   // carrier island cab — computed live since the ship is underway
@@ -594,50 +843,190 @@ export class Carrier {
     world.scene.add(this.group);
   }
   _deckTexture() {
+    // laid out like the real CVN-65 deck plan: canvas left = starboard,
+    // top = stern, bottom = bow (the deck box's top-face UV mapping)
     const c = document.createElement('canvas'); c.width = 256; c.height = 1024;
     const g = c.getContext('2d');
-    g.fillStyle = '#22252a'; g.fillRect(0, 0, 256, 1024);
-    g.strokeStyle = '#e8e8e8'; g.lineWidth = 3;
-    g.setLineDash([30, 24]);
-    g.beginPath(); g.moveTo(128, 40); g.lineTo(128, 984); g.stroke();
-    g.setLineDash([]);
-    g.strokeStyle = '#d8b040'; g.lineWidth = 4;
-    g.beginPath(); g.moveTo(20, 60); g.lineTo(20, 964); g.stroke();
-    g.beginPath(); g.moveTo(236, 60); g.lineTo(236, 964); g.stroke();
-    g.strokeStyle = '#e8e8e8'; g.lineWidth = 3;
-    g.beginPath(); g.moveTo(30, 700); g.lineTo(200, 240); g.stroke();
-    g.beginPath(); g.moveTo(50, 720); g.lineTo(220, 260); g.stroke();
-    g.strokeStyle = '#ddd'; g.lineWidth = 2;
-    for (const y of [420, 460, 500, 540]) { g.beginPath(); g.moveTo(60, y); g.lineTo(210, y - 60); g.stroke(); }
+    const cX = (x) => (x + 38) / 76 * 256, cY = (z) => (z + 168) / 336 * 1024;
+    g.fillStyle = '#43474d'; g.fillRect(0, 0, 256, 1024);
+    g.strokeStyle = '#c9cdd2'; g.lineWidth = 3; g.strokeRect(5, 5, 246, 1014);
+    // axial-deck dashed centreline (stern to bow)
+    g.fillStyle = '#dfe3e6';
+    for (let z = -150; z < 160; z += 20) g.fillRect(cX(0) - 1.5, cY(z), 3, 12);
+    // angled landing deck: stern-starboard (x -14) to port bow (x +27), ~9 deg
+    const a0 = { x: -14, z: -160 }, a1 = { x: 27, z: 112 };
+    this.angleDeck = { a0, a1 };
+    const ang = Math.atan2(a1.x - a0.x, a1.z - a0.z), aLen = Math.hypot(a1.x - a0.x, a1.z - a0.z);
+    const YM = 1024 / 336;   // canvas px per deck metre along the ship
+    g.save();
+    g.translate(cX(a0.x), cY(a0.z)); g.rotate(ang);
+    g.fillStyle = '#e8ecef';
+    g.fillRect(-30, 0, 3, aLen * YM); g.fillRect(27, 0, 3, aLen * YM);   // edge stripes
+    for (let d = 14; d < aLen * 0.94; d += 22) g.fillRect(-2, d * YM, 4, 12);  // centreline dashes
+    for (const wz of [-50, -38, -26, -14]) g.fillRect(-27, (wz - a0.z) * YM, 54, 4);  // 4 arrestor wires
+    g.restore();
+    // catapult tracks (dark slots): two bow cats + two waist cats
+    g.strokeStyle = '#232529'; g.lineWidth = 5;
+    for (const cx of [-13, 11]) { g.beginPath(); g.moveTo(cX(cx), cY(30)); g.lineTo(cX(cx), cY(158)); g.stroke(); }
+    g.save(); g.translate(cX(22), cY(-60)); g.rotate(ang);
+    for (const off of [0, -30]) { g.beginPath(); g.moveTo(off, 0); g.lineTo(off, 90 * YM); g.stroke(); }
+    g.restore();
+    // elevators: yellow deck-edge outlines (3 starboard + 1 port aft)
+    g.strokeStyle = '#d8bc30'; g.lineWidth = 3;
+    const elev = (x, z0, z1) => g.strokeRect(cX(x) - 1, cY(z0), 12, cY(z1) - cY(z0));
+    elev(-38, 62, 88); elev(-38, -2, 24); elev(-38, -78, -52); elev(26, -34, -8);
+    // foul-line box around the bow park
+    g.setLineDash([10, 8]); g.strokeRect(cX(-34), cY(58), cX(30) - cX(-34), cY(160) - cY(58)); g.setLineDash([]);
     if (!this.isSub) {
-      g.fillStyle = '#e8e8e8'; g.font = 'bold 60px monospace';
-      g.save(); g.translate(190, 950); g.rotate(Math.PI); g.fillText('65', 0, 0); g.restore();
+      g.save(); g.translate(cX(8), cY(128)); g.rotate(Math.PI);
+      g.font = 'bold 64px Arial'; g.fillStyle = '#e8ecef'; g.textAlign = 'center'; g.fillText('65', 0, 0); g.restore();
     }
-    return new THREE.CanvasTexture(c);
+    const t = new THREE.CanvasTexture(c);
+    t.anisotropy = 4;
+    return t;
   }
   _build(isSub) {
-    const hullC = isSub ? 0x1c2126 : 0x5a626a;
-    const hull = new THREE.Mesh(new THREE.BoxGeometry(70, 18, 320), new THREE.MeshLambertMaterial({ color: isSub ? hullC : 0x7d868f }));
-    hull.position.y = 2; this.group.add(hull);
-    const bow = new THREE.Mesh(new THREE.CylinderGeometry(35, 12, 18, 4, 1), new THREE.MeshLambertMaterial({ color: hullC }));
-    bow.rotation.y = Math.PI / 4; bow.scale.set(1, 1, 1.6); bow.position.set(0, 2, 178); this.group.add(bow);
     const deckMat = new THREE.MeshLambertMaterial({ map: this._deckTexture() });
     const deck = new THREE.Mesh(new THREE.BoxGeometry(76, 3, 336), deckMat);
     deck.position.y = this.deckY - 1.5; this.group.add(deck);
+    const deckY = this.deckY;
     if (!isSub) {
-      const island = new THREE.Mesh(new THREE.BoxGeometry(14, 26, 30), new THREE.MeshLambertMaterial({ color: 0x9aa4ae }));
-      island.position.set(-30, this.deckY + 13, 30); this.group.add(island);
-      const mast = new THREE.Mesh(new THREE.CylinderGeometry(1.5, 2.5, 26, 6), new THREE.MeshLambertMaterial({ color: 0x7a848e }));
-      mast.position.set(-30, this.deckY + 38, 24); this.group.add(mast);
-      const c = document.createElement('canvas'); c.width = 64; c.height = 64;
-      const cx = c.getContext('2d'); cx.fillStyle = '#444c54'; cx.fillRect(0, 0, 64, 64);
-      cx.fillStyle = '#fff'; cx.font = 'bold 40px monospace'; cx.textAlign = 'center'; cx.fillText('65', 32, 46);
-      const num = new THREE.Mesh(new THREE.PlaneGeometry(12, 12), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) }));
-      num.position.set(-22.8, this.deckY + 20, 30); num.rotation.y = Math.PI / 2; this.group.add(num);
+      // ---- CVN-65 detailing -------------------------------------------
+      const LM = (c) => new THREE.MeshLambertMaterial({ color: c });
+      const gM = LM(0x62666c), dM = LM(0x4c5056), wM = LM(0xdfe3e6);
+
+      // lofted hull: grey freeboard above the waterline, red anti-fouling below
+      // sections are [z, halfWidth at deck, halfWidth at keel]
+      const secs = [
+        [-160, 10, 8], [-152, 26, 22], [-135, 33, 28], [-80, 35, 30],
+        [0, 35, 30], [100, 34, 29], [150, 27, 17], [178, 4, 2],
+      ];
+      const yTop = deckY - 1.5, yWat = 0, yBot = -8;
+      const cG = new THREE.Color(0x6e747c), cR = new THREE.Color(0x7e2a22);
+      const V = [], C = [];
+      const push = (p, col) => { V.push(p[0], p[1], p[2]); C.push(col.r, col.g, col.b); };
+      const quad = (a, b, c2, d, col) => { push(a, col); push(b, col); push(c2, col); push(a, col); push(c2, col); push(d, col); };
+      const rings = secs.map(([z, wt, wb]) => [
+        [wt, yTop, z], [wt, yWat, z], [wb, yBot, z],
+        [-wb, yBot, z], [-wt, yWat, z], [-wt, yTop, z],
+      ]);
+      const edgeCol = [cG, cR, cR, cR, cG];
+      for (let i = 0; i < rings.length - 1; i++) {
+        for (let e = 0; e < 5; e++) {   // edge 5 (top) is hidden under the deck
+          const e2 = (e + 1) % 6;
+          quad(rings[i][e], rings[i][e2], rings[i + 1][e2], rings[i + 1][e], edgeCol[e]);
+        }
+      }
+      for (const ri of [0, rings.length - 1]) {           // stern + bow caps
+        const ring = rings[ri];
+        const ctr = [0, (yTop + yBot) / 2, ring[0][2]];
+        for (let e = 0; e < 6; e++) {
+          const e2 = (e + 1) % 6;
+          const col = (ring[e][1] + ring[e2][1]) / 2 > yWat ? cG : cR;
+          if (ri === 0) { push(ctr, col); push(ring[e2], col); push(ring[e], col); }
+          else { push(ctr, col); push(ring[e], col); push(ring[e2], col); }
+        }
+      }
+      const hg = new THREE.BufferGeometry();
+      hg.setAttribute('position', new THREE.Float32BufferAttribute(V, 3));
+      hg.setAttribute('color', new THREE.Float32BufferAttribute(C, 3));
+      hg.computeVertexNormals();
+      this.group.add(new THREE.Mesh(hg, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })));
+
+      // island (starboard): stacked levels, window band, mast + rotating radar
+      const isl = new THREE.Group();
+      const ib = (w, h, d, x, y, z, m) => { const q = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m || gM); q.position.set(x, y, z); isl.add(q); return q; };
+      ib(16, 14, 34, -30, deckY + 7, 30);          // base
+      ib(14, 7, 28, -30, deckY + 17.5, 30);       // level 2
+      ib(15, 5, 24, -30, deckY + 23.5, 30);       // bridge house
+      ib(15.6, 1.8, 24.6, -30, deckY + 25, 30, LM(0x141c26)); // window band
+      ib(10, 2.4, 16, -30, deckY + 29, 30);       // top platform
+      ib(9, 0.8, 34, -30, deckY + 0.6, 30, dM);   // catwalk skirting
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 22, 8), dM);
+      mast.position.set(-30, deckY + 41, 34); isl.add(mast);
+      const yard = new THREE.Mesh(new THREE.BoxGeometry(9, 0.5, 0.5), dM);
+      yard.position.set(-30, deckY + 46, 34); isl.add(yard);
+      const yard2 = yard.clone(); yard2.position.y = deckY + 49; yard2.scale.x = 0.7; isl.add(yard2);
+      this.radar = new THREE.Group();
+      this.radar.position.set(-30, deckY + 52.5, 34);
+      const bar1 = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 1.2), wM);
+      const bar2 = new THREE.Mesh(new THREE.BoxGeometry(6, 0.6, 1.0), wM);
+      bar2.position.y = 1.2; this.radar.add(bar1, bar2); isl.add(this.radar);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(1.6, 10, 8), wM);
+      dome.position.set(-30, deckY + 48, 26); isl.add(dome);
+      this.group.add(isl);
+      // big "65" on both island faces
+      const c65 = document.createElement('canvas'); c65.width = 128; c65.height = 128;
+      const g65 = c65.getContext('2d');
+      g65.fillStyle = '#3a3e44'; g65.fillRect(0, 0, 128, 128);
+      g65.fillStyle = '#e8ecef'; g65.font = 'bold 92px Arial'; g65.textAlign = 'center'; g65.fillText('65', 64, 96);
+      const t65 = new THREE.CanvasTexture(c65);
+      for (const s of [-1, 1]) {
+        const p = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: t65, transparent: true }));
+        p.position.set(-30 + 8.1 * s, deckY + 7, 30); p.rotation.y = s > 0 ? Math.PI / 2 : -Math.PI / 2;
+        this.group.add(p);
+      }
       this.islandOffset = { x: -30, z: 30 };
+
+      // arrestor wires (3D) across the angled deck — a0/a1 set by _deckTexture()
+      const { a0, a1 } = this.angleDeck;
+      const ang = Math.atan2(a1.x - a0.x, a1.z - a0.z);
+      const wireM = LM(0x2a2c2e);
+      for (const wz of [-50, -38, -26, -14]) {
+        const t = (wz - a0.z) / (a1.z - a0.z);
+        const w = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.25, 30), wireM);
+        w.position.set(a0.x + (a1.x - a0.x) * t, deckY + 0.15, wz);
+        w.rotation.y = Math.PI / 2 + ang;          // perpendicular to the landing axis
+        this.group.add(w);
+      }
+      // catapult shuttles on the two bow tracks
+      for (const cx of [-13, 11]) {
+        const sh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 2.5), dM);
+        sh.position.set(cx, deckY + 0.18, 40); this.group.add(sh);
+      }
+      // fresnel lens ("meatball") on the port deck edge, facing the approach
+      const fl = new THREE.Group(); fl.position.set(35.2, deckY + 0.6, -95); fl.rotation.y = Math.PI - 0.15;
+      const flb = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.6), dM); flb.position.y = 1.2; fl.add(flb);
+      const fll = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.8, 0.15), new THREE.MeshBasicMaterial({ color: 0xffb43c }));
+      fll.position.set(0, 1.2, 0.35); fl.add(fll); this.group.add(fl);
+      // whip antennas along both deck edges
+      const whipG = new THREE.CylinderGeometry(0.06, 0.06, 6, 4);
+      for (let i = 0; i < 5; i++) for (const s of [-1, 1]) {
+        const wp = new THREE.Mesh(whipG, dM);
+        wp.position.set(37 * s, deckY + 3, -140 + i * 74); this.group.add(wp);
+      }
+      // parked aircraft, clear of the landing strip, catapult tracks and cat start (-6,-120)
+      const spots = [[-28, 92, 0.3], [-28, 112, 0.1], [-28, 132, -0.2], [-16, 122, 0.6], [4, 140, 3.1], [30, 20, -1.4], [24, -64, 2.8]];
+      for (const [jx, jz, jr] of spots) {
+        const jet = new THREE.Group();
+        const jm = LM(0x9aa0a8), jd = LM(0x767c84);
+        const fu = new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.7, 11), jm); fu.position.y = 1.2; jet.add(fu);
+        const no = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.85, 3.4, 6), jm);
+        no.rotation.x = Math.PI / 2; no.position.set(0, 1.25, 7); jet.add(no);
+        const ca = new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.7, 2.6), jd); ca.position.set(0, 2.2, 3.6); jet.add(ca);
+        const wf = new THREE.Mesh(new THREE.BoxGeometry(0.45, 3.6, 4.5), jm); // folded wings, upright
+        wf.position.set(-1.1, 3.0, -1); wf.rotation.x = -0.15; jet.add(wf);
+        const wf2 = wf.clone(); wf2.position.x = 1.1; jet.add(wf2);
+        const st = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.25, 1.6), jm); st.position.set(0, 1.6, -4.6); jet.add(st);
+        const fi = new THREE.Mesh(new THREE.BoxGeometry(0.25, 2.0, 1.8), jm); fi.position.set(-0.75, 2.4, -4.8); jet.add(fi);
+        const fi2 = fi.clone(); fi2.position.x = 0.75; jet.add(fi2);
+        jet.position.set(jx, deckY, jz); jet.rotation.y = jr;
+        this.group.add(jet);
+      }
+      // deck edge lights
+      const lm2 = new THREE.MeshBasicMaterial({ color: 0xbfd9ff });
+      for (let z = -160; z <= 160; z += 40) for (const s of [-1, 1]) {
+        const li = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), lm2);
+        li.position.set(37.5 * s, deckY + 0.3, z); this.group.add(li);
+      }
     } else {
+      const hullC = 0x1c2126;
+      const hull = new THREE.Mesh(new THREE.BoxGeometry(70, 18, 320), new THREE.MeshLambertMaterial({ color: hullC }));
+      hull.position.y = 2; this.group.add(hull);
+      const bow = new THREE.Mesh(new THREE.CylinderGeometry(35, 12, 18, 4, 1), new THREE.MeshLambertMaterial({ color: hullC }));
+      bow.rotation.y = Math.PI / 4; bow.scale.set(1, 1, 1.6); bow.position.set(0, 2, 178); this.group.add(bow);
       const sail = new THREE.Mesh(new THREE.BoxGeometry(10, 14, 22), new THREE.MeshLambertMaterial({ color: 0x23292e }));
-      sail.position.set(0, this.deckY + 7, 60); this.group.add(sail);
+      sail.position.set(0, deckY + 7, 60); this.group.add(sail);
     }
     const wakeMat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22, depthWrite: false });
     const wake = new THREE.Mesh(new THREE.PlaneGeometry(60, 700), wakeMat);
@@ -663,6 +1052,7 @@ export class Carrier {
       return;
     }
     if (this.isSub) { this.group.rotation.y = Math.PI - this.heading; return; }
+    if (this.radar) this.radar.rotation.y += dt * 0.9;
     const p = this.group.position;
     // stay well out in the Pacific — the coast at this latitude is ~-4 km
     if (this.turning === 0 && Math.abs(Math.sin(this.heading)) > 0.5 && (p.x > -14000 || p.x < -56000)) this.turning = Math.PI;

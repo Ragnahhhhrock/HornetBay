@@ -604,9 +604,10 @@ function handleDiscreteInput(dt) {
     if ((G.missionDef.id === 'qual' || G.missionDef.id === 'free') && !I.ab) {
       const id = G.missionDef.id, s = G.freeFlightStart;
       if (id === 'qual' || s === 'carrier' || !s) G.setPlayerStart({ onCarrier: true });
-      else if (s === 'sfo') G.setPlayerStart({ runway: G.world.runways[0] });
-      else if (s === 'oakland') G.setPlayerStart({ runway: G.world.runways[1] });
-      else if (s === 'moffett') G.setPlayerStart({ runway: G.world.runways[2] });
+      else if (s === 'sfo') G.setPlayerStart({ runway: G.world.runwayById('sfo') });
+      else if (s === 'oakland') G.setPlayerStart({ runway: G.world.runwayById('oakland') });
+      else if (s === 'moffett') G.setPlayerStart({ runway: G.world.runwayById('moffett') });
+      else if (s === 'alameda') G.setPlayerStart({ runway: G.world.runwayById('alameda') });
       G.msg('RE-POSITIONED', 'info');
       return;
     }

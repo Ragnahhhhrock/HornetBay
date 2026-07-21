@@ -13,6 +13,7 @@ export const FF_SPOTS = [
   { key: '2', id: 'oakland', label: 'OAKLAND INTL' },
   { key: '3', id: 'moffett', label: 'MOFFETT FIELD' },
   { key: '4', id: 'carrier', label: 'USS ENTERPRISE' },
+  { key: '5', id: 'alameda', label: 'NAS ALAMEDA' },
 ];
 
 export class Intro {
