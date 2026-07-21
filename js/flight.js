@@ -15,6 +15,7 @@ export const PLANES = {
 };
 
 const _e = new THREE.Euler(), _dq = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
+const _v3 = new THREE.Vector3(), _v4 = new THREE.Vector3(), _Y = new THREE.Vector3(0, 1, 0);
 
 export class Player {
   constructor(scene, world) {
@@ -37,6 +38,7 @@ export class Player {
     this.stores = { aim9: 2, aim120: 4, gun: 500, chaff: 14, flares: 14 };
     this.weapon = 'aim120';
     this.dead = false; this.ejected = false; this.stalled = false; this.modelDown = false;
+    this._parkedEject = false; this._deckRide = null;
     this.onGround = null; this.deckLocal = null; this.smokeT = 0; this.contrailT = 0;
     this.crashTimer = 0; this.spinDir = 1;
     this.vel.set(0, 0, 0);
@@ -181,8 +183,17 @@ export class Player {
     const pitchMax = Math.min(1.05, cfg.gMax * 9.81 / Math.max(newSpeed, 75)) * authority;
     const rollMax = cfg.maxRoll * clamp(newSpeed / 90, 0.25, 1);
     this.stalled = newSpeed < cfg.stall && this.pos.y > 5;
+    // bank angle relative to the horizon — drives the banked-lift physics below
+    const _rgt = _v3.set(1, 0, 0).applyQuaternion(this.quat);
+    const _upv = _v4.set(0, 1, 0).applyQuaternion(this.quat).y;
+    const bankNow = Math.atan2(-_rgt.y, _upv);
     let pitchIn = inp.pitch * pitchMax;
     if (this.stalled) pitchIn -= 0.5 * (1 - newSpeed / cfg.stall); // nose drops
+    // spiral mode: with the lift vector tilted there is no vertical force
+    // holding the nose up — it drops through the horizon unless the pilot
+    // keeps back-pressure on. Gentle: strong values couple into the heading
+    // and fight the coordinated turn.
+    else pitchIn -= (1 - Math.cos(bankNow)) * 0.10;
     this.pitchRate = damp(this.pitchRate, -pitchIn, 7, dt);           // -X = nose up
     // nose = +Z convention: the pilot's right hand is local -X, so a
     // positive rotation about +Z raises the +X (left) wing = bank right
@@ -198,9 +209,21 @@ export class Player {
     if (curDir.lengthSq() < 0.5) curDir.copy(newFwd);
     curDir.lerp(newFwd, 1 - Math.exp(-alignRate * dt)).normalize();
     this.vel.copy(curDir).multiplyScalar(newSpeed);
+    // ---- banked-lift turn & sink (flight dynamics): the wings' lift acts
+    // along the aircraft's up axis, so in a bank its horizontal component
+    // curves the flight path — the coordinated turn, ω = g·tanφ/v — while
+    // its reduced vertical component lets the flight path sag. Roll 45° and
+    // the jet turns and sinks on its own; hold altitude with back-stick.
+    let turnW = 0;
+    if (!this.stalled && Math.abs(bankNow) > 0.01) {
+      turnW = clamp(9.81 * Math.tan(bankNow) / Math.max(newSpeed, cfg.stall * 0.9), -1.2, 1.2);
+      _dq.setFromAxisAngle(_Y, turnW * dt);
+      this.quat.premultiply(_dq).normalize();
+      this.vel.y -= 9.81 * (1 - Math.cos(bankNow)) * 0.85 * dt;
+    }
     if (this.stalled) this.vel.y -= 9.81 * Math.pow(1 - newSpeed / cfg.stall, 2) * 3.2 * dt;
-    // G estimate for HUD / blackout / contrails
-    this.gForce = 1 + Math.abs(this.pitchRate) * newSpeed / 9.81 * 0.9;
+    // G estimate for HUD / blackout / contrails (stick pull + turn load)
+    this.gForce = 1 + Math.abs(this.pitchRate) * newSpeed / 9.81 * 0.9 + Math.abs(turnW) * newSpeed / 9.81 * 0.9;
     this.pos.addScaledVector(this.vel, dt);
     // mach meter + sonic boom on the transition
     const a = Math.max(295, 340.3 - 3.2 * (this.pos.y / 1000));  // speed of sound, m/s
@@ -313,7 +336,14 @@ export class Player {
     if (this.pos.y < gh + 2) G.onCrashed('SHOT DOWN');
   }
   _updateBallistic(dt, G) {
+    // ejected while parked — the jet just sits there with its engine cut
+    // (and still rides the ship if it was left on the deck)
+    if (this._deckRide) {
+      this.pos.copy(carrierLocalToWorld(this.world.carrier, this._deckRide.x, this._deckRide.y, this._deckRide.z));
+      return;
+    }
     if (this.modelDown) return;
+    if (this._parkedEject) { this.modelDown = true; return; }
     this.vel.y -= 9.81 * dt;
     this.pos.addScaledVector(this.vel, dt);
     _e.set(0.5 * dt, 0, 1.2 * dt, 'XYZ'); _dq.setFromEuler(_e); this.quat.multiply(_dq).normalize();
@@ -352,7 +382,7 @@ export function carrierLocalToWorld(c, lx, ly, lz, out = new THREE.Vector3()) {
 // a second of free fall in the seat, then the dome opens overhead and he
 // sways his way down to the sea (or the hills, if he's lucky)
 export class Chute {
-  constructor(scene, pos, vel) {
+  constructor(scene, pos, vel, groundY) {
     this.group = new THREE.Group();
     const LM = (c) => new THREE.MeshLambertMaterial({ color: c });
     const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.0, 0.6), LM(0x2e3238));
@@ -379,6 +409,7 @@ export class Chute {
     this.group.add(this.lines);
     this.group.position.copy(pos); this.group.position.y += 2.5;
     this.vel = vel.clone();
+    this.groundY = groundY;             // deck height when ejecting on the carrier
     this.t = 0; this.landed = false; this._scene = scene;
     scene.add(this.group);
   }
@@ -401,14 +432,15 @@ export class Chute {
     }
     p.addScaledVector(v, dt);
     if (G && G.audio) G.audio.updateChute(v.y);   // the rush of air, not the engine
-    const gh = Math.max(groundHeight(p.x, p.z), 0);
+    const gh = this.groundY !== undefined ? this.groundY : Math.max(groundHeight(p.x, p.z), 0);
     if (p.y <= gh + 0.3) {
       p.y = gh + 0.3;
       this.landed = true;
       this.canopy.scale.set(1, 0.25, 1); this.canopy.position.y = 1.4;   // canopy collapses
       this.group.rotation.set(0, 0, 0);
       if (G && G.audio) G.audio.chuteLand();
-      if (G && G.msg) G.msg(groundHeight(p.x, p.z) > 0 ? 'PILOT DOWN ON TERRA FIRMA' : 'PILOT IN THE DRINK — SAR INBOUND', 'info');
+      if (G && G.msg) G.msg(this.groundY !== undefined ? 'PILOT DOWN ON THE DECK'
+        : groundHeight(p.x, p.z) > 0 ? 'PILOT DOWN ON TERRA FIRMA' : 'PILOT IN THE DRINK — SAR INBOUND', 'info');
     }
   }
   dispose() { this._scene.remove(this.group); }

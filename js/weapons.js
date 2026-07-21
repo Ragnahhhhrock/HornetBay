@@ -162,6 +162,18 @@ export class Missile {
         return;
       }
     }
+    // unguided shot (fired with no lock) — still lethal to anything in its path
+    if (!t && !this.spoofed) {
+      for (const b of G.bandits) {
+        if (b.dead || b.removeMe || b === this.owner) continue;
+        if (this.pos.distanceTo(b.pos) < cfg.prox) {
+          G.explode(this.pos, 0.8);
+          b.hit(cfg.dmg, G, this.owner === G.player);
+          this._die();
+          return;
+        }
+      }
+    }
     // hit terrain?
     if (this.pos.y < 1) { G.fx.splash(this.pos, 0.7); this._die(); return; }
   }

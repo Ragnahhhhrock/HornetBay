@@ -587,15 +587,16 @@ function updateTargeting(dt) {
   else G.lockLevel = Math.max(0, G.lockLevel - dt * 1.6);
   G.locked = G.lockLevel >= 1;
   G.audio.setLock(canLock ? G.lockLevel : 0, G.locked);
-  // fire missile
-  if (G.input.pressed('Space') && G.state === 'flying' && !P.onGround && !P.dead) {
+  // fire missile — lock or no lock, on the deck or in the air; with no
+  // lock the round just motors straight ahead like the original's did
+  if (G.input.pressed('Space') && G.state === 'flying' && !P.dead && !P.ejected) {
     if (wpn === 'gun') { /* gun uses trigger */ }
     else if (wpn === 'aim9' || wpn === 'aim120') {
       if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : 'NO AMRAAMS LEFT', 'warn');
-      else if (!G.locked || !G.playerTarget) G.msg('NO LOCK', 'warn');
       else {
         P.stores[wpn]--;
-        G.missiles.push(new Missile(G, P, wpn, G.playerTarget));
+        const tgt = (G.locked && G.playerTarget) ? G.playerTarget : null;
+        G.missiles.push(new Missile(G, P, wpn, tgt));
         G.audio.missileFire();
         G.shotsFired++;
         G.msg(wpn === 'aim9' ? 'FOX 2!' : 'FOX 3!', 'good');
@@ -603,8 +604,8 @@ function updateTargeting(dt) {
       }
     }
   }
-  // gun trigger
-  if (G.input.trigger && P.weapon === 'gun' && G.state === 'flying' && !P.onGround && !P.dead) {
+  // gun trigger — the Vulcan doesn't ask for a lock either
+  if (G.input.trigger && P.weapon === 'gun' && G.state === 'flying' && !P.dead && !P.ejected) {
     gun.fire(dt, P, G.bandits);
     if (G.shotsFired === 0) G.shotsFired = 1;
   }
@@ -699,11 +700,27 @@ function handleDiscreteInput(dt) {
   // original: keypad changes point of view / distance
   const povKeys = ['Numpad0', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad6', 'Numpad7', 'Numpad8', 'Numpad9', 'NumpadAdd', 'NumpadSubtract'];
   if (povKeys.some(k => I.pressed(k))) G.view = 'orbit';
-  // eject is Shift+E — plain E is safe to fat-finger
-  if (I.pressed('KeyE') && (I.down('ShiftLeft') || I.down('ShiftRight')) && !P.onGround && !P.ejected && G.state === 'flying') {
+  // eject is Shift+E — plain E is safe to fat-finger; works parked on the
+  // deck too — the seat catapult still throws the pilot clear of the jet
+  if (I.pressed('KeyE') && (I.down('ShiftLeft') || I.down('ShiftRight')) && !P.ejected && G.state === 'flying') {
     P.ejected = true; P.dead = false;
     P.stores.gun = 0;
-    G.chute = new Chute(scene, P.pos, P.vel);   // the pilot floats down under a canopy
+    const cv = P.vel.clone();
+    let deckY;
+    if (P.onGround) {
+      P._parkedEject = true;                     // the empty jet stays where it sits
+      const og = P.onGround;
+      if (og.type === 'carrier') {
+        cv.copy(G.world.carrier.deckVelWorld(new THREE.Vector3()));
+        cv.addScaledVector(_v.set(Math.sin(P.heading), 0, -Math.cos(P.heading)), og.speedRel);
+        P._deckRide = P.deckLocal.clone();       // and keeps riding the ship
+        deckY = P.pos.y - 2.2;
+      } else {
+        cv.set(Math.sin(P.heading) * og.speedRel, 0, -Math.cos(P.heading) * og.speedRel);
+      }
+      cv.y += 26;                                // seat charge lob
+    }
+    G.chute = new Chute(scene, P.pos, cv, deckY);   // the pilot floats down under a canopy
     G.audio.eject();                            // engine cuts to the sound of rushing air
     G.msg('EJECTED! THE JET IS GONE.', 'warn');
     if (G.missionDef.id === 'free') {
@@ -1048,14 +1065,21 @@ if (auto && warpT > 0) {
   // separate timed batches with ';', e.g. keys=KeyP@0.5;KeyQ@1.5)
   const holdKeys = params.get('keys');
   const keySegs = holdKeys ? holdKeys.split(';').map(seg => {
-    const [kl, at] = seg.split('@');
-    return { list: kl.split(','), at: parseFloat(at || '0') };
+    const [kl, atd] = seg.split('@');
+    const [at, dur] = (atd || '0').split('+');   // keys=K@2+0.5 holds K for 0.5 s then releases
+    return { list: kl.split(','), at: parseFloat(at || '0'), dur: dur !== undefined ? parseFloat(dur) : Infinity };
   }) : [];
   for (let i = 0; i < warpT * 60; i++) {
     if (burn && G.player) {
       G.player.throttle = 1; G.player.abLatch = true; G.player.brakes = false;
     }
-    for (const seg of keySegs) if (i * step >= seg.at) for (const k of seg.list) { if (!G.input.keys.has(k)) G.input.justPressed.add(k); G.input.keys.add(k); }
+    for (const seg of keySegs) {
+      const on = i * step >= seg.at && i * step < seg.at + seg.dur;
+      for (const k of seg.list) {
+        if (on) { if (!G.input.keys.has(k)) G.input.justPressed.add(k); G.input.keys.add(k); }
+        else if (seg.dur !== Infinity) G.input.keys.delete(k);
+      }
+    }
     stepGame(step);
     G.input.postUpdate();   // mirror the real frame loop, or justPressed sticks
     if (G.state === 'debrief' || G.state === 'menu') break;
