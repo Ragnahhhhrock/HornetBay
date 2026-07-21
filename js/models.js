@@ -43,6 +43,27 @@ function missileMesh(color = 0xe8e8e8, len = 3, r = 0.14) {
 }
 
 // ---------------- F/A-18 Hornet ----------------
+// navigation lights — red port (+X is the left wing), green starboard, white
+// tail; collected in userData.nav so the game can toggle them with the sun
+let _navTex = null, _navMats = null;
+function addNavLights(g, halfSpan, tailZ, y = 1) {
+  if (!_navTex) _navTex = makeGlowTexture();
+  if (!_navMats) _navMats = {
+    r: new THREE.SpriteMaterial({ map: _navTex, color: 0xff2020, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    g: new THREE.SpriteMaterial({ map: _navTex, color: 0x28ff40, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+    w: new THREE.SpriteMaterial({ map: _navTex, color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
+  };
+  if (!g.userData.nav) g.userData.nav = [];
+  const mk = (mat, x, yy, z) => {
+    const sp = new THREE.Sprite(mat);
+    sp.scale.setScalar(3); sp.position.set(x, yy, z); sp.visible = false;
+    g.add(sp); g.userData.nav.push(sp);
+  };
+  mk(_navMats.r, halfSpan, y, 0);
+  mk(_navMats.g, -halfSpan, y, 0);
+  mk(_navMats.w, 0, y + 0.5, tailZ);
+}
+
 export function buildFA18() {
   const g = new THREE.Group();
   const C = 0xa8b4bc, CD = 0x8a98a0;
@@ -105,6 +126,7 @@ export function buildFA18() {
     }
   }
   g.userData = { ab, gear, hook, stabL, stabR, stores, type: 'f18' };
+  addNavLights(g, 6.8, -8.5, 1.0);
   return g;
 }
 
@@ -153,6 +175,7 @@ export function buildF16() {
     }
   }
   g.userData = { ab: [f], gear, hook, stabL, stabR, stores, type: 'f16' };
+  addNavLights(g, 5.0, -7.5, 0.8);
   return g;
 }
 
@@ -189,6 +212,7 @@ export function buildMiG29() {
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.6, 0, -6.6); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.6, 0, -6.6); g.add(stabR);
   g.userData = { ab, gear: null, hook: null, stabL, stabR, stores: { aim9: [], aim120: [] }, type: 'mig29' };
+  addNavLights(g, 5.7, -8.5, 1.0);
   return g;
 }
 
@@ -213,6 +237,7 @@ export function build747() {
   const sG = wingGeo([[1.5, 1], [1.5, -3], [11, -3.5], [11, -2]], 0.4);
   for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(W)); st.scale.x = s; st.position.set(0, 1, -30); g.add(st); }
   g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'b747' };
+  addNavLights(g, 30, -34, 2.5);
   return g;
 }
 
@@ -233,6 +258,7 @@ export function build707() {
   const sG = wingGeo([[1, 0.8], [1, -2.2], [7, -2.6], [7, -1.6]], 0.3);
   for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(W)); st.scale.x = s; st.position.set(0, 0.6, -20); g.add(st); }
   g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'b707' };
+  addNavLights(g, 22, -21, 1.8);
   return g;
 }
 

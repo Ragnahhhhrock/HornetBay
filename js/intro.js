@@ -118,7 +118,7 @@ export class Intro {
         pos: s.id === 'carrier' ? G.world.carrier?.pos : G.world.landmarks[s.id],
       })));
     } else if (this.active === 'planesel') {
-      c.fillText('SELECT:  1 ..... F/A-18 HORNET     2 ..... F-16 FALCON', w / 2, h - 8);
+      c.fillText(`SELECT:  1 ..... F/A-18 HORNET     2 ..... F-16 FALCON     T ..... TIME: ${(this.G.dayNightSel || 'mission').toUpperCase()}`, w / 2, h - 8);
       // F-16 rejection flash (no tailhook — can't work the boat)
       if (this.blockMsg && G.time - (this.blockT || 0) < 2.5) {
         c.font = `bold ${15 * s}px "Courier New", monospace`;

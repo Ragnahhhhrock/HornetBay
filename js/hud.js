@@ -44,6 +44,7 @@ export class HUD {
     const c = this.cx, w = this.w, h = this.h;
     c.clearRect(0, 0, w, h);
     if (G.intro && G.intro.active) { G.intro.drawOverlay(c, w, h); return; }
+    if (G.state === 'gallery') { if (G.gallery) G.gallery.drawOverlay(c, w, h); return; }
     if (!G.player || G.state !== 'flying') return;
     const P = G.player, s = this.scale;
     const fwd = P.fwd;
@@ -432,16 +433,17 @@ export class HUD {
     screen(0.420, 0.738, 0.583, 0.918);
     this._radarScope(c, G, 0.420 * w, 0.738 * h, 0.163 * w, 0.180 * h, s);
 
-    // ---- centre-bottom text strip: x .408-.685, y .958-1.0
-    screen(0.408, 0.958, 0.685, 0.998, '#020a05');
-    c.strokeStyle = '#2a6a3a'; c.strokeRect(0.408 * w, 0.958 * h, 0.277 * w, 0.040 * h);
+    // ---- centre-bottom text strip: x .408-.592, y .958-1.0 — kept short so
+    // the attitude ball (bezel x .598+) never overlaps it
+    screen(0.408, 0.958, 0.592, 0.998, '#020a05');
+    c.strokeStyle = '#2a6a3a'; c.strokeRect(0.408 * w, 0.958 * h, 0.184 * w, 0.040 * h);
     const m0 = G.messages[0];
     if (m0 && G.time - m0.t < 6) {
       c.globalAlpha = G.time - m0.t > 5 ? 1 - (G.time - m0.t - 5) : 1;
       c.fillStyle = m0.kind === 'warn' ? AMBER : m0.kind === 'bad' ? RED : m0.kind === 'good' ? '#9aff9a' : GREEN;
       c.font = `bold ${10 * s}px "Courier New", monospace`;
       c.textAlign = 'center';
-      c.fillText(m0.text, 0.5465 * w, 0.986 * h, 0.270 * w);
+      c.fillText(m0.text, 0.500 * w, 0.986 * h, 0.176 * w);
       c.textAlign = 'left'; c.globalAlpha = 1;
     }
 
@@ -461,19 +463,52 @@ export class HUD {
       c.fillStyle = '#c8c8c8'; c.fillText('·', lx - 0.008 * w, 0.773 * h);
     }
     c.textAlign = 'left';
+    // ---- attitude ball: blue over brown, pitch ladder, bank pointer + scale,
+    // fixed aircraft symbol — per the real attitude indicator
+    const py = pitch * 120 * s;
     c.save();
     c.beginPath(); c.arc(bX, bY, bR, 0, Math.PI * 2); c.clip();
     c.save();
     c.translate(bX, bY); c.rotate(bank);
-    c.fillStyle = '#8a92eb'; c.fillRect(-bR * 1.2, -bR * 1.2 - pitch * 120 * s, bR * 2.4, bR * 1.2 + pitch * 120 * s);
-    c.fillStyle = '#e82818'; c.fillRect(-bR * 1.2, -pitch * 120 * s, bR * 2.4, bR * 1.2);
-    // white horizon line across the ball, like the original
-    c.strokeStyle = '#f2f2f2'; c.lineWidth = 1.6 * s;
-    c.beginPath(); c.moveTo(-bR * 0.95, -pitch * 120 * s); c.lineTo(bR * 0.95, -pitch * 120 * s); c.stroke();
+    // sky above the horizon line, ground below (nose up => the line drops)
+    c.fillStyle = '#2f9df0'; c.fillRect(-bR * 1.3, -bR * 1.3, bR * 2.6, bR * 1.3 + py);
+    c.fillStyle = '#7a5a28'; c.fillRect(-bR * 1.3, py, bR * 2.6, bR * 1.3);
+    // pitch ladder bars at 10/20/30 deg, numbered
+    c.strokeStyle = '#f2f2f2'; c.fillStyle = '#f2f2f2'; c.lineWidth = 1.1 * s;
+    c.font = `${6.5 * s}px "Courier New", monospace`; c.textAlign = 'center';
+    const lad = (degA, halfW) => {
+      const y = py - degA * Math.PI / 180 * 120 * s;
+      c.beginPath(); c.moveTo(-halfW * bR, y); c.lineTo(halfW * bR, y); c.stroke();
+      c.fillText(Math.abs(degA).toString(), -halfW * bR - 4.5 * s, y + 2 * s);
+      c.fillText(Math.abs(degA).toString(), halfW * bR + 4.5 * s, y + 2 * s);
+    };
+    lad(10, 0.55); lad(-10, 0.55); lad(20, 0.42); lad(-20, 0.42); lad(30, 0.30); lad(-30, 0.30);
+    // white horizon line across the ball
+    c.lineWidth = 1.8 * s;
+    c.beginPath(); c.moveTo(-bR * 0.98, py); c.lineTo(bR * 0.98, py); c.stroke();
+    // bank pointer — rides the ball, points up at the fixed scale
+    c.fillStyle = '#ffae2a';
+    c.beginPath(); c.moveTo(0, -bR + 1 * s); c.lineTo(-3.2 * s, -bR + 7 * s); c.lineTo(3.2 * s, -bR + 7 * s); c.closePath(); c.fill();
+    c.restore();
+    c.restore();
+    // fixed bank scale around the top of the dial
+    c.strokeStyle = '#e8e8e8'; c.lineWidth = 1.3 * s;
+    for (const a of [0, 10, 20, 30, 45, 60]) for (const sg of a === 0 ? [1] : [-1, 1]) {
+      const ang = sg * a * Math.PI / 180, len = (a === 0 || a === 30 || a === 60) ? 7 : 4.5;
+      c.beginPath();
+      c.moveTo(bX + Math.sin(ang) * (bR + 1.5 * s), bY - Math.cos(ang) * (bR + 1.5 * s));
+      c.lineTo(bX + Math.sin(ang) * (bR + len * s), bY - Math.cos(ang) * (bR + len * s));
+      c.stroke();
+    }
+    // fixed aircraft symbol (orange W + centre dot)
+    c.strokeStyle = '#ffae2a'; c.lineWidth = 2.2 * s;
+    c.beginPath();
+    c.moveTo(bX - bR * 0.72, bY - bR * 0.06); c.lineTo(bX - bR * 0.14, bY + bR * 0.10); c.lineTo(bX, bY);
+    c.lineTo(bX + bR * 0.14, bY + bR * 0.10); c.lineTo(bX + bR * 0.72, bY - bR * 0.06);
+    c.stroke();
+    c.fillStyle = '#ffae2a'; c.beginPath(); c.arc(bX, bY, 1.6 * s, 0, Math.PI * 2); c.fill();
+    c.strokeStyle = '#3a3a3a'; c.lineWidth = 1.6 * s; c.beginPath(); c.arc(bX, bY, bR, 0, Math.PI * 2); c.stroke();
     c.lineWidth = 1.2 * s;
-    c.restore();
-    c.restore();
-    c.strokeStyle = '#3a3a3a'; c.beginPath(); c.arc(bX, bY, bR, 0, Math.PI * 2); c.stroke();
 
     // ---- right data block: bezel x .718-.905, screen x .730-.893
     bezel(0.718, 0.738, 0.905, 0.995);

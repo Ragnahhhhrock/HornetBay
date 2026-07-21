@@ -24,11 +24,13 @@ export class Input {
       this.mx = clamp((e.clientX / window.innerWidth) * 2 - 1, -1, 1);
       this.my = clamp((e.clientY / window.innerHeight) * 2 - 1, -1, 1);
     });
+    this.wheel = 0;
+    window.addEventListener('wheel', (e) => { this.wheel += Math.sign(e.deltaY); }, { passive: true });
   }
   pressed(code) { return this.justPressed.has(code); }
   down(code) { return this.keys.has(code); }
   // call once per frame after game logic reads justPressed
-  postUpdate() { this.justPressed.clear(); }
+  postUpdate() { this.justPressed.clear(); this.wheel = 0; }
   poll() {
     // discrete
     if (this.pressed('KeyY')) this.mouseStick = !this.mouseStick;

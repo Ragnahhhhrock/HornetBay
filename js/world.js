@@ -10,6 +10,7 @@ import { clamp, lerp, fbm, noise2, rand } from './util.js';
 // listed in kilometers and scaled to meters below.
 const sstep = (e0, e1, v) => { const t = clamp((v - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
 const _UP = new THREE.Vector3(0, 1, 0);
+const _tm = new THREE.Matrix4(), _tq = new THREE.Quaternion(), _tv = new THREE.Vector3(), _ts = new THREE.Vector3(), _e = new THREE.Euler();
 
 const PENINSULA = [ // SF peninsula + the land south of the bay (San Jose side)
   [-2, 1.8], [7, 2.8], [9, 5.5], [10.5, 9], [12, 12.5], [13.8, 16], [15.5, 20],
@@ -242,6 +243,13 @@ export class World {
     this._buildFarallon();
     this._buildEA();
     this._buildRoads();
+    // night systems + road traffic
+    this.nightGroup = new THREE.Group();
+    this.nightGroup.visible = false;
+    this.scene.add(this.nightGroup);
+    this._buildCityLights();
+    this._buildRunwayLights();
+    this._buildTraffic();
     this.carrier = new Carrier(this, new THREE.Vector3(-30000, 0, 10000), Math.PI / 2, false);
     this.enemySub = new Carrier(this, new THREE.Vector3(-42000, 0, -14000), Math.PI / 2, true);
     this.enemySub.group.visible = false;
@@ -319,6 +327,12 @@ export class World {
     if (this.waterMat) this.waterMat.color.set(cfg.water);
     if (this.clouds) this.clouds.visible = false;   // the original's sky is cloudless
     this.mode = mode;
+    // night systems: city/runway/carrier lights and traffic headlights
+    this.night01 = cfg.night;
+    const isNight = cfg.night > 0.5;
+    if (this.nightGroup) this.nightGroup.visible = isNight;
+    if (this.traffic) this.traffic.lights.visible = isNight;
+    for (const sh of [this.carrier, this.enemySub]) if (sh && sh.nightGroup) sh.nightGroup.visible = isNight;
   }
 
   _buildOcean() {
@@ -542,6 +556,7 @@ export class World {
     const N = 130;
     this.cityMesh = new THREE.InstancedMesh(box, this.cityMat, N);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+    this._cityLightPts = [];
     let i = 0, guard = 0;
     while (i < N && guard++ < 2000) {
       const a = rand(Math.PI * 2), r = Math.pow(rand(), 0.6) * 1900;
@@ -554,6 +569,9 @@ export class World {
       m.compose(p, q, s);
       this.cityMesh.setMatrixAt(i, m);
       this.addCollider(x, g + h / 2, z, w / 2 + 4, h / 2 + 2, d / 2 + 4);
+      // lit windows/roof for the night city
+      this._cityLightPts.push(x + rand(-w * 0.3, w * 0.3), g - 1 + h * rand(0.55, 1.02), z + rand(-d * 0.3, d * 0.3));
+      if (i % 2 === 0) this._cityLightPts.push(x + rand(-w * 0.4, w * 0.4), g - 1 + h * rand(0.2, 0.95), z + rand(-d * 0.4, d * 0.4));
       i++;
     }
     this.scene.add(this.cityMesh);
@@ -704,6 +722,170 @@ export class World {
       line.frustumCulled = false;
       this.scene.add(line);
     }
+  }
+
+  // ---- night: warm window/roof dots over the city + town clusters ----------
+  _buildCityLights() {
+    const pts = this._cityLightPts || [];
+    const cluster = (cx, cz, r, n, hMin, hMax) => {
+      for (let k = 0; k < n; k++) {
+        const a = rand(Math.PI * 2), rr = Math.pow(rand(), 0.7) * r;
+        const x = cx + Math.cos(a) * rr, z = cz + Math.sin(a) * rr;
+        const g = groundHeight(x, z); if (g < 1) continue;
+        pts.push(x, g + rand(hMin, hMax), z);
+      }
+    };
+    cluster(7000, 5000, 2600, 500, 10, 90);      // downtown SF
+    cluster(27000, 12000, 4200, 700, 8, 45);     // Oakland
+    cluster(14000, 38000, 5500, 700, 8, 40);     // south bay
+    cluster(-2000, -6000, 3000, 350, 8, 35);     // Marin
+    cluster(13000, 21000, 2500, 350, 8, 30);     // San Mateo
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    const mat = new THREE.PointsMaterial({ color: 0xffd9a0, size: 7, sizeAttenuation: true, transparent: true, opacity: 0.85, depthWrite: false, fog: true });
+    const p = new THREE.Points(geo, mat);
+    p.frustumCulled = false;
+    this.nightGroup.add(p);
+  }
+
+  // ---- night: runway edge / threshold / end lights --------------------------
+  _buildRunwayLights() {
+    const pos = [], col = [];
+    const cW = [1.0, 0.95, 0.75], cG = [0.2, 1.0, 0.3], cR = [1.0, 0.15, 0.1];
+    for (const rw of this.runways) {
+      const fx = Math.sin(rw.hdg), fz = -Math.cos(rw.hdg);   // down-runway direction
+      const px = -fz, pz = fx;                               // right of the centreline
+      const hw = rw.wid * 0.5 * 0.92, y0 = rw.elev + 0.6;
+      for (let d = -rw.len / 2; d <= rw.len / 2; d += 55) {
+        for (const sg of [-1, 1]) { pos.push(rw.x + fx * d + px * hw * sg, y0, rw.z + fz * d + pz * hw * sg); col.push(...cW); }
+      }
+      for (const e of [-1, 1]) {
+        for (let k = -1.5; k <= 1.5; k += 1) {
+          pos.push(rw.x + fx * e * rw.len / 2 + px * k * 3, y0, rw.z + fz * e * rw.len / 2 + pz * k * 3); col.push(...cG);
+          pos.push(rw.x + fx * e * (rw.len / 2 + 8) + px * k * 3, y0, rw.z + fz * e * (rw.len / 2 + 8) + pz * k * 3); col.push(...cR);
+        }
+      }
+    }
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    const mat = new THREE.PointsMaterial({ size: 3, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: 0.95, depthWrite: false, fog: true });
+    const p = new THREE.Points(geo, mat);
+    p.frustumCulled = false;
+    this.nightGroup.add(p);
+  }
+
+  // ---- road traffic: cars, trucks and buses plying every road --------------
+  _buildTraffic() {
+    const paths = [];
+    for (let ri = 0; ri < ROADS.length; ri++) {
+      const R = ROADS[ri];
+      const S = [];
+      for (let i = 0; i < R.pts.length - 1; i++) {
+        const a = R.pts[i], b = R.pts[i + 1];
+        const dx = b[0] - a[0], dz = b[1] - a[1], L = Math.hypot(dx, dz);
+        const n = Math.max(1, Math.round(L / 60));
+        for (let k = (i === 0 ? 0 : 1); k <= n; k++) {
+          const t = k / n, x = a[0] + dx * t, z = a[1] + dz * t;
+          const sh = surfaceHeight(x, z);
+          const gy = (sh === null ? groundHeight(x, z) : sh) + 0.35;
+          let y;
+          if (a.length === 3 && b.length === 3) y = lerp(a[2], b[2], t);
+          else if (a.length === 3) y = lerp(a[2], gy, t);
+          else if (b.length === 3) y = lerp(gy, b[2], t);
+          else y = gy;
+          S.push([x, y, z]);
+        }
+      }
+      const cum = [0];
+      for (let i = 1; i < S.length; i++) cum.push(cum[i - 1] + Math.hypot(S[i][0] - S[i - 1][0], S[i][2] - S[i - 1][2]));
+      paths.push({ S, cum, len: cum[cum.length - 1], w: R.w || 40 });
+    }
+    const COL_CAR = [0xd8d8d8, 0xf0f0f0, 0x1c2228, 0xa02828, 0x2848a8, 0xd8a828, 0x787878, 0x38a0c8];
+    const COL_HEAVY = [0xe0e0e0, 0xa8a8a8, 0x707a88, 0xc86030];
+    const COL_BUS = [0x2a5a8a, 0x8a2a2a, 0xd0d0d0];
+    const defs = [];
+    for (const p of paths) {
+      const n = Math.max(2, Math.round(p.len / (p.w > 30 ? 430 : 650)));
+      for (let k = 0; k < n; k++) {
+        const r = rand();
+        const type = r < 0.72 ? 0 : r < 0.88 ? 1 : 2;
+        defs.push({
+          path: p, d: rand() * p.len, dir: rand() < 0.5 ? 1 : -1,
+          speed: rand(17, 27) * (type === 0 ? 1 : 0.85), type, j: 0,
+          col: (type === 0 ? COL_CAR : type === 1 ? COL_HEAVY : COL_BUS)[Math.floor(rand() * (type === 0 ? 8 : 4))],
+        });
+      }
+    }
+    const N = defs.length;
+    const geo = new THREE.BoxGeometry(1, 1, 1); geo.translate(0, 0.5, 0);
+    const body = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({}), N);
+    body.frustumCulled = false;
+    const cab = new THREE.InstancedMesh(geo, new THREE.MeshLambertMaterial({ color: 0x14181c }), N);
+    cab.frustumCulled = false;
+    const colTmp = new THREE.Color();
+    for (let i = 0; i < N; i++) body.setColorAt(i, colTmp.setHex(defs[i].col));
+    if (body.instanceColor) body.instanceColor.needsUpdate = true;
+    this.scene.add(body); this.scene.add(cab);
+    // headlights / tail lights, one Points cloud, shown at night only
+    const lp = new Float32Array(N * 2 * 3), lc = new Float32Array(N * 2 * 3);
+    for (let i = 0; i < N; i++) {
+      lc.set([1, 1, 0.85], i * 6);          // headlight — white
+      lc.set([1, 0.12, 0.1], i * 6 + 3);    // tail light — red
+    }
+    const lgeo = new THREE.BufferGeometry();
+    lgeo.setAttribute('position', new THREE.BufferAttribute(lp, 3));
+    lgeo.setAttribute('color', new THREE.BufferAttribute(lc, 3));
+    const lights = new THREE.Points(lgeo, new THREE.PointsMaterial({ size: 2.6, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: 0.95, depthWrite: false, fog: true }));
+    lights.frustumCulled = false;
+    lights.visible = false;
+    this.scene.add(lights);
+    this.traffic = { defs, body, cab, lights, lp };
+  }
+
+  _updateTraffic(dt) {
+    const T = this.traffic;
+    if (!T) return;
+    const DIM = [[4.4, 1.5, 1.9], [8.5, 2.7, 2.6], [11, 2.7, 2.7]];    // car / truck / bus
+    const _m = _tm, _q = _tq, _p = _tv, _s = _ts;
+    for (let i = 0; i < T.defs.length; i++) {
+      const v = T.defs[i], P = v.path, cum = P.cum, S = P.S;
+      v.d += v.dir * v.speed * dt;
+      if (v.d > P.len) v.d -= P.len; else if (v.d < 0) v.d += P.len;
+      let j = v.j;
+      while (j < cum.length - 2 && cum[j + 1] < v.d) j++;
+      while (j > 0 && cum[j] > v.d) j--;
+      v.j = j;
+      const t = (v.d - cum[j]) / Math.max(cum[j + 1] - cum[j], 1e-6);
+      const a = S[j], b = S[Math.min(j + 1, S.length - 1)];
+      let tx = b[0] - a[0], tz = b[2] - a[2];
+      const tl = Math.hypot(tx, tz) || 1; tx /= tl; tz /= tl;
+      const dirx = tx * v.dir, dirz = tz * v.dir;          // direction of travel
+      const off = P.w * 0.22;                              // right-hand traffic
+      const x = a[0] + (b[0] - a[0]) * t - dirz * off;
+      const z = a[2] + (b[2] - a[2]) * t + dirx * off;
+      const y = a[1] + (b[1] - a[1]) * t + 0.15;
+      const dims = DIM[v.type];
+      _e.set(0, Math.atan2(dirx, dirz), 0); _q.setFromEuler(_e);
+      _p.set(x, y, z); _s.set(dims[2], dims[1], dims[0]); _m.compose(_p, _q, _s);
+      T.body.setMatrixAt(i, _m);
+      // cabin block (cars and truck cabs only)
+      if (v.type < 2) {
+        const cd = v.type === 0 ? [2.2, 0.7, 1.7] : [2.4, 0.7, 2.4];
+        const cz = v.type === 0 ? -0.3 : dims[0] * 0.28;   // cars: cabin aft; trucks: cab forward
+        _p.set(x + dirx * cz, y + dims[1], z + dirz * cz); _s.set(cd[2], cd[1], cd[0]); _m.compose(_p, _q, _s);
+      } else {
+        _p.set(x, y - 10, z); _s.set(0.01, 0.01, 0.01); _m.compose(_p, _q, _s);
+      }
+      T.cab.setMatrixAt(i, _m);
+      // lights: white at the nose, red at the tail
+      const nose = dims[0] / 2 + 0.3, li = i * 6;
+      T.lp[li] = x + dirx * nose; T.lp[li + 1] = y + 0.8; T.lp[li + 2] = z + dirz * nose;
+      T.lp[li + 3] = x - dirx * nose; T.lp[li + 4] = y + 0.8; T.lp[li + 5] = z - dirz * nose;
+    }
+    T.body.instanceMatrix.needsUpdate = true;
+    T.cab.instanceMatrix.needsUpdate = true;
+    T.lights.geometry.attributes.position.needsUpdate = true;
   }
   _bridgeSpan(a, b) {
     const gray = new THREE.MeshLambertMaterial({ color: 0x9aa2a8 });
@@ -895,6 +1077,7 @@ export class World {
     this._reflowSpecks(camPos, playerY);
     this.carrier.update(dt);
     this.enemySub.update(dt);
+    this._updateTraffic(dt);
   }
 }
 
@@ -1075,6 +1258,21 @@ export class Carrier {
         const li = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), lm2);
         li.position.set(37.5 * s, deckY + 0.3, z); this.group.add(li);
       }
+      // night lighting: glowing deck edge line, island windows, masthead
+      this.nightGroup = new THREE.Group();
+      this.nightGroup.visible = false;
+      const np = [], nc = [];
+      const addL = (x, y, z, c) => { np.push(x, y, z); nc.push(...c); };
+      for (let z = -160; z <= 160; z += 12) for (const s of [-1, 1]) addL(37.5 * s, deckY + 0.6, z, [0.7, 0.8, 1]);
+      for (let i = 0; i < 22; i++) addL(-30 + rand(-6, 6), deckY + rand(4, 24), 30 + rand(-13, 13), [1, 0.85, 0.55]);
+      addL(-30, deckY + 53.5, 34, [1, 1, 1]);   // masthead
+      const ngeo = new THREE.BufferGeometry();
+      ngeo.setAttribute('position', new THREE.Float32BufferAttribute(np, 3));
+      ngeo.setAttribute('color', new THREE.Float32BufferAttribute(nc, 3));
+      const npts = new THREE.Points(ngeo, new THREE.PointsMaterial({ size: 3.2, vertexColors: true, sizeAttenuation: true, transparent: true, opacity: 0.95, depthWrite: false, fog: true }));
+      npts.frustumCulled = false;
+      this.nightGroup.add(npts);
+      this.group.add(this.nightGroup);
     } else {
       const hullC = 0x1c2126;
       const hull = new THREE.Mesh(new THREE.BoxGeometry(70, 18, 320), new THREE.MeshLambertMaterial({ color: hullC }));

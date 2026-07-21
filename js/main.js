@@ -11,6 +11,7 @@ import { AudioEngine } from './audio.js';
 import { MISSIONS } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
+import { Gallery } from './gallery.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -85,6 +86,7 @@ G.intro = new Intro(G);
 const hud = new HUD($('hud'));
 G.hud = hud;
 G.mapview = new MapView();   // N toggles the live tactical map
+G.gallery = new Gallery(G, () => showMenu());   // menu item 9: aircraft viewer
 
 // world is heavy — build lazily on first load but before menu demo
 G.world = new World(scene);
@@ -98,6 +100,7 @@ const SAVE_KEY = 'hornet-bay-v1';
 let save = { qualified: false, done: {}, best: 0, kills: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen toggles MISSION/DAY/NIGHT
 
 // ---------------- menu (original 1-8 structure) ----------------
 const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
@@ -155,6 +158,11 @@ function buildMenu(mode = 'main') {
     startBriefing(next);
   });
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
+  addBtn('9', 'AIRCRAFT GALLERY', '', () => {
+    $('menu').classList.add('hidden');
+    stopDemo();
+    G.gallery.enter();
+  });
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
   $('pilot-record').textContent =
     `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
@@ -205,7 +213,12 @@ function launchWithZoom(def) {
 // plane select + map select + briefing keys
 window.addEventListener('keydown', (e) => {
   if (G.state === 'planesel') {
-    if (e.code === 'Digit1') { G.player.type = 'f18'; launchWithZoom(pendingMission); }
+    if (e.code === 'KeyT') {
+      G.dayNightSel = G.dayNightSel === 'mission' ? 'day' : G.dayNightSel === 'day' ? 'night' : 'mission';
+      save.dayNight = G.dayNightSel; persist();
+      G.audio.radioClick();
+    }
+    else if (e.code === 'Digit1') { G.player.type = 'f18'; launchWithZoom(pendingMission); }
     else if (e.code === 'Digit2') {
       // the F-16 has no tailhook and can't take off from or land on the carrier
       const carrierStart = pendingMission.id === 'free' ? G.freeFlightStart === 'carrier' : pendingMission.id !== 'm1';
@@ -274,6 +287,9 @@ function launchMission(def, opts = {}) {
   G.world.setTimeOfDay(def.time || 'day');
   G.mission = Object.assign({}, def);
   G.mission.setup(G);
+  // day/night selection from the plane-select screen (overrides the authored time)
+  if (G.dayNightSel === 'day') G.world.setTimeOfDay('day');
+  else if (G.dayNightSel === 'night') G.world.setTimeOfDay('night');
   scriptT = 0; runScript._gear = false;
   G.msg(def.title, 'info');
   G.audio.ensure();
@@ -463,6 +479,7 @@ const _qy180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0
 
 function updateCamera(dt) {
   if (G.intro.active) return; // intro drives the camera in map/briefing/zoom states
+  if (G.state === 'gallery') return;   // the gallery drives the camera
   const P = G.player;
   if (G.state === 'menu' && demoJet) {
     // cinematic chase of the demo jet
@@ -954,6 +971,12 @@ function stepGame(dt) {
     G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
     G.fx.update(dt);
     hud.draw(G, dt);
+  } else if (G.state === 'gallery') {
+    G.time += dt;
+    G.gallery.update(dt, G.input);
+    G.world.update(dt, camera.position, camera.position.y);
+    G.fx.update(dt);
+    hud.draw(G, dt);
   } else if (G.state === 'flying' || G.state === 'dead') {
     G.time += dt;
     G.shakeT = Math.max(0, G.shakeT - dt * 1.3);
@@ -1013,12 +1036,26 @@ function stepGame(dt) {
   } else if (G.state === 'paused') {
     hud.draw(G, 0);
   }
+  syncNavLights();
+}
+
+// navigation lights come on at night on every aircraft in the world
+function syncNavLights() {
+  const night = G.world.night01 > 0.5;
+  for (const e of [G.player, ...G.bandits, demoJet]) {
+    const nav = e && e.model && e.model.userData.nav;
+    if (nav) for (const sp of nav) sp.visible = night;
+  }
+  const gm = G.gallery && G.gallery.model;
+  if (gm && gm.userData.nav) for (const sp of gm.userData.nav) sp.visible = night;
 }
 
 // ---------------- URL params for direct launch (testing) ----------------
 const params = new URLSearchParams(location.search);
 FIXDT = parseFloat(params.get('fixdt') || '0');
 SCRIPT = params.get('script');
+if (params.get('night')) G.dayNightSel = 'night';   // test hook: force night
+if (params.get('day')) G.dayNightSel = 'day';
 showMenu();
 const auto = params.get('auto');
 const viewP = params.get('view');
@@ -1026,6 +1063,7 @@ if (viewP) G.view = viewP;
 // intro-flow test hooks: ?auto=menu | map | brief:<id> | planesel:<id> | zoom:<id>
 if (auto === 'menu') { /* stay on menu */ }
 else if (auto === 'map') { startFreeFlightMap(); }
+else if (auto === 'gallery') { $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter(); }
 else if (auto && auto.startsWith('brief:')) { startBriefing(auto.slice(6)); }
 else if (auto && auto.startsWith('planesel:')) {
   const def = MISSIONS.find(m => m.id === auto.slice(9));
