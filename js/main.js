@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { clamp, lerp, damp, KTS, FT, NM, wrapAngle, flightQuat, rand } from './util.js';
 import { World, groundHeight } from './world.js';
-import { Player, PLANES } from './flight.js';
+import { Player, PLANES, Chute } from './flight.js';
 import { AIAircraft } from './ai.js';
 import { FXPool, Missile, GunSystem } from './weapons.js';
 import { HUD } from './hud.js';
@@ -171,6 +171,7 @@ window.addEventListener('keydown', (e) => {
 
 function showMenu() {
   G.state = 'menu';
+  if (G.chute) { G.chute.dispose(); G.chute = null; }
   $('menu').classList.remove('hidden');
   $('briefing').classList.add('hidden');
   $('debrief').classList.add('hidden');
@@ -255,6 +256,8 @@ function launchMission(def, opts = {}) {
   $('pause').classList.add('hidden');
   stopDemo();
   // clear entities
+  if (G.chute) { G.chute.dispose(); G.chute = null; }
+  G._chuteCamSnap = false;
   for (const b of G.bandits) b.dispose();
   G.bandits = [];
   for (const m of G.missiles) m._die();
@@ -470,6 +473,24 @@ function updateCamera(dt) {
     return;
   }
   if (!P) return;
+  // ejected: a slow orbit around the pilot floating down under the canopy
+  if (G.chute) {
+    if (P.model) P.model.visible = true;   // watch the empty jet fall away
+    const c = G.chute.group.position;
+    const a = G.time * 0.1;
+    _v.set(c.x - 26 * Math.cos(a), c.y + 6, c.z - 26 * Math.sin(a));
+    if (!G._chuteCamSnap) { camPos.copy(_v); G._chuteCamSnap = true; }  // cut to the chute cam
+    else {
+      camPos.x = damp(camPos.x, _v.x, 3.0, dt);
+      camPos.y = damp(camPos.y, Math.max(_v.y, 4), 3.0, dt);
+      camPos.z = damp(camPos.z, _v.z, 3.0, dt);
+    }
+    camera.position.copy(camPos);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(c.x, c.y + 2, c.z);
+    camera.fov = damp(camera.fov, 55, 2, dt); camera.updateProjectionMatrix();
+    return;
+  }
   // own jet must not block the cockpit view
   if (P.model) P.model.visible = G.view !== 'cockpit';
   if (G.view === 'chase') {
@@ -680,9 +701,10 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyE') && (I.down('ShiftLeft') || I.down('ShiftRight')) && !P.onGround && !P.ejected && G.state === 'flying') {
     P.ejected = true; P.dead = false;
     P.stores.gun = 0;
+    G.chute = new Chute(scene, P.pos, P.vel);   // the pilot floats down under a canopy
     G.msg('EJECTED! THE JET IS GONE.', 'warn');
     if (G.missionDef.id === 'free') {
-      setTimeout(() => { if (G.state === 'flying' || G.state === 'dead') { launchMission(G.missionDef); } }, 2600);
+      setTimeout(() => { if (G.state === 'flying' || G.state === 'dead') { launchMission(G.missionDef); } }, 8000);
     } else {
       G.state = 'dead'; G.deadT = 0; G.crashReason = 'EJECTED OVER HOSTILE WATERS';
     }
@@ -926,12 +948,13 @@ function stepGame(dt) {
       if (P.dead && !G.crashHandled) P._updateDead(dt, G);
       else if (P.ejected) P._updateBallistic(dt, G);
       G.deadT += dt;
-      if (G.deadT > 3 && !G.over) {
+      if (G.deadT > (G.chute ? 9 : 3) && !G.over) {   // let the chute ride play out
         if (G.missionDef.id === 'free') launchMission(G.missionDef);
         else G.failMission('AIRCRAFT LOST', G.crashReason + '.\nThe Navy will bill your next of kin for one fighter jet.');
       }
     }
     // entities
+    if (G.chute) G.chute.update(dt, G);
     for (let i = G.bandits.length - 1; i >= 0; i--) {
       const b = G.bandits[i];
       b.update(dt, G);

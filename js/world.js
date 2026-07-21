@@ -922,7 +922,7 @@ export class Carrier {
     const c = document.createElement('canvas'); c.width = 256; c.height = 1024;
     const g = c.getContext('2d');
     const cX = (x) => (x + 38) / 76 * 256, cY = (z) => (z + 168) / 336 * 1024;
-    g.fillStyle = '#43474d'; g.fillRect(0, 0, 256, 1024);
+    g.fillStyle = '#23262b'; g.fillRect(0, 0, 256, 1024);   // near-black deck, like the original
     g.strokeStyle = '#c9cdd2'; g.lineWidth = 3; g.strokeRect(5, 5, 246, 1014);
     // axial-deck dashed centreline (stern to bow)
     g.fillStyle = '#dfe3e6';
@@ -967,7 +967,7 @@ export class Carrier {
     if (!isSub) {
       // ---- CVN-65 detailing -------------------------------------------
       const LM = (c) => new THREE.MeshLambertMaterial({ color: c });
-      const gM = LM(0x62666c), dM = LM(0x4c5056), wM = LM(0xdfe3e6);
+      const gM = LM(0x8a929c), dM = LM(0x596069), wM = LM(0xdfe3e6);   // light island over the dark deck, like the original
 
       // lofted hull: grey freeboard above the waterline, red anti-fouling below
       // sections are [z, halfWidth at deck, halfWidth at keel]
@@ -976,7 +976,7 @@ export class Carrier {
         [0, 35, 30], [100, 34, 29], [150, 27, 17], [178, 4, 2],
       ];
       const yTop = deckY - 1.5, yWat = 0, yBot = -8;
-      const cG = new THREE.Color(0x6e747c), cR = new THREE.Color(0x7e2a22);
+      const cG = new THREE.Color(0x4b4f56), cR = new THREE.Color(0x6e241d);   // dark hull like the original
       const V = [], C = [];
       const push = (p, col) => { V.push(p[0], p[1], p[2]); C.push(col.r, col.g, col.b); };
       const quad = (a, b, c2, d, col) => { push(a, col); push(b, col); push(c2, col); push(a, col); push(c2, col); push(d, col); };
@@ -1032,8 +1032,8 @@ export class Carrier {
       // big "65" on both island faces
       const c65 = document.createElement('canvas'); c65.width = 128; c65.height = 128;
       const g65 = c65.getContext('2d');
-      g65.fillStyle = '#3a3e44'; g65.fillRect(0, 0, 128, 128);
-      g65.fillStyle = '#e8ecef'; g65.font = 'bold 92px Arial'; g65.textAlign = 'center'; g65.fillText('65', 64, 96);
+      g65.clearRect(0, 0, 128, 128);
+      g65.fillStyle = '#23262b'; g65.font = 'bold 92px Arial'; g65.textAlign = 'center'; g65.fillText('65', 64, 96);
       const t65 = new THREE.CanvasTexture(c65);
       for (const s of [-1, 1]) {
         const p = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: t65, transparent: true }));

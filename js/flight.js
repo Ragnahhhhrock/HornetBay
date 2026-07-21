@@ -347,3 +347,67 @@ export function carrierLocalToWorld(c, lx, ly, lz, out = new THREE.Vector3()) {
   out.x += c.group.position.x; out.z += c.group.position.z;
   return out;
 }
+
+// Chute — the ejected pilot drifting down under a canopy, like the original:
+// a second of free fall in the seat, then the dome opens overhead and he
+// sways his way down to the sea (or the hills, if he's lucky)
+export class Chute {
+  constructor(scene, pos, vel) {
+    this.group = new THREE.Group();
+    const LM = (c) => new THREE.MeshLambertMaterial({ color: c });
+    const seat = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.0, 0.6), LM(0x2e3238));
+    seat.position.y = 0.5; this.group.add(seat);
+    const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.35), LM(0x5a6242));
+    torso.position.y = 1.25; this.group.add(torso);
+    const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.22, 8, 6), LM(0xe8e8e8));
+    helmet.position.y = 1.8; this.group.add(helmet);
+    this.canopy = new THREE.Mesh(
+      new THREE.SphereGeometry(3.2, 14, 7, 0, Math.PI * 2, 0, Math.PI / 2),
+      new THREE.MeshLambertMaterial({ color: 0xf2f2ee, side: THREE.DoubleSide }));
+    this.canopy.position.y = 4.6;
+    this.canopy.scale.setScalar(0.12);          // still packed
+    this.group.add(this.canopy);
+    // shroud lines from the canopy rim to the seat
+    const lv = [];
+    for (let i = 0; i < 6; i++) {
+      const a = i / 6 * Math.PI * 2;
+      lv.push(Math.cos(a) * 3.1, 4.75, Math.sin(a) * 3.1, 0, 1.0, 0);
+    }
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', new THREE.Float32BufferAttribute(lv, 3));
+    this.lines = new THREE.LineSegments(lg, new THREE.LineBasicMaterial({ color: 0x30343a }));
+    this.group.add(this.lines);
+    this.group.position.copy(pos); this.group.position.y += 2.5;
+    this.vel = vel.clone();
+    this.t = 0; this.landed = false; this._scene = scene;
+    scene.add(this.group);
+  }
+  update(dt, G) {
+    if (this.landed) return;
+    this.t += dt;
+    const v = this.vel, p = this.group.position;
+    if (this.t < 1.1) {                 // seat separation: ballistic with drag
+      v.y -= 9.81 * dt;
+      v.multiplyScalar(1 - 0.22 * dt);
+    } else {                            // canopy open: settle to a slow descent
+      const k = Math.min(1, (this.t - 1.1) / 0.5);
+      this.canopy.scale.set(0.12 + 0.88 * k, 0.12 + 0.60 * k, 0.12 + 0.88 * k);
+      this.lines.visible = k > 0.6;
+      v.y += (-7.5 - v.y) * Math.min(1, 2.0 * dt);
+      v.x += (5.0 - v.x) * Math.min(1, 0.5 * dt);   // weather-vane downwind
+      v.z += (0.0 - v.z) * Math.min(1, 0.5 * dt);
+      this.group.rotation.z = Math.sin(this.t * 1.15) * 0.11;   // pendulum sway
+      this.group.rotation.x = Math.sin(this.t * 0.85 + 1.3) * 0.08;
+    }
+    p.addScaledVector(v, dt);
+    const gh = Math.max(groundHeight(p.x, p.z), 0);
+    if (p.y <= gh + 0.3) {
+      p.y = gh + 0.3;
+      this.landed = true;
+      this.canopy.scale.set(1, 0.25, 1); this.canopy.position.y = 1.4;   // canopy collapses
+      this.group.rotation.set(0, 0, 0);
+      if (G && G.msg) G.msg(groundHeight(p.x, p.z) > 0 ? 'PILOT DOWN ON TERRA FIRMA' : 'PILOT IN THE DRINK — SAR INBOUND', 'info');
+    }
+  }
+  dispose() { this._scene.remove(this.group); }
+}
