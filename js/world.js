@@ -265,9 +265,10 @@ export class World {
       top:     { value: new THREE.Color(0x2a6fd4) },
       horizon: { value: new THREE.Color(0xbfd9ef) },
       sunDir:  { value: new THREE.Vector3(0.5, 0.6, -0.3).normalize() },
-      sunCol:  { value: new THREE.Color(0xfff3d0) },
+      sunCol:  { value: new THREE.Color() },
       night:   { value: 0 },
     };
+    this.skyU.sunCol.value.setRGB(1.0, 0.95, 0.82);   // raw display values, like top/horizon
     const mat = new THREE.ShaderMaterial({
       uniforms: this.skyU, side: THREE.BackSide, depthWrite: false, fog: false,
       vertexShader: 'varying vec3 vDir; void main(){ vDir=normalize(position); gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
@@ -277,8 +278,12 @@ export class World {
         float hash(vec3 p){ return fract(sin(dot(p, vec3(12.9898,78.233,45.164)))*43758.5453); }
         void main(){
           float h = clamp(vDir.y, 0.0, 1.0);
-          // Amiga-flat sky: thin horizon band, then solid color — no sun disc
+          // Amiga-flat sky: thin horizon band, then solid color
           vec3 col = mix(horizon, top, smoothstep(0.0, 0.12, h));
+          // the original's sun: a bright disc riding sunDir (a pale moon at night)
+          float s = dot(normalize(vDir), sunDir);
+          vec3 scol = mix(sunCol, vec3(0.72, 0.78, 0.9), night);
+          col += scol * smoothstep(0.99955, 0.99975, s) * (1.0 - night * 0.55);
           if (night > 0.01 && vDir.y > 0.02) {
             vec3 g = floor(vDir * 220.0);
             float st = step(0.9975, hash(g)) * night * smoothstep(0.02, 0.25, vDir.y);
@@ -297,7 +302,7 @@ export class World {
     // true Amiga palette, sampled from the original running under emulation:
     // day sky 0x444477, sea 0x003366 — muted, not the bright web-shot lavender
     const cfg = {
-      day:     { top: 0x444477, hor: 0x444477, water: 0x003366, sun: [0.45, 0.75, -0.35], i: 1.1,  hemi: 1.0,  fog: [45000, 220000], night: 0 },
+      day:     { top: 0x444477, hor: 0x444477, water: 0x003366, sun: [0.3, 0.88, -0.22], i: 1.1,  hemi: 1.0,  fog: [45000, 220000], night: 0 },
       morning: { top: 0x3c3c6e, hor: 0x6a5f7e, water: 0x0a2c55, sun: [0.85, 0.25, -0.25], i: 1.0,  hemi: 0.85, fog: [45000, 220000], night: 0 },
       dusk:    { top: 0x2e2842, hor: 0x4a3a4a, water: 0x081226, sun: [-0.9, 0.15, 0.2],   i: 0.9,  hemi: 0.75, fog: [40000, 200000], night: 0.12 },
       night:   { top: 0x0a0a24, hor: 0x181830, water: 0x060a1c, sun: [0.3, 0.5, 0.4],     i: 0.3,  hemi: 0.25, fog: [35000, 160000], night: 1 },
