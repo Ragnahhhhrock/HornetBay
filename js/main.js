@@ -172,6 +172,7 @@ window.addEventListener('keydown', (e) => {
 function showMenu() {
   G.state = 'menu';
   if (G.chute) { G.chute.dispose(); G.chute = null; }
+  G.audio.endChute();
   $('menu').classList.remove('hidden');
   $('briefing').classList.add('hidden');
   $('debrief').classList.add('hidden');
@@ -258,6 +259,7 @@ function launchMission(def, opts = {}) {
   // clear entities
   if (G.chute) { G.chute.dispose(); G.chute = null; }
   G._chuteCamSnap = false;
+  G.audio.endChute();
   for (const b of G.bandits) b.dispose();
   G.bandits = [];
   for (const m of G.missiles) m._die();
@@ -702,6 +704,7 @@ function handleDiscreteInput(dt) {
     P.ejected = true; P.dead = false;
     P.stores.gun = 0;
     G.chute = new Chute(scene, P.pos, P.vel);   // the pilot floats down under a canopy
+    G.audio.eject();                            // engine cuts to the sound of rushing air
     G.msg('EJECTED! THE JET IS GONE.', 'warn');
     if (G.missionDef.id === 'free') {
       setTimeout(() => { if (G.state === 'flying' || G.state === 'dead') { launchMission(G.missionDef); } }, 8000);
@@ -984,8 +987,8 @@ function stepGame(dt) {
     G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
     G.fx.update(dt);
     updateRadarContacts();
-    // audio
-    G.audio.updateFlight(P.throttle, P.ab, P.speed);
+    // audio — once the pilot is out, the jet's engine stays silent for good
+    G.audio.updateFlight(P.ejected ? 0 : P.throttle, !P.ejected && P.ab, P.ejected ? 0 : P.speed);
     hud.draw(G, dt);
   } else if (G.state === 'paused') {
     hud.draw(G, 0);

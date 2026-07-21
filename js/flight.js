@@ -400,12 +400,14 @@ export class Chute {
       this.group.rotation.x = Math.sin(this.t * 0.85 + 1.3) * 0.08;
     }
     p.addScaledVector(v, dt);
+    if (G && G.audio) G.audio.updateChute(v.y);   // the rush of air, not the engine
     const gh = Math.max(groundHeight(p.x, p.z), 0);
     if (p.y <= gh + 0.3) {
       p.y = gh + 0.3;
       this.landed = true;
       this.canopy.scale.set(1, 0.25, 1); this.canopy.position.y = 1.4;   // canopy collapses
       this.group.rotation.set(0, 0, 0);
+      if (G && G.audio) G.audio.chuteLand();
       if (G && G.msg) G.msg(groundHeight(p.x, p.z) > 0 ? 'PILOT DOWN ON TERRA FIRMA' : 'PILOT IN THE DRINK — SAR INBOUND', 'info');
     }
   }

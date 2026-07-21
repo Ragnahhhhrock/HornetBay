@@ -75,6 +75,7 @@ export class AudioEngine {
   // rpm 0..1.1, ab bool, speed m/s
   updateFlight(rpm, ab, speed) {
     if (!this.ctx) return;
+    if (this._chute) return;   // pilot is out: the chute's own rush owns the air
     const t = this.ctx.currentTime;
     if (this.engA) {
       const r = clamp(rpm, 0, 1);
@@ -99,6 +100,40 @@ export class AudioEngine {
   setStall(b) { this._stall = b; }
   setMissileWarn(b) { this._missileWarn = b; }
   setLock(lvl, locked) { this._lockLvl = lvl; this._locked = locked; }
+
+  // ejection: the cockpit goes silent — engine loops and warning tones cut,
+  // replaced by the sound of rushing air as the pilot drifts back to earth
+  eject() {
+    this._chute = true;
+    if (!this.ctx) return;
+    const t = this.ctx.currentTime;
+    this._stall = this._missileWarn = this._locked = false; this._lockLvl = 0;
+    if (this.engA) {
+      this.engA.g.gain.setTargetAtTime(0, t, 0.25);
+      this.engB.g.gain.setTargetAtTime(0, t, 0.25);
+    }
+    this._noiseHit(0.5, 0.5, 1800, 0.7, 500);   // canopy pyro + first blast of freefall
+    this.windGain.gain.setTargetAtTime(0.30, t, 0.1);
+    this.windFilter.frequency.setTargetAtTime(900, t, 0.1);
+  }
+  // every frame while the chute rides: a steady rush that follows the descent rate
+  updateChute(vy) {
+    if (!this.ctx || !this._chute) return;
+    const t = this.ctx.currentTime, w = clamp(Math.abs(vy) / 30, 0, 1);
+    this.windGain.gain.setTargetAtTime(0.10 + w * 0.12, t, 0.3);
+    this.windFilter.frequency.setTargetAtTime(600 + Math.abs(vy) * 25, t, 0.3);
+  }
+  chuteLand() {
+    if (!this.ctx) return;
+    this._noiseHit(0.35, 0.4, 500, 0.8, 120);   // soft thump / splash
+    this.endChute();
+  }
+  endChute() {
+    if (!this._chute) return;
+    this._chute = false;
+    if (!this.ctx) return;
+    this.windGain.gain.setTargetAtTime(0, this.ctx.currentTime, 0.4);
+  }
 
   _play(name, vol = 1, rate = 1) {
     if (!this.ctx || !this.buf[name]) return;
