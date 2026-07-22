@@ -6,6 +6,13 @@
   <description>Every new feature in the Hornet Bay rebuild, logged with a screenshot.</description>
   <language>en-us</language>
   <item>
+    <title>The Vulcan gets its true voice e55e9d1</title>
+    <link>https://hornetbay.com/changelog.html#vulcan-sound</link>
+    <guid isPermaLink="true">https://hornetbay.com/changelog.html#vulcan-sound</guid>
+    <pubDate>Thu, 23 Jul 2026 00:00:00 +0000</pubDate>
+    <description>&lt;p&gt;&lt;img src="https://hornetbay.com/shots/vulcan-waveform.jpg" alt="" /&gt;&lt;/p&gt;The gatling sample is rebuilt to match the real M61: a 100-rounds-per-second burst synthesized from scratch — powder-crack impulse train, mechanical roar, and the fire-rate ripple that gives the Vulcan its buzzsaw shriek. YouTube was unreachable from the build sandbox, so the sound is synthesized to the reference rather than lifted from the video.</description>
+  </item>
+  <item>
     <title>Post titles are the permalinks now bc7900d</title>
     <link>https://hornetbay.com/changelog.html#title-permalinks</link>
     <guid isPermaLink="true">https://hornetbay.com/changelog.html#title-permalinks</guid>
