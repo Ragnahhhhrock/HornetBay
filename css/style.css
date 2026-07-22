@@ -36,7 +36,7 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
     radial-gradient(1px 1px at 55% 45%, #fff, transparent),
     radial-gradient(1px 1px at 33% 12%, #9cf, transparent);
   background-repeat:repeat; background-size:640px 640px; }
-.title-block { text-align:center; margin-bottom:18px; z-index:1; }
+.title-block { text-align:center; margin-bottom:12px; z-index:1; }
 .title-top { font-size:11px; letter-spacing:4px; color:#5f86b8; margin-bottom:14px; }
 .game-title { font-size:64px; line-height:.95; letter-spacing:6px; color:#fff;
   text-shadow:0 0 18px #2f7dff, 0 0 60px #1a3c8f; font-weight:700; font-style:italic; }
@@ -60,9 +60,12 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
 .mbtn .tag { float:right; font-size:11px; color:#ffb437; margin-left:24px; }
 .mbtn:hover:not(:disabled) .tag { color:#081020; }
 .mbtn.center { text-align:center; }
-.menu-footer { margin-top:16px; text-align:center; z-index:1; }
+.menu-footer { margin-top:10px; text-align:center; z-index:1; }
 #pilot-record { font-size:12px; color:#7fa8d8; letter-spacing:1px; margin-bottom:10px; }
 .hint { font-size:11px; letter-spacing:2px; color:#46648c; }
+.x-follow { margin-top:8px; font-size:11px; letter-spacing:2px; }
+.x-follow a { color:#5f86b8; text-decoration:none; transition:color .12s; }
+.x-follow a:hover { color:#ffb437; }
 
 /* ------- briefing / debrief ------- */
 .brief-box { width:min(760px, 92vw); max-height:88vh; overflow-y:auto; background:rgba(4,12,28,.92);
