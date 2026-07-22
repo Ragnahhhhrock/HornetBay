@@ -144,25 +144,37 @@ export function buildF16() {
   const g = new THREE.Group();
   const C = 0xa8b4bc, CD = 0x8a98a0;
   const fus = box(1.7, 1.5, 9, C); fus.position.z = -0.6; g.add(fus);
-  const nose = cone(0.75, 3.8, C); nose.position.z = 5.8; g.add(nose);
+  // low spine blending the bubble canopy into the fin
+  const spine = box(0.9, 0.3, 4.2, CD); spine.position.set(0, 0.8, -1.4); g.add(spine);
+  // long, slender, distinctly dark radome
+  const nose = cone(0.68, 4.4, 0x42484e); nose.position.z = 6.1; g.add(nose);
+  // the famous frameless bubble canopy — tall gold-tinted teardrop
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 8),
-    M(0x94a2aa));
-  canopy.scale.set(0.8, 0.6, 1.8); canopy.position.set(0, 0.85, 2.6); g.add(canopy);
-  const intake = box(1.0, 0.6, 2.2, CD); intake.position.set(0, -0.75, 2.2); g.add(intake);
-  const wG = wingGeo([[0.7, 1.2], [0.7, -3.2], [5.4, -3.3], [5.4, -2.7]], 0.2);
+    M(0x6a7a80));
+  canopy.scale.set(0.85, 0.75, 2.2); canopy.position.set(0, 0.95, 2.5); g.add(canopy);
+  // chin ("mouth") intake under the forward fuselage, dark scoop opening
+  const intake = box(1.2, 0.65, 2.4, CD); intake.position.set(0, -0.75, 2.1); g.add(intake);
+  const mouth = box(0.95, 0.45, 0.12, 0x0c0e10); mouth.position.set(0, -0.75, 3.32); g.add(mouth);
+  // M61 Vulcan port — left cheek above the wing root
+  const gun = box(0.06, 0.2, 0.55, 0x14161a); gun.position.set(0.86, 0.3, 0.6); g.add(gun);
+  // cropped-delta wing
+  const wG = wingGeo([[0.7, 1.3], [0.7, -3.2], [5.4, -3.4], [5.4, -2.6]], 0.2);
   for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 0.05; g.add(w); }
-  // single tail
+  // single tall fin
   const tG = wingGeo([[0, 0.6], [0, -2.4], [3.6, -3.4], [3.6, -2.6]], 0.16);
-  const tail = new THREE.Mesh(tG, M(C)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 0.5, -3.0); g.add(tail);
+  const tail = new THREE.Mesh(tG, M(C)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 0.5, -3.2); g.add(tail);
+  // twin ventral fins under the engine, angled out
   for (const s of [1, -1]) {
-    const vf = box(0.12, 1.0, 1.4, CD); vf.position.set(s * 0.5, -0.9, -4.6); g.add(vf);
+    const vf = box(0.12, 1.0, 1.4, CD); vf.position.set(s * 0.55, -0.85, -5.3); vf.rotation.z = -s * 0.15; g.add(vf);
   }
   const e = cyl(0.75, 0.6, 4.4, CD); e.position.set(0, -0.05, -5.2); g.add(e);
   const nz = cyl(0.55, 0.42, 1.1, 0x33383e); nz.position.set(0, -0.05, -7.6); g.add(nz);
+  const ni = cyl(0.38, 0.38, 0.18, 0x0a0a0c); ni.position.set(0, -0.05, -8.05); g.add(ni);   // dark tailpipe
   const f = abFlame(3.4, 0.5); f.position.set(0, -0.05, -8.9); g.add(f);
-  const sG = wingGeo([[0.3, 0.1], [0.3, -1.4], [2.8, -1.2], [2.8, -0.5]], 0.13);
-  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.3, 0.05, -5.4); g.add(stabL);
-  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.3, 0.05, -5.4); g.add(stabR);
+  // stabilators ride low at the tail
+  const sG = wingGeo([[0.3, 0.2], [0.3, -1.5], [3.0, -1.3], [3.0, -0.4]], 0.13);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.3, -0.3, -5.6); g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.3, -0.3, -5.6); g.add(stabR);
   const gear = new THREE.Group();
   const gm = M(0x2c3136);
   const mkWheel = (x, y, z) => {
@@ -184,7 +196,7 @@ export function buildF16() {
     }
   }
   g.userData = { ab: [f], gear, hook, stabL, stabR, stores, type: 'f16' };
-  addNavLights(g, 5.0, -7.5, 0.8);
+  addNavLights(g, 5.5, -8.0, 0.8);
   return g;
 }
 
