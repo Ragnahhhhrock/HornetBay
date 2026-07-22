@@ -4,6 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>HORNET BAY — San Francisco Bay, 1994</title>
+<!-- Google Analytics (GA4) — paste your measurement ID over G-XXXXXXXXXX.
+     Only runs on the live domains, so local/dev copies never pollute stats. -->
+<script>
+  (function () {
+    var GA_ID = 'G-XXXXXXXXXX';
+    if (!/(^|\.)(hornetbay\.com|ragnahhhhrock\.github\.io)$/.test(location.hostname)) return;
+    var s = document.createElement('script');
+    s.async = true;
+    s.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+  })();
+</script>
 <link rel="stylesheet" href="css/style.css">
 <script type="importmap">
 { "imports": { "three": "./libs/three.module.js" } }
