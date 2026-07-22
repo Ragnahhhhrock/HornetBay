@@ -6,6 +6,13 @@
   <description>Every new feature in the Hornet Bay rebuild, logged with a screenshot.</description>
   <language>en-us</language>
   <item>
+    <title>Post titles are the permalinks now bc7900d</title>
+    <link>https://hornetbay.com/changelog.html#title-permalinks</link>
+    <guid isPermaLink="true">https://hornetbay.com/changelog.html#title-permalinks</guid>
+    <pubDate>Wed, 22 Jul 2026 23:00:00 +0000</pubDate>
+    <description>Small ergonomic tweak: the title of every journal entry is itself the permalink — click to jump, right-click to copy the link. The separate link icon has retired.</description>
+  </item>
+  <item>
     <title>The journal gets permalinks, tags and an RSS feed 786c616</title>
     <link>https://hornetbay.com/changelog.html#journal-permalinks</link>
     <guid isPermaLink="true">https://hornetbay.com/changelog.html#journal-permalinks</guid>
