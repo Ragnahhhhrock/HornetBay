@@ -907,7 +907,6 @@ export class World {
     const pts = new THREE.Points(geo, this._flashMat);
     pts.frustumCulled = false;
     this.nightGroup.add(pts);
-    if (location.search.includes('dbgflash')) document.title = `FLASH beacons=${this._beaconPts.length} total=${pos.length / 3}`;
   }
 
   // ---- road traffic: cars, trucks and buses plying every road --------------
