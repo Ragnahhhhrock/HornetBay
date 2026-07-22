@@ -54,14 +54,16 @@ function addNavLights(g, halfSpan, tailZ, y = 1) {
     w: new THREE.SpriteMaterial({ map: _navTex, color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
   };
   if (!g.userData.nav) g.userData.nav = [];
-  const mk = (mat, x, yy, z) => {
+  const mk = (mat, x, yy, z, role, scale = 3) => {
     const sp = new THREE.Sprite(mat);
-    sp.scale.setScalar(3); sp.position.set(x, yy, z); sp.visible = false;
+    sp.scale.setScalar(scale); sp.position.set(x, yy, z); sp.visible = false;
+    sp.userData.role = role; sp.userData.phase = Math.random(); sp.userData.base = scale;
     g.add(sp); g.userData.nav.push(sp);
   };
-  mk(_navMats.r, halfSpan, y, 0);
-  mk(_navMats.g, -halfSpan, y, 0);
-  mk(_navMats.w, 0, y + 0.5, tailZ);
+  mk(_navMats.r, halfSpan, y, 0, 'pos');              // steady red port
+  mk(_navMats.g, -halfSpan, y, 0, 'pos');             // steady green starboard
+  mk(_navMats.w, 0, y + 0.5, tailZ, 'strobe', 3.4);   // white tail strobe, double-flash
+  mk(_navMats.r, 0, y + 0.9, tailZ * 0.35, 'beacon', 2.6);  // red anti-collision beacon
 }
 
 export function buildFA18() {
@@ -186,8 +188,7 @@ export function buildF16() {
   };
   gear.add(mkWheel(0, -1.9, 3.2), mkWheel(1.0, -1.9, -1.2), mkWheel(-1.0, -1.9, -1.2));
   g.add(gear);
-  const hook = box(0.1, 0.1, 2.2, 0xcccccc); hook.position.set(0, -0.55, -6.6);
-  hook.rotation.x = -0.5; hook.visible = false; g.add(hook);
+  // no tailhook — the F-16 is land-based only
   const stores = { aim9: [], aim120: [] };
   for (const s of [1, -1]) {
     const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 5.4, -0.05, -3.0); g.add(m9); stores.aim9.push(m9);
@@ -195,7 +196,7 @@ export function buildF16() {
       const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * px, -0.5, -2.2); g.add(m120); stores.aim120.push(m120);
     }
   }
-  g.userData = { ab: [f], gear, hook, stabL, stabR, stores, type: 'f16' };
+  g.userData = { ab: [f], gear, hook: null, stabL, stabR, stores, type: 'f16' };
   addNavLights(g, 5.5, -8.0, 0.8);
   return g;
 }

@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { clamp, lerp, fbm, noise2, rand } from './util.js';
 
+const _gloomCol = new THREE.Color(0.32, 0.34, 0.38);   // overcast gray for rainy weather
+
 // ---------- polygon coastline ----------
 // Traced against the original game's satellite map: the Pacific on the west,
 // the Golden Gate strait at the origin, the SF peninsula wrapping under the
@@ -194,6 +196,55 @@ export function surfaceHeight(x, z) {
 }
 
 // ============================================================
+// ---- rain: a volume of streaks wrapped around the camera -------------------
+// Heads fall at 55 m/s world-down and recycle into a box that travels with
+// the viewer; each streak is drawn along its velocity RELATIVE to the camera,
+// so the rain slants convincingly at 400 knots.
+class Rain {
+  constructor(scene) {
+    const N = 1100;
+    this.N = N; this.B = 48; this.TOP = 26; this.BOT = 34;
+    this.heads = new Float32Array(N * 3);
+    this.geo = new THREE.BufferGeometry();
+    this.posAttr = new THREE.Float32BufferAttribute(new Float32Array(N * 6), 3);
+    this.posAttr.setUsage(THREE.DynamicDrawUsage);
+    this.geo.setAttribute('position', this.posAttr);
+    this.mat = new THREE.LineBasicMaterial({ color: 0x9fb4cc, transparent: true, opacity: 0, fog: true });
+    this.lines = new THREE.LineSegments(this.geo, this.mat);
+    this.lines.frustumCulled = false;
+    this.lines.visible = false;
+    scene.add(this.lines);
+    this._init = false;
+  }
+  update(dt, cam, vel, strength) {
+    this.mat.opacity = 0.38 * strength;
+    this.lines.visible = strength > 0.02;
+    if (!this.lines.visible) return;
+    const { N, B, TOP, BOT } = this, H = this.heads, P = this.posAttr.array;
+    const vx = vel ? vel.x : 0, vy = vel ? vel.y : 0, vz = vel ? vel.z : 0;
+    if (!this._init) {
+      for (let i = 0; i < N; i++) {
+        H[i * 3] = cam.x + (Math.random() * 2 - 1) * B;
+        H[i * 3 + 1] = cam.y + Math.random() * (TOP + BOT) - BOT;
+        H[i * 3 + 2] = cam.z + (Math.random() * 2 - 1) * B;
+      }
+      this._init = true;
+    }
+    const fall = 55 * dt, k = 0.045;
+    const tx = (vx) * k, ty = (vy + 55) * k, tz = (vz) * k;   // streak tail offset
+    for (let i = 0; i < N; i++) {
+      let x = H[i * 3], y = H[i * 3 + 1] - fall, z = H[i * 3 + 2];
+      if (y < cam.y - BOT) { y = cam.y + TOP + Math.random() * 8; x = cam.x + (Math.random() * 2 - 1) * B; z = cam.z + (Math.random() * 2 - 1) * B; }
+      if (x < cam.x - B) x += 2 * B; else if (x > cam.x + B) x -= 2 * B;
+      if (z < cam.z - B) z += 2 * B; else if (z > cam.z + B) z -= 2 * B;
+      H[i * 3] = x; H[i * 3 + 1] = y; H[i * 3 + 2] = z;
+      P[i * 6] = x; P[i * 6 + 1] = y; P[i * 6 + 2] = z;
+      P[i * 6 + 3] = x + tx; P[i * 6 + 4] = y + ty; P[i * 6 + 5] = z + tz;
+    }
+    this.posAttr.needsUpdate = true;
+  }
+}
+
 export class World {
   constructor(scene) {
     this.scene = scene;
@@ -249,6 +300,7 @@ export class World {
     this.scene.add(this.nightGroup);
     this._buildCityLights();
     this._buildRunwayLights();
+    this._buildFlashers();
     this._buildTraffic();
     this.carrier = new Carrier(this, new THREE.Vector3(-30000, 0, 10000), Math.PI / 2, false);
     this.enemySub = new Carrier(this, new THREE.Vector3(-42000, 0, -14000), Math.PI / 2, true);
@@ -324,6 +376,9 @@ export class World {
     this.sun.intensity = cfg.i; this.sun.color.set(0xffffff);
     this.hemi.intensity = cfg.hemi;
     F.color.set(cfg.hor); F.near = cfg.fog[0]; F.far = cfg.fog[1];
+    // remember the clean palette so the rain gloom can blend on top of it
+    this._baseTop = this.skyU.top.value.clone(); this._baseHor = this.skyU.horizon.value.clone();
+    this._baseFog = [F.near, F.far]; this._baseSun = cfg.i; this._baseHemi = cfg.hemi;
     if (this.waterMat) this.waterMat.color.set(cfg.water);
     if (this.clouds) this.clouds.visible = false;   // the original's sky is cloudless
     this.mode = mode;
@@ -561,6 +616,7 @@ export class World {
     this.cityMesh = new THREE.InstancedMesh(box, this.cityMat, N);
     const m = new THREE.Matrix4(), q = new THREE.Quaternion(), s = new THREE.Vector3(), p = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
     this._cityLightPts = [];
+    this._beaconPts = [];
     let i = 0, guard = 0;
     while (i < N && guard++ < 2000) {
       const a = rand(Math.PI * 2), r = Math.pow(rand(), 0.6) * 1900;
@@ -573,6 +629,8 @@ export class World {
       m.compose(p, q, s);
       this.cityMesh.setMatrixAt(i, m);
       this.addCollider(x, g + h / 2, z, w / 2 + 4, h / 2 + 2, d / 2 + 4);
+      // red obstruction beacon on anything tall enough to be a hazard
+      if (h > 100) this._beaconPts.push([x, g - 1 + h + 4, z]);
       // lit windows/roof for the night city
       this._cityLightPts.push(x + rand(-w * 0.3, w * 0.3), g - 1 + h * rand(0.55, 1.02), z + rand(-d * 0.3, d * 0.3));
       if (i % 2 === 0) this._cityLightPts.push(x + rand(-w * 0.4, w * 0.4), g - 1 + h * rand(0.2, 0.95), z + rand(-d * 0.4, d * 0.4));
@@ -583,6 +641,7 @@ export class World {
     const pyr = new THREE.Mesh(new THREE.ConeGeometry(26, 260, 4), new THREE.MeshLambertMaterial({ color: 0x888888 }));
     pyr.position.set(7300, g1 + 130, 4600); pyr.rotation.y = Math.PI / 4;
     this.scene.add(pyr); this.addCollider(7300, g1 + 130, 4600, 24, 132, 24);
+    this._beaconPts.push([7300, g1 + 264, 4600]);   // Transamerica pyramid tip
     const g2 = groundHeight(8300, 4000);
     const coit = new THREE.Mesh(new THREE.CylinderGeometry(5, 6, 64, 10), new THREE.MeshLambertMaterial({ color: 0xe8e0d0 }));
     coit.position.set(8300, g2 + 32, 4000); this.scene.add(coit);
@@ -602,6 +661,7 @@ export class World {
     const cross2 = cross.clone(); cross2.position.y = 180; cross2.rotation.y = -0.4; sutro.add(cross2);
     sutro.position.set(5150, g3, 9450); this.scene.add(sutro);
     this.addCollider(5150, g3 + 150, 9450, 28, 152, 28);
+    this._beaconPts.push([5150, g3 + 306, 9450]);   // Sutro tower top
   }
 
   _buildGoldenGate() {
@@ -788,6 +848,66 @@ export class World {
     const p = new THREE.Points(geo, mat);
     p.frustumCulled = false;
     this.nightGroup.add(p);
+  }
+
+  // ---- night: the FLASHING lights — approach sequenced flashers ("the
+  // rabbit") chasing into each threshold, REIL strobes at the threshold
+  // corners, and red obstruction beacons on the tall towers. One shader-
+  // driven Points cloud; per-light phase/frequency/duty attributes. --------
+  _buildFlashers() {
+    const pos = [], col = [], pha = [], fre = [], dut = [];
+    const push = (x, y, z, c, ph, f, du) => { pos.push(x, y, z); col.push(...c); pha.push(ph); fre.push(f); dut.push(du); };
+    for (const rw of this.runways) {
+      const fx = Math.sin(rw.hdg), fz = -Math.cos(rw.hdg);   // down-runway direction
+      const px = -fz, pz = fx;                               // right of the centreline
+      for (const e of [-1, 1]) {
+        const tx = rw.x + fx * e * rw.len / 2, tz = rw.z + fz * e * rw.len / 2;  // this threshold
+        const ox = -fx * e, oz = -fz * e;                   // outward along the approach
+        // 15 sequenced flashers at 50 m spacing over 750 m, chasing toward the threshold
+        for (let k = 15; k >= 1; k--) push(tx + ox * k * 50, rw.elev + 1.4, tz + oz * k * 50, [1, 1, 1], k / 16, 1.4, 0.10);
+        // 300 m crossbar
+        for (let k = -2; k <= 2; k++) push(tx + ox * 300 + px * k * 12, rw.elev + 1.4, tz + oz * 300 + pz * k * 12, [1, 1, 1], 300 / 800, 1.4, 0.10);
+        // REIL strobes either side of the threshold
+        for (const sg of [-1, 1]) push(tx + px * sg * (rw.wid * 0.5 + 6), rw.elev + 1.2, tz + pz * sg * (rw.wid * 0.5 + 6), [1, 1, 0.85], Math.random(), 1.0, 0.5);
+      }
+    }
+    // red obstruction beacons on tall buildings and landmarks
+    for (const b of this._beaconPts) push(b[0], b[1], b[2], [1, 0.1, 0.06], Math.random(), 0.6, 0.22);
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+    geo.setAttribute('phase', new THREE.Float32BufferAttribute(pha, 1));
+    geo.setAttribute('freq', new THREE.Float32BufferAttribute(fre, 1));
+    geo.setAttribute('duty', new THREE.Float32BufferAttribute(dut, 1));
+    this._flashMat = new THREE.ShaderMaterial({
+      uniforms: THREE.UniformsUtils.merge([THREE.UniformsLib.fog, { uTime: { value: 0 } }]),
+      fog: true, transparent: true, depthWrite: false,
+      vertexShader: `
+        attribute vec3 color; attribute float phase; attribute float freq; attribute float duty;
+        varying vec3 vColor; varying float vOn; varying float vFogDepth;
+        uniform float uTime;
+        void main() {
+          vColor = color;
+          vOn = step(fract(uTime * freq + phase), duty);   // 1 while the lamp is lit
+          vec4 mv = modelViewMatrix * vec4(position, 1.0);
+          gl_PointSize = clamp(3.2 * (360.0 / max(1.0, -mv.z)), 2.2, 6.0);   // min size keeps strobes visible for miles
+          vFogDepth = -mv.z;
+          gl_Position = projectionMatrix * mv;
+        }`,
+      fragmentShader: `
+        varying vec3 vColor; varying float vOn; varying float vFogDepth;
+        uniform vec3 fogColor; uniform float fogNear; uniform float fogFar;
+        void main() {
+          vec2 c = gl_PointCoord - 0.5;
+          if (dot(c, c) > 0.25) discard;
+          float fogF = smoothstep(fogNear, fogFar, vFogDepth);
+          gl_FragColor = vec4(mix(vColor, fogColor, fogF) * vOn, vOn);
+        }`,
+    });
+    const pts = new THREE.Points(geo, this._flashMat);
+    pts.frustumCulled = false;
+    this.nightGroup.add(pts);
+    if (location.search.includes('dbgflash')) document.title = `FLASH beacons=${this._beaconPts.length} total=${pos.length / 3}`;
   }
 
   // ---- road traffic: cars, trucks and buses plying every road --------------
@@ -1089,8 +1209,9 @@ export class World {
     return out.add(c.group.position);
   }
 
-  update(dt, camPos, playerY = camPos.y) {
+  update(dt, camPos, playerY = camPos.y, camVel = null) {
     this.time += dt;
+    if (this._flashMat) this._flashMat.uniforms.uTime.value += dt;
     // ocean is flat — nothing to animate
     if (this.skyMesh) this.skyMesh.position.copy(camPos);
     if (this.oceanMesh) this.oceanMesh.position.set(camPos.x, -2.5, camPos.z);
@@ -1098,6 +1219,32 @@ export class World {
     this.carrier.update(dt);
     this.enemySub.update(dt);
     this._updateTraffic(dt);
+    // weather blend: ease toward the target and apply the gloom
+    const wT = this.weatherTarget || 0;
+    this.weather01 = (this.weather01 || 0) + clamp(wT - (this.weather01 || 0), -dt * 0.5, dt * 0.5);
+    if (this.weather01 > 0.001) this._applyGloom();
+    if (this.rain) this.rain.update(dt, camPos, camVel, this.weather01);
+  }
+
+  // rain dims the sky, drags the murk in close and knocks the light down —
+  // applied every frame on top of the time-of-day palette, so it fades
+  // smoothly as the weather turns
+  _applyGloom() {
+    const w = this.weather01, F = this.scene.fog;
+    const gray = 0.62;   // blend toward a flat overcast gray
+    if (this._baseTop) {
+      this.skyU.top.value.copy(this._baseTop).multiplyScalar(1 - gray * 0.65 * w);
+      this.skyU.horizon.value.copy(this._baseHor).lerp(_gloomCol, 0.7 * w);
+    }
+    if (this._baseFog) { F.near = this._baseFog[0] * (1 - 0.78 * w); F.far = this._baseFog[1] * (1 - 0.72 * w); }
+    F.color.copy(this.skyU.horizon.value);
+    this.sun.intensity = this._baseSun * (1 - 0.6 * w);
+    this.hemi.intensity = this._baseHemi * (1 - 0.42 * w);
+  }
+
+  setWeather(mode) {
+    this.weatherTarget = mode === 'rain' ? 1 : 0;
+    if (!this.rain) this.rain = new Rain(this.scene);
   }
 }
 

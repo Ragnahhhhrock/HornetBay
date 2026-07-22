@@ -118,7 +118,16 @@ export class Intro {
         pos: s.id === 'carrier' ? G.world.carrier?.pos : G.world.landmarks[s.id],
       })));
     } else if (this.active === 'planesel') {
-      c.fillText(`SELECT:  1 ..... F/A-18 HORNET     2 ..... F-16 FALCON     T ..... TIME: ${(this.G.dayNightSel || 'mission').toUpperCase()}`, w / 2, h - 8);
+      // carrier start? the F-16 isn't even offered — no tailhook, no boat ops
+      const planeOpts = this.carrierStart ? '1 ..... F/A-18 HORNET' : '1 ..... F/A-18 HORNET     2 ..... F-16 FALCON';
+      c.fillText(`SELECT:  ${planeOpts}     T ..... TIME: ${(this.G.dayNightSel || 'mission').toUpperCase()}     R ..... WX: ${(this.G.weatherSel || 'mission').toUpperCase()}`, w / 2, h - 8);
+      if (this.carrierStart) {
+        c.font = `bold 13px "Courier New", monospace`;
+        c.fillStyle = '#9ab';
+        c.fillText('F-16 UNAVAILABLE — NO TAILHOOK FOR CARRIER OPS', w / 2, h - 30);
+        c.font = 'bold 15px "Courier New", monospace';
+        c.fillStyle = '#ffe23a';
+      }
       // F-16 rejection flash (no tailhook — can't work the boat)
       if (this.blockMsg && G.time - (this.blockT || 0) < 2.5) {
         c.font = `bold ${15 * s}px "Courier New", monospace`;

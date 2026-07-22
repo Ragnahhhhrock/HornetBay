@@ -116,6 +116,7 @@ let save = { qualified: false, done: {}, best: 0, kills: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
 G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen toggles MISSION/DAY/NIGHT
+G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION/CLEAR/RAIN
 
 // ---------------- menu (original 1-8 structure) ----------------
 const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
@@ -179,6 +180,7 @@ function buildMenu(mode = 'main') {
     G.gallery.enter();
   });
   addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ mission: 'MISSION DEFAULT', day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
+  addBtn('R', 'TOGGLE CLEAR or RAIN WEATHER', `NOW: ${{ mission: 'MISSION DEFAULT', clear: 'CLEAR', rain: 'RAIN' }[G.weatherSel]}`, () => cycleMenuWeather());
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
   $('pilot-record').textContent =
     `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
@@ -187,7 +189,7 @@ function buildMenu(mode = 'main') {
 window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : e.code === 'KeyT' ? 'T' : null;
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : null;
   if (!d) return;
   const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
   if (btn && btn.onclick) { G.audio.ensure(); btn.onclick(); }
@@ -206,6 +208,19 @@ function cycleMenuDayNight() {
 function applyMenuTimeOfDay() {
   G.world.setTimeOfDay(G.dayNightSel === 'mission' ? 'day' : G.dayNightSel);
 }
+// R on the main menu: cycle MISSION/CLEAR/RAIN — the menu backdrop gets the
+// weather immediately and the choice is saved for the next mission
+function cycleMenuWeather() {
+  G.weatherSel = { mission: 'clear', clear: 'rain', rain: 'mission' }[G.weatherSel] || 'mission';
+  save.weather = G.weatherSel;
+  persist();
+  G.audio.radioClick();
+  applyMenuWeather();
+  buildMenu();   // refresh the row label
+}
+function applyMenuWeather() {
+  G.world.setWeather(G.weatherSel === 'mission' ? 'clear' : G.weatherSel);
+}
 
 function showMenu() {
   G.state = 'menu';
@@ -218,6 +233,7 @@ function showMenu() {
   buildMenu();
   startDemo();
   applyMenuTimeOfDay();   // menu backdrop reflects the selected time of day
+  applyMenuWeather();     // ...and the selected weather
 }
 
 // ---------------- briefing / debrief (map + typed text + zoom, like the original)
@@ -231,6 +247,8 @@ function startBriefing(id) {
 }
 function enterPlaneSelect(def) {
   pendingMission = def;
+  // the F-16 has no tailhook — carrier starts are Hornet-only
+  G.intro.carrierStart = def.id === 'free' ? G.freeFlightStart === 'carrier' : def.id !== 'm1';
   G.intro.planeSelect();
 }
 function startFreeFlightMap() {
@@ -247,6 +265,11 @@ window.addEventListener('keydown', (e) => {
     if (e.code === 'KeyT') {
       G.dayNightSel = G.dayNightSel === 'mission' ? 'day' : G.dayNightSel === 'day' ? 'night' : 'mission';
       save.dayNight = G.dayNightSel; persist();
+      G.audio.radioClick();
+    }
+    else if (e.code === 'KeyR') {
+      G.weatherSel = G.weatherSel === 'mission' ? 'clear' : G.weatherSel === 'clear' ? 'rain' : 'mission';
+      save.weather = G.weatherSel; persist();
       G.audio.radioClick();
     }
     else if (e.code === 'Digit1') { G.player.type = 'f18'; launchWithZoom(pendingMission); }
@@ -321,6 +344,8 @@ function launchMission(def, opts = {}) {
   // day/night selection from the plane-select screen (overrides the authored time)
   if (G.dayNightSel === 'day') G.world.setTimeOfDay('day');
   else if (G.dayNightSel === 'night') G.world.setTimeOfDay('night');
+  // weather selection from the menu (missions are authored clear)
+  G.world.setWeather(G.weatherSel === 'mission' ? 'clear' : G.weatherSel);
   scriptT = 0; runScript._gear = false;
   G.msg(def.title, 'info');
   G.audio.ensure();
@@ -1061,7 +1086,7 @@ function stepGame(dt) {
         G.fx.trail(_v2.copy(P.pos).addScaledVector(r, -6), 1.1, 0xffffff, 1.2);
       }
     }
-    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
+    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y, G.player ? G.player.vel : null);
     G.fx.update(dt);
     updateRadarContacts();
     // audio — once the pilot is out, the jet's engine stays silent for good
@@ -1070,18 +1095,36 @@ function stepGame(dt) {
   } else if (G.state === 'paused') {
     hud.draw(G, 0);
   }
-  syncNavLights();
+  syncNavLights(dt);
 }
 
-// navigation lights come on at night on every aircraft in the world
-function syncNavLights() {
+// navigation lights come on at night on every aircraft in the world — red and
+// green position lights burn steady, the white tail strobe double-flashes and
+// the red anti-collision beacon blinks, like the real jets
+let navT = 0;
+function syncNavLights(dt) {
+  navT += dt;
   const night = G.world.night01 > 0.5;
+  const set = (sp) => {
+    sp.visible = night;
+    if (!night) return;
+    const role = sp.userData.role, ph = sp.userData.phase || 0, base = sp.userData.base || 3;
+    if (role === 'strobe') {           // aviation double-flash: two 50 ms pops per second
+      const c = (navT + ph) % 1;
+      sp.scale.setScalar((c < 0.05 || (c > 0.12 && c < 0.17)) ? base : 0.001);
+    } else if (role === 'beacon') {    // slower red blink
+      const c = (navT * 0.9 + ph) % 1;
+      sp.scale.setScalar(c < 0.09 ? base : 0.001);
+    } else {
+      sp.scale.setScalar(base);
+    }
+  };
   for (const e of [G.player, ...G.bandits, demoJet]) {
     const nav = e && e.model && e.model.userData.nav;
-    if (nav) for (const sp of nav) sp.visible = night;
+    if (nav) for (const sp of nav) set(sp);
   }
   const gm = G.gallery && G.gallery.model;
-  if (gm && gm.userData.nav) for (const sp of gm.userData.nav) sp.visible = night;
+  if (gm && gm.userData.nav) for (const sp of gm.userData.nav) set(sp);
 }
 
 // ---------------- URL params for direct launch (testing) ----------------
@@ -1089,6 +1132,7 @@ const params = new URLSearchParams(location.search);
 FIXDT = parseFloat(params.get('fixdt') || '0');
 SCRIPT = params.get('script');
 if (params.get('night')) G.dayNightSel = 'night';   // test hook: force night
+if (params.get('rain')) G.weatherSel = 'rain';      // test hook: force rain
 if (params.get('clean')) G.cleanShot = true;        // test hook: HUD-free captures
 if (params.get('day')) G.dayNightSel = 'day';
 showMenu();
