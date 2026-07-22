@@ -201,33 +201,80 @@ export function buildF16() {
 }
 
 // ---------------- MiG-29 Fulcrum ----------------
+let _starTex = null;
+function starDecal(size) {
+  if (!_starTex) {
+    const c = document.createElement('canvas'); c.width = c.height = 64;
+    const x = c.getContext('2d');
+    x.translate(32, 32);
+    x.beginPath();
+    for (let i = 0; i < 5; i++) {
+      const a = -Math.PI / 2 + i * 2 * Math.PI / 5, b = a + Math.PI / 5;
+      x[i ? 'lineTo' : 'moveTo'](Math.cos(a) * 29, Math.sin(a) * 29);
+      x.lineTo(Math.cos(b) * 12, Math.sin(b) * 12);
+    }
+    x.closePath();
+    x.fillStyle = '#e81414'; x.fill();
+    x.lineWidth = 2.5; x.strokeStyle = '#a00808'; x.stroke();
+    _starTex = new THREE.CanvasTexture(c);
+  }
+  return new THREE.Mesh(new THREE.PlaneGeometry(size, size),
+    new THREE.MeshBasicMaterial({ map: _starTex, transparent: true, side: THREE.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: -1 }));
+}
+
 export function buildMiG29() {
   const g = new THREE.Group();
-  const C = 0x5a626a, CD = 0x4a5258;
+  const C = 0x9fa8ae, CD = 0x828c94;   // classic Soviet light gray
   const fus = box(2.6, 1.4, 10, C); fus.position.z = -1; g.add(fus);
-  const nose = cone(0.8, 4.8, CD); nose.scale.set(1.2, 0.85, 1); nose.position.z = 6.4; g.add(nose);
+  // long drooped radome + pitot spike
+  const nose = cone(0.75, 5.2, CD); nose.scale.set(1.2, 0.85, 1); nose.position.z = 6.6; g.add(nose);
+  const pitot = box(0.05, 0.05, 2.0, 0x2c3136); pitot.position.set(0, -0.05, 10.2); g.add(pitot);
+  // bubble canopy with dark surround
   const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 8),
-    M(0x4a5258));
-  canopy.scale.set(0.85, 0.55, 1.7); canopy.position.set(0, 0.85, 3.0); g.add(canopy);
+    M(0x35474f));
+  canopy.scale.set(0.85, 0.6, 1.9); canopy.position.set(0, 0.9, 3.1); g.add(canopy);
+  // IRST ball ahead of the canopy, offset to starboard
   const irst = new THREE.Mesh(new THREE.SphereGeometry(0.16, 6, 6), M(0x1a1a1a));
-  irst.position.set(0.35, 0.75, 4.6); g.add(irst);
-  const wG = wingGeo([[1.0, 1.4], [1.0, -3.6], [6.2, -3.0], [6.2, -2.2]], 0.22);
+  irst.position.set(0.35, 0.8, 4.6); g.add(irst);
+  // broad LERX strakes blending nose into wing
+  const lexG = wingGeo([[0.4, 4.8], [2.8, 0.0], [0.4, 0.0]], 0.12);
+  for (const s of [1, -1]) {
+    const lex = new THREE.Mesh(lexG, M(CD)); lex.scale.x = s; lex.position.set(0, 0.45, 0.4); g.add(lex);
+  }
+  // trapezoid wing
+  const wG = wingGeo([[1.0, 1.6], [1.0, -3.8], [6.2, -3.4], [6.2, -2.3]], 0.22);
   for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 0.1; g.add(w); }
-  // glove intakes (top louvres)
+  // glove intakes with dark ramp mouths + the famous top louvres
   for (const s of [1, -1]) {
     const it = box(1.0, 0.9, 3.4, CD); it.position.set(s * 1.5, -0.6, 0.4); g.add(it);
+    const mouth = box(0.8, 0.68, 0.12, 0x0c0e10); mouth.position.set(s * 1.5, -0.6, 2.16); g.add(mouth);
+    for (let k = 0; k < 3; k++) {
+      const lv = box(0.85, 0.05, 0.28, 0x2c3136); lv.position.set(s * 1.5, 0.02, 0.8 + k * 0.55); g.add(lv);
+    }
     const e = cyl(0.7, 0.6, 4.8, CD); e.position.set(s * 0.95, -0.05, -5.8); g.add(e);
     const nz = cyl(0.52, 0.4, 1.2, 0x2c3136); nz.position.set(s * 0.95, -0.05, -8.4); g.add(nz);
+    const ni = cyl(0.36, 0.36, 0.18, 0x0a0a0c); ni.position.set(s * 0.95, -0.05, -8.95); g.add(ni);
+    // small ventral strakes under the engine booms
+    const vf = box(0.1, 0.8, 1.6, CD); vf.position.set(s * 1.15, -0.95, -6.4); vf.rotation.z = -s * 0.12; g.add(vf);
+    // underwing AAM
+    const aam = cyl(0.13, 0.13, 1.9, 0xd8dce0); aam.position.set(s * 3.8, -0.55, -2.0); g.add(aam);
+    const aamN = cone(0.13, 0.4, 0xd8dce0); aamN.position.set(s * 3.8, -0.55, -0.85); g.add(aamN);
   }
   const ab = [];
   for (const s of [1, -1]) { const f = abFlame(3.4, 0.48); f.position.set(s * 0.95, -0.05, -9.8); g.add(f); ab.push(f); }
-  // tailboom
+  // "beaver tail" boom between the nozzles
   const tb = box(0.7, 0.5, 3.4, CD); tb.position.set(0, 0.35, -8.6); g.add(tb);
-  // twin canted fins (vertical, canted outward)
+  // twin fins at the outer rear corners, canted outward
   const tG = wingGeo([[0, 0.5], [0, -2.2], [2.7, -3.1], [2.7, -2.4]], 0.16);
   for (const s of [1, -1]) {
     const t = new THREE.Mesh(tG, M(C));
-    t.rotation.z = Math.PI / 2 - s * 0.22; t.position.set(s * 2.4, 0.6, -3.6); g.add(t);
+    t.rotation.z = Math.PI / 2 - s * 0.28; t.position.set(s * 2.4, 0.6, -3.6); g.add(t);
+    const fs = starDecal(1.3); fs.position.set(s * 2.95, 1.9, -5.0); fs.rotation.y = s * Math.PI / 2; g.add(fs);
+  }
+  // red stars on the wing tops — the enemy's colours
+  for (const s of [1, -1]) {
+    const ws = starDecal(1.6); ws.position.set(s * 3.6, 0.24, -2.6); ws.rotation.x = -Math.PI / 2; g.add(ws);
   }
   const sG = wingGeo([[0.4, 0.2], [0.4, -1.6], [3.4, -1.4], [3.4, -0.6]], 0.14);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.6, 0, -6.6); g.add(stabL);
