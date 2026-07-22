@@ -8,7 +8,7 @@ import { clamp } from './util.js';
 const ITEMS = [
   { type: 'f18',   name: 'F/A-18 HORNET',              info: 'CARRIER-CAPABLE MULTIROLE STRIKE FIGHTER — THE MOUNT' },
   { type: 'f16',   name: 'F-16 FIGHTING FALCON',       info: 'LAND-BASED AIR-DEFENCE HOT-ROD — NO TAILHOOK' },
-  { type: 'b707',  name: 'AIR FORCE ONE (BOEING 707)', info: 'PRESIDENTIAL HEAVY — DO NOT SCRATCH THE PAINT' },
+  { type: 'b747',  name: 'AIR FORCE ONE (VC-25A)',     info: 'BOEING 747-200B — THE 1994 PRESIDENTIAL MOUNT — MIND THE PAINT' },
   { type: 'mig29', name: 'MIG-29 FULCRUM',             info: 'ENEMY BOGEY — TWIN-TAIL AGILE FIGHTER' },
 ];
 

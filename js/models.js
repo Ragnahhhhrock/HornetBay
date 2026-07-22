@@ -237,24 +237,47 @@ export function buildMiG29() {
   return g;
 }
 
-// ---------------- Boeing 747 (Air Force One) ----------------
+// ---------------- Boeing VC-25A / 747-200B (Air Force One, 1994) ----------------
+// Loewy livery: white crown, robin's-egg nose/belly/nacelles, dark blue
+// window cheatline with a gold pinstripe, flag on the fin, tail 28000
 export function build747() {
   const g = new THREE.Group();
-  const W = 0xf0f2f4, B = 0x3a6ac0;
+  const W = 0xf0f2f4, LB = 0x9fc9dd, DB = 0x1c3a70, GD = 0xc8a020;
   const fus = cyl(3.6, 3.2, 62, W, 14); fus.position.z = 0; g.add(fus);
-  const nose = cone(3.6, 10, W, 14); nose.position.z = 36; g.add(nose);
-  const hump = box(5.5, 2.4, 16, W); hump.position.set(0, 3.6, 22); g.add(hump);
-  const belly = cyl(3.4, 3.4, 56, B, 14); belly.scale.set(1.02, 0.55, 1); belly.position.set(0, -1.6, -2); g.add(belly);
+  // blue nose band sweeping up around the cockpit
+  const nose = cone(3.6, 10, LB, 14); nose.position.z = 36; g.add(nose);
+  // extended 747 upper deck
+  const hump = box(5.5, 2.4, 20, W); hump.position.set(0, 3.6, 20); g.add(hump);
+  // robin's-egg belly
+  const belly = cyl(3.4, 3.4, 56, LB, 14); belly.scale.set(1.02, 0.55, 1); belly.position.set(0, -1.6, -2); g.add(belly);
   const tailCone = cone(3.0, 9, W, 10); tailCone.rotation.x = Math.PI; tailCone.position.z = -35; g.add(tailCone);
+  // cheatline + gold pinstripe: tapered sleeves hugging the fuselage
+  const cheat = cyl(3.66, 3.26, 50, DB, 14); cheat.scale.set(1, 0.22, 1); cheat.position.set(0, 0.9, -1); g.add(cheat);
+  const pin = cyl(3.64, 3.24, 50, GD, 14); pin.scale.set(1, 0.05, 1); pin.position.set(0, 0.02, -1); g.add(pin);
+  // upper-deck window band
+  for (const s of [1, -1]) {
+    const ud = box(0.06, 0.35, 14, DB); ud.position.set(s * 2.78, 4.3, 20); g.add(ud);
+  }
   const wG = wingGeo([[2.5, 4], [2.5, -8], [30, -8], [30, -5.5]], 0.5);
   for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(W)); w.scale.x = s; w.position.y = -0.5; g.add(w); }
-  // 4 engines
+  // 4 blue nacelles
   for (const s of [1, -1]) for (const [ex, ez] of [[9, 0], [17, -2]]) {
-    const en = cyl(1.3, 1.1, 5, 0xd8dce0, 10); en.position.set(s * ex, -3.0, ez + 1); g.add(en);
+    const en = cyl(1.3, 1.1, 5, LB, 10); en.position.set(s * ex, -3.0, ez + 1); g.add(en);
   }
-  // tail
+  // white fin with a light-blue wedge at the leading-edge base
   const tG = wingGeo([[0, 2], [0, -5], [11, -7.5], [11, -5.5]], 0.6);
-  const tail = new THREE.Mesh(tG, M(B)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 2.5, -28); g.add(tail);
+  const tail = new THREE.Mesh(tG, M(W)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 2.5, -28); g.add(tail);
+  const tB = wingGeo([[0, 1.8], [0, -4.8], [4.5, -5.6], [4.5, -4.2]], 0.62);
+  const tailB = new THREE.Mesh(tB, M(LB)); tailB.rotation.z = Math.PI / 2; tailB.position.set(0, 2.5, -28); g.add(tailB);
+  // the flag on the fin (both sides)
+  for (const s of [1, -1]) {
+    const fx = s * 0.36;
+    const field = box(0.04, 1.0, 1.4, 0xffffff); field.position.set(fx, 9.6, -30.2); g.add(field);
+    const canton = box(0.05, 0.45, 0.55, 0x1a3a8a); canton.position.set(fx, 9.85, -29.75); g.add(canton);
+    for (const ry of [9.25, 9.55]) {
+      const stripe = box(0.05, 0.12, 1.35, 0xb02030); stripe.position.set(fx, ry, -30.2); g.add(stripe);
+    }
+  }
   const sG = wingGeo([[1.5, 1], [1.5, -3], [11, -3.5], [11, -2]], 0.4);
   for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(W)); st.scale.x = s; st.position.set(0, 1, -30); g.add(st); }
   g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'b747' };
