@@ -24,7 +24,7 @@ export class AudioEngine {
   setMusicOn() { /* music removed at user request */ }
 
   async _loadSamples() {
-    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom'];
+    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom', 'gatling', 'voice_gun', 'voice_sidewinder', 'voice_amraam'];
     await Promise.all(files.map(async n => {
       try {
         let ab;
@@ -160,8 +160,39 @@ export class AudioEngine {
     const g = c.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     s.connect(f); f.connect(g); g.connect(this.sfx); s.start(t); s.stop(t + dur + 0.05);
   }
-  gun() { this._noiseHit(0.07, 0.5, 2600, 0.7, 500); }
+  gun() {
+    // when the gatling loop is running the burst sample does all the talking
+    if (this._gatling && this._gatling !== 'synth') return;
+    this._noiseHit(0.07, 0.5, 2600, 0.7, 500);
+  }
   gunHit() { this._noiseHit(0.06, 0.25, 4000, 1, 1200); }
+  // the M61 Vulcan: an A-10-style sustained BRRRT loop for as long as the
+  // trigger is held — call every frame with the trigger state
+  setGatling(on) {
+    if (!this.ctx) { if (on) this.ensure(); else return; }
+    if (on && !this._gatling) {
+      if (this.buf.gatling) {
+        const c = this.ctx, s = c.createBufferSource(), g = c.createGain();
+        s.buffer = this.buf.gatling; s.loop = true;
+        g.gain.value = 0.95;
+        s.connect(g); g.connect(this.sfx); s.start();
+        this._gatling = { s, g };
+      } else this._gatling = 'synth';   // sample missing — per-shot pops carry on
+    } else if (!on && this._gatling) {
+      if (this._gatling !== 'synth') {
+        const { s, g } = this._gatling;
+        g.gain.setTargetAtTime(0, this.ctx.currentTime, 0.05);
+        s.stop(this.ctx.currentTime + 0.2);
+      }
+      this._gatling = null;
+    }
+  }
+  // spoken weapon callout on ENTER — "GUNS" / "SIDEWINDER" / "AMRAAM"
+  weaponSelect(w) {
+    const n = { gun: 'voice_gun', aim9: 'voice_sidewinder', aim120: 'voice_amraam' }[w];
+    if (n && this.buf[n]) this._play(n, 1.0);
+    else this.radioClick();
+  }
   missileFire() { this._play('whoosh', 0.9); this._noiseHit(0.9, 0.3, 3200, 0.6, 300); }
   sonicBoom() {
     // pressure crack, then the classic double N-wave thump

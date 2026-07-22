@@ -681,10 +681,12 @@ function updateTargeting(dt) {
     }
   }
   // gun trigger — the Vulcan doesn't ask for a lock either
-  if (G.input.trigger && P.weapon === 'gun' && G.state === 'flying' && !P.dead && !P.ejected) {
+  const wantGatling = G.input.trigger && P.weapon === 'gun' && G.state === 'flying' && !P.dead && !P.ejected && P.stores.gun > 0;
+  if (wantGatling) {
     gun.fire(dt, P, G.bandits);
     if (G.shotsFired === 0) G.shotsFired = 1;
   }
+  G.audio.setGatling(wantGatling);
 }
 
 // ---------------- radar contacts ----------------
@@ -707,6 +709,7 @@ function handleDiscreteInput(dt) {
     G.msg(G.mapview.toggle() ? 'MAP ON' : 'MAP OFF', 'info');
   }
   if (G.state !== 'flying') {
+    G.audio.setGatling(false);   // cut the burst on pause/death/quit
     if (I.pressed('Slash')) { $('controls').classList.contains('hidden') ? G.openManual() : G.closeManual(); }
     else if ((I.pressed('Escape') || I.pressed('KeyP')) && G.state === 'paused') {
       if (!$('controls').classList.contains('hidden')) G.closeManual();   // ESC closes the manual first
@@ -736,7 +739,7 @@ function handleDiscreteInput(dt) {
     const order = ['aim120', 'aim9', 'gun'];
     P.weapon = order[(order.indexOf(P.weapon) + 1) % order.length];
     G.lockLevel = 0;
-    G.audio.radioClick();
+    G.audio.weaponSelect(P.weapon);   // spoken callout so you know what's live
   }
   if (I.pressed('KeyR')) {
     const ranges = [[2, 2 * NM], [10, 10 * NM], [40, 40 * NM]];
@@ -1020,14 +1023,15 @@ function stepGame(dt) {
     G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
     G.fx.update(dt);
   } else if (G.intro.active) {
-    // satellite map / briefing / plane select / zoom intro states
+    // satellite map / briefing / plane select / zoom intro states — suppress
+    // the weather here so rain and murk never blot out the planning map
     G.time += dt;
     if (G.state === 'zoom' && G.player) {
       G.player.update(dt, G.input, G);
       for (const b of G.bandits) b.update(dt, G);
     }
     G.intro.update(dt);
-    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
+    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y, null, true);
     G.fx.update(dt);
     hud.draw(G, dt);
   } else if (G.state === 'gallery') {

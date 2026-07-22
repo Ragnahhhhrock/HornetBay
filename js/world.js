@@ -1208,7 +1208,7 @@ export class World {
     return out.add(c.group.position);
   }
 
-  update(dt, camPos, playerY = camPos.y, camVel = null) {
+  update(dt, camPos, playerY = camPos.y, camVel = null, weatherSuppressed = false) {
     this.time += dt;
     if (this._flashMat) this._flashMat.uniforms.uTime.value += dt;
     // ocean is flat — nothing to animate
@@ -1218,18 +1218,20 @@ export class World {
     this.carrier.update(dt);
     this.enemySub.update(dt);
     this._updateTraffic(dt);
-    // weather blend: ease toward the target and apply the gloom
+    // weather blend: ease toward the target and apply the gloom. The satellite
+    // map views (briefing / plane select / zoom) suppress it — no rain streaks
+    // or murk over the planning map.
     const wT = this.weatherTarget || 0;
     this.weather01 = (this.weather01 || 0) + clamp(wT - (this.weather01 || 0), -dt * 0.5, dt * 0.5);
-    if (this.weather01 > 0.001) this._applyGloom();
-    if (this.rain) this.rain.update(dt, camPos, camVel, this.weather01);
+    if (this.weather01 > 0.001) this._applyGloom(weatherSuppressed ? 0 : this.weather01);
+    if (this.rain) this.rain.update(dt, camPos, camVel, weatherSuppressed ? 0 : this.weather01);
   }
 
   // rain dims the sky, drags the murk in close and knocks the light down —
   // applied every frame on top of the time-of-day palette, so it fades
   // smoothly as the weather turns
-  _applyGloom() {
-    const w = this.weather01, F = this.scene.fog;
+  _applyGloom(w = this.weather01) {
+    const F = this.scene.fog;
     const gray = 0.62;   // blend toward a flat overcast gray
     if (this._baseTop) {
       this.skyU.top.value.copy(this._baseTop).multiplyScalar(1 - gray * 0.65 * w);
