@@ -51,6 +51,7 @@ export class Gallery {
     this.G.scene.add(this.model);
   }
   update(dt, I) {
+    this.yaw += dt * 0.35;   // idle showroom spin
     const R = 1.9 * dt;
     if (I.down('ArrowLeft') || I.down('KeyA')) this.yaw -= R;
     if (I.down('ArrowRight') || I.down('KeyD')) this.yaw += R;

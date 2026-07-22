@@ -12,7 +12,17 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
 .overlay { position:fixed; inset:0; z-index:20; display:flex; flex-direction:column;
   align-items:center; justify-content:center; background:radial-gradient(ellipse at 50% 30%, #0a1a3a 0%, #030810 70%);
   overflow:hidden; }
-#menu { background:radial-gradient(ellipse at 50% 30%, rgba(10,26,58,0.42) 0%, rgba(3,8,16,0.66) 70%); }
+#menu { background:radial-gradient(ellipse at 50% 30%, rgba(10,26,58,0.42) 0%, rgba(3,8,16,0.66) 70%);
+  align-items:flex-start; padding-left:6vw; }
+#menu .title-block, #menu .menu-footer { text-align:left; }
+#menu .title-block, #menu .menu-list, #menu .menu-footer, #menu .menu-mode-title { max-width:44vw; }
+#menu .menu-list { min-width:min(420px, 44vw); }
+/* narrow windows: fall back to the centred layout (hero jet sits behind the panel) */
+@media (max-aspect-ratio: 5/4) {
+  #menu { align-items:center; padding-left:0; }
+  #menu .title-block, #menu .menu-footer { text-align:center; }
+  #menu .title-block, #menu .menu-list, #menu .menu-footer, #menu .menu-mode-title { max-width:none; }
+}
 
 /* ------- title ------- */
 .stars { position:absolute; inset:0; pointer-events:none; opacity:.5;
@@ -32,6 +42,8 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
   text-shadow:0 0 18px #2f7dff, 0 0 60px #1a3c8f; font-weight:700; font-style:italic; }
 .game-title span { color:#ffb437; text-shadow:0 0 18px #b45f00, 0 0 60px #7a3800; }
 .title-sub { margin-top:14px; font-size:12px; letter-spacing:5px; color:#7fa8d8; }
+.title-sim { margin-top:10px; font-size:12px; letter-spacing:4px; color:#ffb437;
+  text-shadow:0 0 10px #7a3800; }
 
 .menu-mode-title { font-size:15px; letter-spacing:4px; color:#ffd75e; margin-bottom:10px; z-index:1;
   text-shadow:0 0 10px #8f6a00; }

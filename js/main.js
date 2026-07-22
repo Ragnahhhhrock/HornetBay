@@ -12,6 +12,7 @@ import { MISSIONS } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
+import { buildModel } from './models.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -51,6 +52,20 @@ renderer.setSize(Math.floor(window.innerWidth * RETRO_SCALE), Math.floor(window.
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1.5, 320000);
+// showroom F/A-18 pinned to the camera — a slow turntable on the home menu,
+// so the star of the game is on screen the moment the page loads
+scene.add(camera);
+const hero = buildModel('f18');
+hero.scale.setScalar(0.28);
+hero.position.set(2.25, -0.15, -6);
+hero.rotation.order = 'YXZ';
+hero.rotation.x = 0.16;
+if (hero.userData.gear) hero.userData.gear.visible = false;   // clean in-flight look
+camera.add(hero);
+// soft showroom spot so the star stays lit after dark (short range: only the hero)
+const heroLight = new THREE.PointLight(0xcfe0ff, 0, 16, 1.6);
+heroLight.position.set(3.5, 2.5, -3);
+camera.add(heroLight);
 window.addEventListener('resize', () => {
   renderer.setSize(Math.floor(window.innerWidth * RETRO_SCALE), Math.floor(window.innerHeight * RETRO_SCALE), false);
   camera.aspect = window.innerWidth / window.innerHeight;
@@ -970,9 +985,12 @@ function stepGame(dt) {
   G.input.poll();
   if (SCRIPT) runScript(dt);
   handleDiscreteInput(dt);
+  hero.visible = (G.state === 'menu');
 
   if (G.state === 'menu' && demoJet) {
     G.time += dt;
+    hero.rotation.y += dt * 0.45;   // the star's slow turntable
+    heroLight.intensity = 60 * (G.world.night01 || 0);   // lit after dark
     demoJet.update(dt, G);
     G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
     G.fx.update(dt);
@@ -1126,6 +1144,7 @@ if (auto && warpT > 0) {
     const [at, dur] = (atd || '0').split('+');   // keys=K@2+0.5 holds K for 0.5 s then releases
     return { list: kl.split(','), at: parseFloat(at || '0'), dur: dur !== undefined ? parseFloat(dur) : Infinity };
   }) : [];
+  const warpStartState = G.state;   // allow warps that START in the menu to run
   for (let i = 0; i < warpT * 60; i++) {
     if (burn && G.player) {
       G.player.throttle = 1; G.player.abLatch = true; G.player.brakes = false;
@@ -1139,7 +1158,7 @@ if (auto && warpT > 0) {
     }
     stepGame(step);
     G.input.postUpdate();   // mirror the real frame loop, or justPressed sticks
-    if (G.state === 'debrief' || G.state === 'menu') break;
+    if (G.state !== warpStartState && (G.state === 'debrief' || G.state === 'menu')) break;
   }
   window.__warped = true;
   if (G.state === 'flying') snapCamera();
