@@ -13,6 +13,20 @@ const _gloomCol = new THREE.Color(0.32, 0.34, 0.38);   // overcast gray for rain
 const sstep = (e0, e1, v) => { const t = clamp((v - e0) / (e1 - e0), 0, 1); return t * t * (3 - 2 * t); };
 const _UP = new THREE.Vector3(0, 1, 0);
 const _tm = new THREE.Matrix4(), _tq = new THREE.Quaternion(), _tv = new THREE.Vector3(), _ts = new THREE.Vector3(), _e = new THREE.Euler();
+const _olv = new THREE.Vector3();          // scratch for carrier-local OLS math
+let _olsGlow = null;                        // shared radial glow for the meatball lamps
+function _glowTex() {
+  if (_olsGlow) return _olsGlow;
+  const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+  const cx = cv.getContext('2d');
+  const gr = cx.createRadialGradient(32, 32, 2, 32, 32, 30);
+  gr.addColorStop(0, 'rgba(255,255,255,1)');
+  gr.addColorStop(0.4, 'rgba(255,255,255,0.5)');
+  gr.addColorStop(1, 'rgba(255,255,255,0)');
+  cx.fillStyle = gr; cx.fillRect(0, 0, 64, 64);
+  _olsGlow = new THREE.CanvasTexture(cv);
+  return _olsGlow;
+}
 
 const PENINSULA = [ // SF peninsula + the land south of the bay (San Jose side)
   [-2, 1.8], [7, 2.8], [9, 5.5], [10.5, 9], [12, 12.5], [13.8, 16], [15.5, 20],
@@ -1409,11 +1423,34 @@ export class Carrier {
         const sh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 2.5), dM);
         sh.position.set(cx, deckY + 0.18, 40); this.group.add(sh);
       }
-      // fresnel lens ("meatball") on the port deck edge, facing the approach
-      const fl = new THREE.Group(); fl.position.set(35.2, deckY + 0.6, -95); fl.rotation.y = Math.PI - 0.15;
-      const flb = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.4, 0.6), dM); flb.position.y = 1.2; fl.add(flb);
-      const fll = new THREE.Mesh(new THREE.BoxGeometry(0.4, 1.8, 0.15), new THREE.MeshBasicMaterial({ color: 0xffb43c }));
-      fll.position.set(0, 1.2, 0.35); fl.add(fll); this.group.add(fl);
+      // ---- IFLOLS "meatball" — functional optical landing system --------
+      // port deck edge abeam the wires, facing down the approach; an amber
+      // ball rides 5 cells against a green datum row (3.5° glideslope), and
+      // red wave-off lamps flash when the pass is unsafe
+      const { a0: oa0, a1: oa1 } = this.angleDeck;
+      const ols = new THREE.Group();
+      ols.position.set(37.2, deckY + 0.3, -46);
+      const apx = oa0.x - oa1.x, apz = oa0.z - oa1.z;          // astern = the approach direction
+      const apL = Math.hypot(apx, apz);
+      ols.rotation.y = Math.atan2(apx / apL, apz / apL);
+      const olsB = new THREE.Mesh(new THREE.BoxGeometry(2.6, 2.2, 0.9), dM); olsB.position.y = 1.1; ols.add(olsB);
+      const olsF = new THREE.Mesh(new THREE.BoxGeometry(2.2, 1.7, 0.12), LM(0x11141a)); olsF.position.set(0, 1.25, 0.5); ols.add(olsF);
+      const olsSpr = (col) => new THREE.Sprite(new THREE.SpriteMaterial({ map: _glowTex(), color: col, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
+      this.ols = { group: ols, cells: [], datum: [], wave: [], t: 0, ax: oa1.x - oa0.x, az: oa1.z - oa0.z, aim: { x: 5.3, z: -32 } };
+      { const L = Math.hypot(this.ols.ax, this.ols.az); this.ols.ax /= L; this.ols.az /= L; }
+      for (let i = 0; i < 5; i++) {                            // ball cells, bottom → top
+        const s = olsSpr(0xffb43c); s.position.set(0, 0.55 + i * 0.42, 0.62); s.visible = false;
+        ols.add(s); this.ols.cells.push(s);
+      }
+      for (const sgn of [-1, 1]) for (let k = 0; k < 4; k++) { // green datum bars flanking the middle cell
+        const s = olsSpr(0x35ff70); s.position.set(sgn * (0.55 + k * 0.38), 0.55 + 2 * 0.42, 0.62);
+        s.scale.setScalar(1.1); ols.add(s); this.ols.datum.push(s);
+      }
+      for (const sgn of [-1, 1]) {                             // red wave-off pair above the lens
+        const s = olsSpr(0xff2a1a); s.position.set(sgn * 1.05, 0.55 + 4.6 * 0.42, 0.62); s.visible = false;
+        ols.add(s); this.ols.wave.push(s);
+      }
+      this.group.add(ols);
       // whip antennas along both deck edges
       const whipG = new THREE.CylinderGeometry(0.06, 0.06, 6, 4);
       for (let i = 0; i < 5; i++) for (const s of [-1, 1]) {
@@ -1426,12 +1463,46 @@ export class Carrier {
         const li = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), lm2);
         li.position.set(37.5 * s, deckY + 0.3, z); this.group.add(li);
       }
+      // ---- port-side angle deck sponson --------------------------------
+      // the landing strip's port edge runs off the hull deck from z≈-16
+      // forward — a real CVN carries it on a sponson jutting to port, so
+      // build that structure: deck-top triangle (38,-16)→(59.5,107)→(38,116)
+      const spA = [38, -16.3], spB = [59.5, 106.8], spC = [38, 116];
+      const sV = [], sCl = [];
+      const DK = new THREE.Color(0x23262b), HGc = new THREE.Color(0x4b4f56);
+      const sPush = (p, col) => { sV.push(p[0], p[1], p[2]); sCl.push(col.r, col.g, col.b); };
+      const sTri = (a, b, c, col) => { sPush(a, col); sPush(b, col); sPush(c, col); };
+      const A3 = [spA[0], deckY, spA[1]], B3 = [spB[0], deckY, spB[1]], C3 = [spC[0], deckY, spC[1]];
+      const A2 = [spA[0], deckY - 2.2, spA[1]], B2 = [spB[0], deckY - 2.2, spB[1]], C2 = [spC[0], deckY - 2.2, spC[1]];
+      sTri(A3, B3, C3, DK); sTri(A2, C2, B2, HGc);
+      for (const [p1, p2, p3, p4] of [[A3, B3, B2, A2], [B3, C3, C2, B2], [C3, A3, A2, C2]]) { sTri(p1, p2, p3, HGc); sTri(p1, p3, p4, HGc); }
+      const sg = new THREE.BufferGeometry();
+      sg.setAttribute('position', new THREE.Float32BufferAttribute(sV, 3));
+      sg.setAttribute('color', new THREE.Float32BufferAttribute(sCl, 3));
+      sg.computeVertexNormals();
+      this.group.add(new THREE.Mesh(sg, new THREE.MeshLambertMaterial({ vertexColors: true })));
+      // stripes: continue the landing strip's port edge onto the sponson, then edge-light it
+      const stripe = (p, q, wdt) => {
+        const ln = Math.hypot(q[0] - p[0], q[1] - p[1]);
+        const s = new THREE.Mesh(new THREE.BoxGeometry(wdt, 0.14, ln), wM);
+        s.position.set((p[0] + q[0]) / 2, deckY + 0.08, (p[1] + q[1]) / 2);
+        s.rotation.y = Math.atan2(q[0] - p[0], q[1] - p[1]);
+        this.group.add(s);
+      };
+      stripe([38, -16.3], [56.7, 107.5], 1.1);   // strip's port edge, continuing the deck paint
+      stripe(spA, spB, 1.3);                     // sponson outer deck edge
+      for (let t = 0.08; t < 0.99; t += 0.15) {
+        const li = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), lm2);
+        li.position.set(spA[0] + (spB[0] - spA[0]) * t, deckY + 0.3, spA[1] + (spB[1] - spA[1]) * t);
+        this.group.add(li);
+      }
       // night lighting: glowing deck edge line, island windows, masthead
       this.nightGroup = new THREE.Group();
       this.nightGroup.visible = false;
       const np = [], nc = [];
       const addL = (x, y, z, c) => { np.push(x, y, z); nc.push(...c); };
       for (let z = -160; z <= 160; z += 12) for (const s of [-1, 1]) addL(37.5 * s, deckY + 0.6, z, [0.7, 0.8, 1]);
+      for (let t = 0.08; t < 0.99; t += 0.1) addL(spA[0] + (spB[0] - spA[0]) * t, deckY + 0.6, spA[1] + (spB[1] - spA[1]) * t, [0.7, 0.8, 1]);   // sponson edge
       for (let i = 0; i < 22; i++) addL(-30 + rand(-6, 6), deckY + rand(4, 24), 30 + rand(-13, 13), [1, 0.85, 0.55]);
       addL(-30, deckY + 53.5, 34, [1, 1, 1]);   // masthead
       const ngeo = new THREE.BufferGeometry();
@@ -1484,4 +1555,33 @@ export class Carrier {
     this.group.rotation.y = Math.PI - this.heading;
   }
   submerge() { this.submerged = true; }
+  // drive the meatball from the player's position on approach: the ball shows
+  // where you are relative to the 3.5° glideslope, red lamps wave you off
+  updateOLS(dt, player) {
+    const o = this.ols; if (!o) return;
+    o.t += dt;
+    let ball = 0, range = 0, inCone = false, waveoff = false;
+    if (player && !player.dead && !player.ejected) {
+      const loc = this.toLocal(player.pos, _olv);
+      const relX = loc.x - o.aim.x, relZ = loc.z - o.aim.z;
+      const along = relX * o.ax + relZ * o.az;          // + = past the wires toward the bow
+      const lateral = relX * o.az - relZ * o.ax;        // + = port of the approach line
+      range = Math.max(1, -along);
+      inCone = along < -60 && range < 3800 && Math.abs(lateral) < range * 0.45 && loc.y > -3 && loc.y < 1500;
+      if (inCone) {
+        const gs = Math.atan2(loc.y, range) * 180 / Math.PI;
+        ball = Math.max(-2, Math.min(2, Math.round((gs - 3.5) / 0.75)));
+        waveoff = !player.gearDown || !player.hookDown || gs > 6.6 || gs < 1.6;
+      }
+    }
+    const sc = inCone ? Math.min(13, Math.max(1.4, range * 0.004)) : 1.4;
+    for (let i = 0; i < 5; i++) {
+      const on = inCone && !waveoff && i === 2 + ball;
+      o.cells[i].visible = on;
+      if (on) o.cells[i].scale.setScalar(sc);
+    }
+    const wv = inCone && waveoff && (o.t % 0.4) < 0.2;
+    for (const s of o.wave) { s.visible = wv; if (wv) s.scale.setScalar(sc * 1.1); }
+    for (const s of o.datum) s.scale.setScalar(inCone ? sc * 0.75 : 1.1);
+  }
 }

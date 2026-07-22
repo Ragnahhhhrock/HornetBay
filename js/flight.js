@@ -17,6 +17,15 @@ export const PLANES = {
 const _e = new THREE.Euler(), _dq = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
 const _v3 = new THREE.Vector3(), _v4 = new THREE.Vector3(), _Y = new THREE.Vector3(0, 1, 0);
 
+// 2D point-in-triangle (carrier sponson footprint test)
+function _inTri(px, pz, ax, az, bx, bz, cx, cz) {
+  const d1 = (px - bx) * (az - bz) - (ax - bx) * (pz - bz);
+  const d2 = (px - cx) * (bz - cz) - (bx - cx) * (pz - cz);
+  const d3 = (px - ax) * (cz - az) - (cx - ax) * (pz - az);
+  const neg = (d1 < 0) || (d2 < 0) || (d3 < 0), pos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+  return !(neg && pos);
+}
+
 export class Player {
   constructor(scene, world) {
     this.scene = scene; this.world = world;
@@ -268,7 +277,9 @@ export class Player {
     const carrier = this.world.carrier;
     // --- carrier deck touchdown
     const loc = carrier.toLocal(p, _v);
-    if (Math.abs(loc.x) < carrier.deckHalfWid && loc.z > -carrier.deckHalfLen - 10 && loc.z < carrier.deckHalfLen + 10) {
+    // deck footprint = the hull deck plus the port-side angle-deck sponson
+    const onSponson = !carrier.isSub && loc.x >= 30 && _inTri(loc.x, loc.z, 38, -16.3, 59.5, 106.8, 38, 116);
+    if ((Math.abs(loc.x) < carrier.deckHalfWid && loc.z > -carrier.deckHalfLen - 10 && loc.z < carrier.deckHalfLen + 10) || onSponson) {
       if (loc.y < 2.6 && loc.y > -3) {
         // over the deck — attempt trap / bolter / deck landing
         const dv = carrier.deckVelWorld(_v2);

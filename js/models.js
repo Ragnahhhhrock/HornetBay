@@ -54,7 +54,7 @@ function addNavLights(g, halfSpan, tailZ, y = 1) {
     w: new THREE.SpriteMaterial({ map: _navTex, color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending }),
   };
   if (!g.userData.nav) g.userData.nav = [];
-  const mk = (mat, x, yy, z, role, scale = 3) => {
+  const mk = (mat, x, yy, z, role, scale = 1.1) => {
     const sp = new THREE.Sprite(mat);
     sp.scale.setScalar(scale); sp.position.set(x, yy, z); sp.visible = false;
     sp.userData.role = role; sp.userData.phase = Math.random(); sp.userData.base = scale;
@@ -62,8 +62,8 @@ function addNavLights(g, halfSpan, tailZ, y = 1) {
   };
   mk(_navMats.r, halfSpan, y, 0, 'pos');              // steady red port
   mk(_navMats.g, -halfSpan, y, 0, 'pos');             // steady green starboard
-  mk(_navMats.w, 0, y + 0.5, tailZ, 'strobe', 3.4);   // white tail strobe, double-flash
-  mk(_navMats.r, 0, y + 0.9, tailZ * 0.35, 'beacon', 2.6);  // red anti-collision beacon
+  mk(_navMats.w, 0, y + 0.5, tailZ, 'strobe', 1.5);   // white tail strobe, double-flash
+  mk(_navMats.r, 0, y + 0.9, tailZ * 0.35, 'beacon', 1.05);  // red anti-collision beacon
 }
 
 export function buildFA18() {

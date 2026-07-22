@@ -527,7 +527,16 @@ export class HUD {
       [`CHF ${P.stores.chaff} FLR ${P.stores.flares}`, GREEN],
     ];
     c.font = `bold ${11 * s}px "Courier New", monospace`;
-    rows.forEach(([txt, col], i) => { c.fillStyle = col; c.fillText(txt, 0.745 * w, (0.795 + i * 0.0272) * h); });
+    c.textAlign = 'left';
+    rows.forEach(([txt, col], i) => {
+      const ry = (0.795 + i * 0.0272) * h;
+      c.fillStyle = col; c.fillText(txt, 0.745 * w, ry);
+      if (i === 2 && P.ab && P.throttle >= 0.995) {   // full burner: bright yellow underline like the original
+        const tw = c.measureText(txt).width;
+        c.fillStyle = '#ffe600';
+        c.fillRect(0.745 * w, ry + 2.5 * s, tw, Math.max(2, 2 * s));
+      }
+    });
 
     // ---- two lamp squares above the ECM button
     screen(0.905, 0.748, 0.968, 0.782, '#181818');

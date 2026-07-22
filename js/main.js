@@ -665,8 +665,8 @@ function updateTargeting(dt) {
   G.audio.setLock(canLock ? G.lockLevel : 0, G.locked);
   // fire missile — lock or no lock, on the deck or in the air; with no
   // lock the round just motors straight ahead like the original's did
-  if (G.input.pressed('Space') && G.state === 'flying' && !P.dead && !P.ejected) {
-    if (wpn === 'gun') { /* gun uses trigger */ }
+  if ((G.input.pressed('Space') || G.input.pressed('Enter')) && G.state === 'flying' && !P.dead && !P.ejected) {
+    if (wpn === 'gun') { /* gun fires continuously while SPACE/ENTER is held — handled below */ }
     else if (wpn === 'aim9' || wpn === 'aim120') {
       if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : 'NO AMRAAMS LEFT', 'warn');
       else {
@@ -680,8 +680,9 @@ function updateTargeting(dt) {
       }
     }
   }
-  // gun trigger — the Vulcan doesn't ask for a lock either
-  const wantGatling = G.input.trigger && P.weapon === 'gun' && G.state === 'flying' && !P.dead && !P.ejected && P.stores.gun > 0;
+  // gun trigger — the Vulcan doesn't ask for a lock either; mouse button or
+  // holding SPACE or ENTER with the gun selected all work
+  const wantGatling = (G.input.trigger || G.input.down('Space') || G.input.down('Enter')) && P.weapon === 'gun' && G.state === 'flying' && !P.dead && !P.ejected && P.stores.gun > 0;
   if (wantGatling) {
     gun.fire(dt, P, G.bandits);
     if (G.shotsFired === 0) G.shotsFired = 1;
@@ -735,12 +736,13 @@ function handleDiscreteInput(dt) {
   }
   if (I.pressed('KeyP') && !I.ab) { togglePause(); return; }
   if (I.pressed('KeyP') && I.ab) G.podDropRequested = true;
-  if (I.pressed('Enter')) {
-    const order = ['aim120', 'aim9', 'gun'];
-    P.weapon = order[(order.indexOf(P.weapon) + 1) % order.length];
-    G.lockLevel = 0;
-    G.audio.weaponSelect(P.weapon);   // spoken callout so you know what's live
-  }
+  // weapon select moved here when ENTER became a fire key: TAB cycles,
+  // 1/2/3 jump straight to a weapon; the callout says what's live
+  const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
+  if (I.pressed('Tab')) { const order = ['aim120', 'aim9', 'gun']; selW(order[(order.indexOf(P.weapon) + 1) % order.length]); }
+  if (I.pressed('Digit1')) selW('aim120');
+  if (I.pressed('Digit2')) selW('aim9');
+  if (I.pressed('Digit3')) selW('gun');
   if (I.pressed('KeyR')) {
     const ranges = [[2, 2 * NM], [10, 10 * NM], [40, 40 * NM]];
     const i = ranges.findIndex(r => r[0] === G.radarRangeNM);
@@ -1100,6 +1102,7 @@ function stepGame(dt) {
     hud.draw(G, 0);
   }
   syncNavLights(dt);
+  if (G.world.carrier && G.world.carrier.ols) G.world.carrier.updateOLS(dt, G.player);
 }
 
 // navigation lights come on at night on every aircraft in the world — red and
@@ -1172,6 +1175,8 @@ else if (auto) {
     const [px, pz, ph] = ppos.split(',').map(Number);
     G.setPlayerStart({ pos: new THREE.Vector3(px, ph || 800, pz), heading: params.get('phdg') ? Number(params.get('phdg')) * Math.PI / 180 : Math.PI / 2, speed: 180 });
   }
+  const wpn0 = params.get('wpn');            // test hook: preselect weapon (aim120/aim9/gun)
+  if (wpn0 && G.player && ['aim120', 'aim9', 'gun'].includes(wpn0)) G.player.weapon = wpn0;
   if (params.get('xray') === '1') {
     G.player.model.traverse(o => { if (o.material) { o.material = new THREE.MeshBasicMaterial({ color: 0xff0044 }); } });
     G.player.model.scale.setScalar(4);

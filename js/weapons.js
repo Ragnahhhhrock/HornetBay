@@ -255,9 +255,18 @@ export class GunSystem {
     this.cooldown = 0;
     this.tracers = [];
     if (!GunSystem.geo) {
-      GunSystem.geo = new THREE.CylinderGeometry(0.12, 0.12, 26, 4);
+      GunSystem.geo = new THREE.CylinderGeometry(0.34, 0.34, 30, 6);
       GunSystem.geo.rotateX(Math.PI / 2);
-      GunSystem.mat = new THREE.MeshBasicMaterial({ color: 0xffd080, blending: THREE.AdditiveBlending, transparent: true, opacity: 0.9, depthWrite: false });
+      GunSystem.mat = new THREE.MeshBasicMaterial({ color: 0xffe6a8, blending: THREE.AdditiveBlending, transparent: true, opacity: 1.0, depthWrite: false, fog: false });
+      // soft additive glow riding each bolt so distant tracers still read
+      const cv = document.createElement('canvas'); cv.width = cv.height = 64;
+      const cx = cv.getContext('2d');
+      const gr = cx.createRadialGradient(32, 32, 2, 32, 32, 30);
+      gr.addColorStop(0, 'rgba(255,242,205,1)');
+      gr.addColorStop(0.35, 'rgba(255,205,115,0.55)');
+      gr.addColorStop(1, 'rgba(255,160,60,0)');
+      cx.fillStyle = gr; cx.fillRect(0, 0, 64, 64);
+      GunSystem.glowMat = new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), blending: THREE.AdditiveBlending, transparent: true, depthWrite: false, fog: false });
     }
   }
   fire(dt, player, targets) {
@@ -274,6 +283,9 @@ export class GunSystem {
       tr.position.copy(player.pos).addScaledVector(f, 12);
       tr.position.y -= 1;
       tr.quaternion.setFromUnitVectors(_v.set(0, 0, 1), f);
+      const glow = new THREE.Sprite(GunSystem.glowMat);
+      glow.scale.setScalar(7);
+      tr.add(glow);
       G.scene.add(tr);
       this.tracers.push({ mesh: tr, vel: f.multiplyScalar(1050).add(player.vel), life: 1.4 });
       // hit check: ray vs targets (cylinder around flight path)
