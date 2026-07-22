@@ -41,6 +41,7 @@ export class HUD {
   }
 
   draw(G, dt) {
+    if (G.cleanShot) return;   // clean=1: bare 3D scene for marketing captures
     const c = this.cx, w = this.w, h = this.h;
     c.clearRect(0, 0, w, h);
     if (G.intro && G.intro.active) { G.intro.drawOverlay(c, w, h); return; }

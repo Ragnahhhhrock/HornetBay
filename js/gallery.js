@@ -48,10 +48,11 @@ export class Gallery {
     if (this.model) this.G.scene.remove(this.model);
     this.model = buildModel(ITEMS[this.idx].type);
     this.model.position.copy(this.anchor);
+    if (this.G.cleanShot && this.model.userData.gear) this.model.userData.gear.visible = false;   // marketing poses: wheels up
     this.G.scene.add(this.model);
   }
   update(dt, I) {
-    this.yaw += dt * 0.35;   // idle showroom spin
+    if (!this.G.cleanShot) this.yaw += dt * 0.35;   // idle showroom spin (off for posed captures)
     const R = 1.9 * dt;
     if (I.down('ArrowLeft') || I.down('KeyA')) this.yaw -= R;
     if (I.down('ArrowRight') || I.down('KeyD')) this.yaw += R;

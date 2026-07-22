@@ -1089,6 +1089,7 @@ const params = new URLSearchParams(location.search);
 FIXDT = parseFloat(params.get('fixdt') || '0');
 SCRIPT = params.get('script');
 if (params.get('night')) G.dayNightSel = 'night';   // test hook: force night
+if (params.get('clean')) G.cleanShot = true;        // test hook: HUD-free captures
 if (params.get('day')) G.dayNightSel = 'day';
 showMenu();
 const auto = params.get('auto');
