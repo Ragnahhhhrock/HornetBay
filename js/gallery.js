@@ -28,18 +28,34 @@ export class Gallery {
       this._drag = { x: e.clientX, y: e.clientY };
     };
     this._onUp = () => { this._drag = null; };
+    // touch drag rotates the same way (mobile)
+    this._onTStart = (e) => { if (e.touches.length === 1) this._drag = { x: e.touches[0].clientX, y: e.touches[0].clientY }; };
+    this._onTMove = (e) => {
+      if (e.touches.length !== 1 || !this._drag) return;
+      e.preventDefault();
+      this.yaw += (e.touches[0].clientX - this._drag.x) * 0.006;
+      this.pitch = clamp(this.pitch + (e.touches[0].clientY - this._drag.y) * 0.005, -1.2, 1.2);
+      this._drag = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    };
+    this._onTEnd = () => { this._drag = null; };
   }
   enter() {
     this.G.state = 'gallery';
     window.addEventListener('mousedown', this._onDown);
     window.addEventListener('mousemove', this._onMove);
     window.addEventListener('mouseup', this._onUp);
+    window.addEventListener('touchstart', this._onTStart);
+    window.addEventListener('touchmove', this._onTMove, { passive: false });
+    window.addEventListener('touchend', this._onTEnd);
     this._show(this.idx);
   }
   exit() {
     window.removeEventListener('mousedown', this._onDown);
     window.removeEventListener('mousemove', this._onMove);
     window.removeEventListener('mouseup', this._onUp);
+    window.removeEventListener('touchstart', this._onTStart);
+    window.removeEventListener('touchmove', this._onTMove);
+    window.removeEventListener('touchend', this._onTEnd);
     if (this.model) { this.G.scene.remove(this.model); this.model = null; }
     this.onExit();
   }

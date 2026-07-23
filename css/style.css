@@ -101,3 +101,88 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
   max-width:60vw; pointer-events:none; white-space:pre-wrap; }
 ::-webkit-scrollbar { width:8px; } ::-webkit-scrollbar-thumb { background:#2f5f9f; }
 ::-webkit-scrollbar-track { background:#0a1830; }
+
+/* ================= TOUCH CONTROLS (mobile) ================= */
+html.touch body { touch-action:none; }
+#touch-ui { position:fixed; inset:0; z-index:12; pointer-events:none;
+  font-family:"Courier New", ui-monospace, monospace; }
+#touch-ui > * { pointer-events:auto; }
+#touch-ui #trotate, #touch-ui #tstick { pointer-events:none; }
+#touch-ui #tstick { pointer-events:auto; }
+
+.tbtn { font-family:inherit; font-weight:700; color:#cfe8ff; letter-spacing:1px;
+  background:rgba(10,26,58,.48); border:2px solid rgba(111,160,224,.75); border-radius:10px;
+  padding:1.6vmin 2.4vmin; font-size:2.9vmin; line-height:1.15; text-align:center;
+  -webkit-tap-highlight-color:transparent; }
+.tbtn.on { background:#ffb437; color:#081020; border-color:#ffd580; }
+
+/* system strip (gear / hook / brake / view / map / pause) — top centre */
+#tsys { position:fixed; top:calc(1.4vmin + env(safe-area-inset-top)); left:50%;
+  transform:translateX(-50%); display:flex; gap:1.4vmin; }
+#tsys .tbtn { font-size:2.4vmin; padding:1.1vmin 1.8vmin; border-radius:6px; }
+
+/* throttle — stacked above the stick, left edge */
+#tthr { position:fixed; left:calc(2.4vmin + env(safe-area-inset-left));
+  bottom:calc(40vmin + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:1.6vmin; }
+#tthr .tbtn { width:11vmin; height:11vmin; padding:0; font-size:2.7vmin; border-radius:50%; }
+
+/* thumb stick — fixed base bottom-left, generous grab zone */
+#tstick { position:fixed; left:0; bottom:0; width:46%; height:64%; }
+#tstick-base { position:absolute; left:calc(4vmin + env(safe-area-inset-left));
+  bottom:calc(5vmin + env(safe-area-inset-bottom)); width:29vmin; height:29vmin; border-radius:50%;
+  background:radial-gradient(circle, rgba(10,26,58,.30) 55%, rgba(10,26,58,.55) 100%);
+  border:2px solid rgba(111,160,224,.55); }
+#tstick-knob { position:absolute; left:50%; top:50%; width:12.5vmin; height:12.5vmin;
+  margin:-6.25vmin 0 0 -6.25vmin; border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #9fc4f5, #3a6bb5 70%);
+  border:2px solid rgba(200,225,255,.8); box-shadow:0 0 12px rgba(60,120,220,.6); }
+
+/* action cluster — bottom right */
+#tact { position:fixed; right:calc(2.6vmin + env(safe-area-inset-right));
+  bottom:calc(4vmin + env(safe-area-inset-bottom)); display:grid; gap:1.6vmin;
+  grid-template-areas:"tgt ab fire" "wpn wpn fire"; align-items:end; justify-items:center; }
+#tact .tbtn[data-k="KeyT"] { grid-area:tgt; }
+#tact #t-ab { grid-area:ab; }
+#tact .tbtn[data-k="Tab"] { grid-area:wpn; }
+#tact .act { width:11vmin; height:11vmin; padding:0; font-size:2.7vmin; border-radius:50%; }
+#tact .fire { grid-area:fire; width:19vmin; height:19vmin; padding:0; font-size:3.6vmin;
+  border-radius:50%; border-color:rgba(255,120,90,.85); color:#ffd9c8;
+  background:rgba(80,20,10,.45); }
+#tact .fire.on { background:#ff5b4d; color:#200600; border-color:#ffb0a0; }
+
+/* contextual bar for the canvas intro states (briefing / plane / map / zoom) */
+#tintro { position:fixed; left:50%; bottom:calc(5vmin + env(safe-area-inset-bottom));
+  transform:translateX(-50%); display:flex; gap:2vmin; flex-wrap:wrap; justify-content:center;
+  max-width:94vw; }
+#tintro .tbtn { font-size:3.2vmin; padding:2vmin 3.4vmin; background:rgba(10,26,58,.72); }
+#tintro .tbtn.big { border-color:#ffb437; color:#ffd75e; font-size:3.6vmin; }
+
+/* portrait nag */
+#trotate { position:fixed; top:calc(2vmin + env(safe-area-inset-top)); left:50%;
+  transform:translateX(-50%); padding:1.4vmin 3vmin; font-size:2.8vmin; font-weight:700;
+  letter-spacing:2px; color:#ffd75e; background:rgba(10,26,58,.78);
+  border:1px solid #ffb437; border-radius:6px; white-space:nowrap; }
+
+/* roomier tap targets throughout the DOM UI on touch devices */
+html.touch .mbtn { padding:14px 18px; font-size:15px; }
+html.touch .menu-list { gap:8px; }
+html.touch #manual-btn { font-size:14px; padding:10px 16px; }
+html.touch .brief-buttons .mbtn { padding:16px 18px; }
+html.touch .ctl-grid { font-size:14px; }
+
+/* compact title screen for short landscape windows (phones) */
+@media (max-height: 480px) {
+  .title-top { font-size:9px; letter-spacing:2px; margin-bottom:4px; }
+  .game-title { font-size:34px; letter-spacing:3px; }
+  .title-sub { margin-top:5px; font-size:9px; letter-spacing:2px; }
+  .title-sim { margin-top:4px; font-size:9px; letter-spacing:2px; }
+  .title-block { margin-bottom:4px; }
+  .menu-mode-title { font-size:11px; margin-bottom:4px; }
+  .menu-list { gap:4px; max-height:56vh; }
+  .mbtn { padding:6px 12px; font-size:12px; }
+  .menu-footer { margin-top:5px; }
+  #pilot-record { font-size:10px; margin-bottom:4px; }
+  .hint, .x-follow { font-size:9px; margin-top:3px; }
+}
+/* touch bar clears the canvas status line at the bottom of intro states */
+#tintro { bottom:calc(10vmin + env(safe-area-inset-bottom)); }

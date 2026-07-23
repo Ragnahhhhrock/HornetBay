@@ -7,6 +7,7 @@ import { AIAircraft } from './ai.js';
 import { FXPool, Missile, GunSystem } from './weapons.js';
 import { HUD } from './hud.js';
 import { Input } from './input.js';
+import { setupTouch } from './touch.js';
 import { AudioEngine } from './audio.js';
 import { MISSIONS } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
@@ -97,6 +98,7 @@ window.G = G; // debug hook
 
 G.audio = new AudioEngine();
 G.input = new Input();
+G.touch = setupTouch(G);   // mobile: thumb stick + button deck (no-op on desktop)
 G.intro = new Intro(G);
 const hud = new HUD($('hud'));
 G.hud = hud;
@@ -1199,6 +1201,21 @@ if (auto && warpT > 0) {
     return { list: kl.split(','), at: parseFloat(at || '0'), dur: dur !== undefined ? parseFloat(dur) : Infinity };
   }) : [];
   const warpStartState = G.state;   // allow warps that START in the menu to run
+  // rec=N: composite gl+hud to a 1280x720 jpeg every Nth warp step and POST the
+  // batch to /rec-upload — deterministic 60/N fps footage for promo recording
+  const recN = parseInt(params.get('rec') || '0');
+  let recCtx = null, recBuf = [], recIdx = 0;
+  const recPost = (batch) => {
+    for (let a = 0; a < 4; a++) {
+      try {
+        const x = new XMLHttpRequest();
+        x.open('POST', '/rec-upload', false);   // synchronous: in-order, retried, no loss
+        x.setRequestHeader('Content-Type', 'application/json');
+        x.send(JSON.stringify(batch));
+        if (x.status === 200) return;
+      } catch (e) { /* retry */ }
+    }
+  };
   for (let i = 0; i < warpT * 60; i++) {
     if (burn && G.player) {
       G.player.throttle = 1; G.player.abLatch = true; G.player.brakes = false;
@@ -1212,8 +1229,18 @@ if (auto && warpT > 0) {
     }
     stepGame(step);
     G.input.postUpdate();   // mirror the real frame loop, or justPressed sticks
+    if (recN > 0 && i % recN === 0) {
+      updateCamera(step);
+      renderer.render(scene, camera);
+      if (!recCtx) { const c = document.createElement('canvas'); c.width = 1280; c.height = 720; recCtx = c.getContext('2d'); }
+      recCtx.drawImage($('gl'), 0, 0, 1280, 720);
+      recCtx.drawImage($('hud'), 0, 0, 1280, 720);
+      recBuf.push({ i: recIdx++, d: recCtx.canvas.toDataURL('image/jpeg', 0.75) });
+      if (recBuf.length >= 10) { recPost(recBuf); recBuf = []; }
+    }
     if (G.state !== warpStartState && (G.state === 'debrief' || G.state === 'menu')) break;
   }
+  if (recN > 0) { if (recBuf.length) recPost(recBuf); document.title = 'REC-DONE'; }
   window.__warped = true;
   if (G.state === 'flying') snapCamera();
   if (params.has('manual')) G.openManual();   // test hook: open the flight manual

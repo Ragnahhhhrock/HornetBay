@@ -9,6 +9,7 @@ export class Input {
     this.mx = 0; this.my = 0;           // -1..1 stick deflection
     this.pitch = 0; this.roll = 0; this.yaw = 0; this.throttleDelta = 0;
     this.ab = false; this.trigger = false;
+    this.taActive = false; this.tax = 0; this.tay = 0;   // touch stick (touch.js)
     window.addEventListener('keydown', (e) => {
       if (e.repeat) { this.keys.add(e.code); return; }
       this.keys.add(e.code); this.justPressed.add(e.code);
@@ -48,6 +49,14 @@ export class Input {
       const ay = Math.abs(this.my) < dz ? 0 : this.my;
       roll = clamp(ax * 1.6, -1, 1);
       pitch = clamp(ay * 1.6, -1, 1);   // mouse back (down) = pull back = nose up
+    }
+    if (this.taActive) {
+      // touch thumb-stick: same sense as the mouse stick — drag down = pull back
+      const dz = 0.06;
+      const ax = Math.abs(this.tax) < dz ? 0 : this.tax;
+      const ay = Math.abs(this.tay) < dz ? 0 : this.tay;
+      roll = clamp(ax * 1.7, -1, 1);
+      pitch = clamp(ay * 1.7, -1, 1);
     }
     if (this.down('Comma')) yaw -= 1;
     if (this.down('Period')) yaw += 1;
