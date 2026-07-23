@@ -100,6 +100,19 @@
   "blogPost": [
     {
       "@type": "BlogPosting",
+      "headline": "Landscape-only mobile & the gear interlock c568f3d",
+      "datePublished": "2026-07-23",
+      "url": "https://hornetbay.com/blog/landscape-lock",
+      "wordCount": 124,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/landscape-lock.png"
+    },
+    {
+      "@type": "BlogPosting",
       "headline": "The mobile shakedown: a virtual phone, 35 checks, zero failures 227a009",
       "datePublished": "2026-07-23",
       "url": "https://hornetbay.com/blog/touch-shakedown",
@@ -511,6 +524,13 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="landscape-lock">
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">FEATURE</span></span></div>
+    <h2><a class="title-link" href="/blog/landscape-lock">Landscape-only mobile &amp; the gear interlock</a> <span class="hash">c568f3d</span></h2>
+    <a class="shot" href="/shots/landscape-lock.png"><img src="/shots/landscape-lock.png" alt="Portrait phone showing the full-screen ROTATE YOUR DEVICE overlay" loading="lazy"></a>
+    <p>Portrait mode on a phone was never going to work for a two-thumb flight sim — stick, throttle slider and fire cluster simply don't fit a tall narrow viewport. So mobile is now officially <b>landscape-only</b>: rotate to portrait and a full-screen overlay steps in front of everything, menus included, with an animated phone and a clear ROTATE YOUR DEVICE message. Every tap lands on the overlay (verified with elementFromPoint in the suite), so nothing behind it fires by accident; rotate back and the flight deck returns instantly. On Android the game goes further — after the fullscreen handshake it requests a real <b>orientation lock</b>, so the OS itself holds the phone sideways. iOS Safari doesn't allow that, so the overlay does the job there.</p>
+    <p>The same build ships a safety fix the virtual phone uncovered mid-suite: tapping GEAR while parked on the deck used to retract the gear and drop the jet onto its belly — a crash. The lever now has a <b>weight-on-wheels interlock</b>, exactly like the real jet: on the ground the gear stays down, with a WEIGHT ON WHEELS — GEAR STAYS DOWN warning if you try. Airborne, it works as before. The automated touch gate is now <b>41 checks</b> — detection, menus, attract mode, map/plane select, quick-start, the interlock, throttle slider, brakes, stick axes, weapons, gun burst, airborne gear, views, pause, the portrait overlay and quit-to-menu — all green against a virtual iPhone driving the real game over CDP.</p>
+  </article>
   <article id="touch-shakedown">
     <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">BUG FIX</span></span></div>
     <h2><a class="title-link" href="/blog/touch-shakedown">The mobile shakedown: a virtual phone, 35 checks, zero failures</a> <span class="hash">227a009</span></h2>
