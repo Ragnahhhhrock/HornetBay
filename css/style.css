@@ -179,6 +179,14 @@ html.touch body { touch-action:none; }
 @keyframes tprotate { 0%, 20% { transform:rotate(0deg); } 55%, 100% { transform:rotate(90deg); } }
 .tp-title { color:#ffb437; font-weight:700; font-size:18px; letter-spacing:3px; }
 .tp-sub { color:#8fb0d8; font-size:11px; letter-spacing:2px; }
+.tp-lock { color:#5c78a0; font-size:10.5px; letter-spacing:1.5px; text-align:center;
+  line-height:1.9; max-width:82vw; opacity:0; transition:opacity .5s, color .3s; }
+.tp-lock.seen { opacity:1; }
+.tp-lock.hot { color:#ffd75e; font-weight:700; animation:tplockpulse 1.2s ease-in-out infinite; }
+@keyframes tplockpulse { 0%, 100% { opacity:1; } 50% { opacity:.55; } }
+.tp-tap { color:#3d5476; font-size:9.5px; letter-spacing:2px; margin-top:6px;
+  border:1px solid #22365a; border-radius:5px; padding:5px 12px; opacity:0; transition:opacity .5s; }
+.tp-tap.seen { opacity:1; }
 
 /* roomier tap targets throughout the DOM UI on touch devices */
 html.touch .mbtn { padding:14px 18px; font-size:15px; }

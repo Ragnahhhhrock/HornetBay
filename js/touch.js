@@ -47,13 +47,25 @@ export function setupTouch(G) {
       </div>
     </div>
     <div id="tintro" class="hidden"></div>
-    <div id="tportrait" class="hidden">
-      <div class="tp-phone"><div class="tp-screen"></div></div>
-      <div class="tp-title">ROTATE YOUR DEVICE</div>
-      <div class="tp-sub">HORNET BAY IS LANDSCAPE-ONLY ON MOBILE</div>
-    </div>
   `;
   document.body.appendChild(root);
+
+  // The portrait overlay lives OUTSIDE #touch-ui on purpose: touch-ui sits at
+  // z-index 12, below the menu overlay (20) — inside it the "blocking" overlay
+  // was ghosted by the menu and taps fell straight through to the buttons.
+  // As a direct body child its z-60 genuinely tops every gameplay layer.
+  const proot = document.createElement('div');
+  proot.id = 'tportrait';
+  proot.className = 'hidden';
+  proot.innerHTML = `
+    <div class="tp-phone"><div class="tp-screen"></div></div>
+    <div class="tp-title">ROTATE YOUR DEVICE</div>
+    <div class="tp-sub">HORNET BAY IS LANDSCAPE-ONLY ON MOBILE</div>
+    <div class="tp-lock" id="tp-lock">STUCK ON THIS SCREEN? YOUR ROTATION LOCK IS PROBABLY ON &mdash;<br>
+      CONTROL CENTER (SWIPE DOWN FROM TOP-RIGHT) &rarr; TAP THE LOCK ICON</div>
+    <div class="tp-tap" id="tp-tap">TAP HERE IF IT WON'T ROTATE</div>
+  `;
+  document.body.appendChild(proot);
 
   // ---------------- button wiring ----------------
   // hold: key stays down between touchstart and touchend (throttle, burner, fire)
@@ -200,17 +212,56 @@ export function setupTouch(G) {
   // ---------------- visibility / rotate banner ----------------
   // ---------------- landscape only: portrait gets a blocking rotate overlay ----------------
   const tflight = $('tflight'), tportrait = $('tportrait');
+  const tpLock = $('tp-lock'), tpTap = $('tp-tap');
+  if (!window.DeviceOrientationEvent) tpTap.style.display = 'none';
   const portraitMQ = window.matchMedia('(orientation: portrait)');
+  let portraitSince = 0;
   function sync() {
     const st = G.state;
     const portrait = portraitMQ.matches;
     tportrait.classList.toggle('hidden', !portrait);
     tflight.classList.toggle('hidden', portrait || st !== 'flying');
     if (!portrait) syncIntro(); else introBar.classList.add('hidden'), introMode = '';
+    // reveal the rotation-lock hints only after the overlay has been up a
+    // while — a first-timer rotates in a second and never needs them
+    if (portrait && !portraitSince) portraitSince = performance.now();
+    if (!portrait) portraitSince = 0;
+    const stuck = portrait && performance.now() - portraitSince > 6000;
+    tpLock.classList.toggle('seen', stuck);
+    tpTap.classList.toggle('seen', stuck);
     if (thrId === null && G.player) thrHandle.style.bottom = `${(G.player.throttle || 0) * 100}%`;
     requestAnimationFrame(sync);
   }
   sync();
+
+  // ---------------- rotation-lock detective ----------------
+  // With iOS Portrait Orientation Lock ON, rotating the phone never changes the
+  // viewport — the page stays portrait and the overlay spins forever (exactly
+  // what one pilot hit). The overlay can't see the physical device, but the
+  // gyro can: iOS needs a gesture-granted permission, so the first tap on the
+  // overlay asks; once we have orientation data, physical-landscape + portrait-
+  // viewport = rotation lock, and the hint lights up.
+  let lockWatchOn = false;
+  function startLockWatch() {
+    if (lockWatchOn) return;
+    lockWatchOn = true;
+    window.addEventListener('deviceorientation', (e) => {
+      if (e.gamma === null || e.gamma === undefined) return;
+      const physicalLandscape = Math.abs(e.gamma) > 55;
+      tpLock.classList.toggle('hot', physicalLandscape && portraitMQ.matches);
+    });
+  }
+  tportrait.addEventListener('touchend', () => {
+    try {
+      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission()
+          .then((r) => { if (r === 'granted') startLockWatch(); })
+          .catch(() => {});
+      } else if (window.DeviceOrientationEvent) {
+        startLockWatch();   // Android Chrome: no permission dance
+      }
+    } catch (e) { /* no sensors — the static hint still helps */ }
+  });
 
   // ---------------- mobile niceties ----------------
   // canvas touches shouldn't rubber-band or pull-to-refresh (menus still scroll)

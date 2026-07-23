@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>The iPhone rotation crash: taming WebKit's GPU — HORNET BAY</title>
-<meta name="description" content="A field report from an iPhone: load the site, rotate as instructed, game crashed. We can't reproduce WebKit in the lab, but the failure shape is a…">
-<link rel="canonical" href="https://hornetbay.com/blog/ios-rotation-crash">
+<title>Rotation-lock detective: when ROTATE YOUR DEVICE never ends — HORNET BAY</title>
+<meta name="description" content="Second field report from the iPhone: &quot;I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to…">
+<link rel="canonical" href="https://hornetbay.com/blog/rotation-lock-detective">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
-<meta property="og:url" content="https://hornetbay.com/blog/ios-rotation-crash">
-<meta property="og:title" content="The iPhone rotation crash: taming WebKit's GPU — HORNET BAY">
-<meta property="og:description" content="A field report from an iPhone: load the site, rotate as instructed, game crashed. We can't reproduce WebKit in the lab, but the failure shape is a…">
-<meta property="og:image" content="https://hornetbay.com/shots/gl-recovery.png">
+<meta property="og:url" content="https://hornetbay.com/blog/rotation-lock-detective">
+<meta property="og:title" content="Rotation-lock detective: when ROTATE YOUR DEVICE never ends — HORNET BAY">
+<meta property="og:description" content="Second field report from the iPhone: &quot;I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to…">
+<meta property="og:image" content="https://hornetbay.com/shots/rotation-lock-hint.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@hornetbay">
-<meta name="twitter:title" content="The iPhone rotation crash: taming WebKit's GPU — HORNET BAY">
-<meta name="twitter:description" content="A field report from an iPhone: load the site, rotate as instructed, game crashed. We can't reproduce WebKit in the lab, but the failure shape is a…">
-<meta name="twitter:image" content="https://hornetbay.com/shots/gl-recovery.png">
+<meta name="twitter:title" content="Rotation-lock detective: when ROTATE YOUR DEVICE never ends — HORNET BAY">
+<meta name="twitter:description" content="Second field report from the iPhone: &quot;I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to…">
+<meta name="twitter:image" content="https://hornetbay.com/shots/rotation-lock-hint.png">
 <link rel="alternate" type="application/rss+xml" title="Hornet Bay — New Features &amp; Bug Fixes" href="https://hornetbay.com/rss.xml">
 <style>
   :root {
@@ -94,16 +94,16 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "The iPhone rotation crash: taming WebKit's GPU 41506d3",
+  "headline": "Rotation-lock detective: when ROTATE YOUR DEVICE never ends PENDING",
   "datePublished": "2026-07-23",
-  "url": "https://hornetbay.com/blog/ios-rotation-crash",
-  "wordCount": 116,
+  "url": "https://hornetbay.com/blog/rotation-lock-detective",
+  "wordCount": 249,
   "author": {
     "@type": "Organization",
     "name": "Hornet Bay",
     "url": "https://hornetbay.com"
   },
-  "image": "https://hornetbay.com/shots/gl-recovery.png",
+  "image": "https://hornetbay.com/shots/rotation-lock-hint.png",
   "isPartOf": {
     "@type": "Blog",
     "name": "Hornet Bay \u2014 New Features & Bug Fixes",
@@ -119,12 +119,11 @@
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
 </header>
 <main>
-<article id="ios-rotation-crash">
+<article id="rotation-lock-detective">
     <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">iOS</span><span class="tag">BUG FIX</span></span></div>
-    <h2><a class="title-link" href="/blog/ios-rotation-crash">The iPhone rotation crash: taming WebKit's GPU</a> <span class="hash">41506d3</span></h2>
-    <a class="shot" href="/shots/gl-recovery.png"><img src="/shots/gl-recovery.png" alt="The GRAPHICS RESET — RECOVERING banner shown while the GL context is lost" loading="lazy"></a>
-    <p>A field report from an iPhone: load the site, rotate as instructed, game crashed. We can't reproduce WebKit in the lab, but the failure shape is a known iOS classic — <b>rotating the device kills or starves the WebGL context</b>, and every iOS generation has its own flavor of it (the canvas-resize memory leak of iOS 14, the context-loss waves of 16.7/17/18). Our code made it worse in two ways: it resized the GL canvas on <i>every</i> resize event — and iOS fires a storm of them mid-rotation with stale geometry — and it had no handler for the context actually dying, so the canvas just went black and stayed dead. From the pilot's seat: crashed.</p>
-    <p>Two fixes, both verified on the virtual device by forcibly killing the context with the WEBGL_lose_context extension. <b>One:</b> resizing is now debounced and rotation-safe — the geometry storm settles for 180ms (450ms after an orientation change, iOS lands its final dimensions late) before a single canvas re-allocation, degenerate zero-size frames are skipped, and the camera aspect is clamped so a NaN can never poison the projection matrix. <b>Two:</b> a proper context-loss handler — the browser is asked to restore, a GRAPHICS RESET — RECOVERING banner (above) keeps the pilot informed, and if the GPU doesn't come back within four seconds the page reloads itself cleanly instead of sitting dead. Full touch gate re-run after the surgery: 41/41. If you were the pilot who hit this — thanks for the report, and wheels up.</p>
+    <h2><a class="title-link" href="/blog/rotation-lock-detective">Rotation-lock detective: when ROTATE YOUR DEVICE never ends</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/rotation-lock-hint.png"><img src="/shots/rotation-lock-hint.png" alt="The rotate overlay now shows rotation-lock guidance when a pilot is stuck" loading="lazy"></a>
+    <p>Second field report from the iPhone: <i>"I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to animate."</i> Two bugs in one sentence. <b>Bug one:</b> the pilot was able to select FREE FLIGHT <i>while the blocking overlay was up</i> — it turned out the overlay lived inside #touch-ui (z-index 12), which stacked it below the menu (z-index 20), so in menu state the "blocking" overlay ghosted underneath and taps fell straight through to the buttons. It's now a direct child of the body where its z-60 genuinely tops every gameplay layer, in every state — and the suite gained a regression check that pokes a menu button through the overlay to prove it. <b>Bug two is sneakier:</b> with iOS <b>Portrait Orientation Lock</b> on, rotating the phone never changes the browser viewport at all — the page stays portrait, the overlay keeps spinning, and the pilot is stuck with no idea why. The page can't see the lock switch, so the overlay now says it out loud: sit on the overlay for six seconds and a hint fades in — <i>"STUCK ON THIS SCREEN? YOUR ROTATION LOCK IS PROBABLY ON — Control Center → tap the lock icon"</i> — plus a TAP HERE affordance that requests motion-sensor permission; once the gyro is readable, physically rotating to landscape while the viewport stays portrait lights the hint up in pulsing amber. No sensors, no problem: the static hint still points at Control Center. Full gate: 43/43.</p>
   </article>
 </main>
 <footer>
