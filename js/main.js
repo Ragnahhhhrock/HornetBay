@@ -785,9 +785,10 @@ function updateTargeting(dt) {
   G.locked = G.lockLevel >= 1;
   G.audio.setLock(canLock ? G.lockLevel : 0, G.locked);
   // fire missile — lock or no lock, on the deck or in the air; with no
-  // lock the round just motors straight ahead like the original's did
-  if ((G.input.pressed('Space') || G.input.pressed('Enter')) && G.state === 'flying' && !P.dead && !P.ejected) {
-    if (wpn === 'gun') { /* gun fires continuously while SPACE/ENTER is held — handled below */ }
+  // lock the round just motors straight ahead like the original's did.
+  // SPACE only: ENTER is the weapon selector, exactly like the Amiga original
+  if (G.input.pressed('Space') && G.state === 'flying' && !P.dead && !P.ejected) {
+    if (wpn === 'gun') { /* gun fires continuously while SPACE is held — handled below */ }
     else if (wpn === 'aim9' || wpn === 'aim120') {
       if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : 'NO AMRAAMS LEFT', 'warn');
       else {
@@ -802,8 +803,8 @@ function updateTargeting(dt) {
     }
   }
   // gun trigger — the Vulcan doesn't ask for a lock either; mouse button or
-  // holding SPACE or ENTER with the gun selected all work
-  const wantGatling = (G.input.trigger || G.input.down('Space') || G.input.down('Enter')) && P.weapon === 'gun' && G.state === 'flying' && !P.dead && !P.ejected && P.stores.gun > 0;
+  // holding SPACE with the gun selected, or the mouse trigger, both work
+  const wantGatling = (G.input.trigger || G.input.down('Space')) && P.weapon === 'gun' && G.state === 'flying' && !P.dead && !P.ejected && P.stores.gun > 0;
   if (wantGatling) {
     gun.fire(dt, P, G.bandits);
     if (G.shotsFired === 0) G.shotsFired = 1;
@@ -857,10 +858,10 @@ function handleDiscreteInput(dt) {
   }
   if (I.pressed('KeyP') && !I.ab) { togglePause(); return; }
   if (I.pressed('KeyP') && I.ab) G.podDropRequested = true;
-  // weapon select moved here when ENTER became a fire key: TAB cycles,
-  // 1/2/3 jump straight to a weapon; the callout says what's live
+  // weapon select: ENTER cycles (the Amiga original's key), TAB as an alias,
+  // 1/2/3 jump straight to a weapon; the voice callout says what's live
   const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
-  if (I.pressed('Tab')) { const order = ['aim120', 'aim9', 'gun']; selW(order[(order.indexOf(P.weapon) + 1) % order.length]); }
+  if (I.pressed('Enter') || I.pressed('Tab')) { const order = ['aim120', 'aim9', 'gun']; selW(order[(order.indexOf(P.weapon) + 1) % order.length]); }
   if (I.pressed('Digit1')) selW('aim120');
   if (I.pressed('Digit2')) selW('aim9');
   if (I.pressed('Digit3')) selW('gun');

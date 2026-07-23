@@ -3,20 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Sideways by default: no overlay, no waiting — just the game — HORNET BAY</title>
-<meta name="description" content="Product call from the boss: &quot;Instead of waiting for the phone to rotate, just serve the game and fix for landscape. The user will figure it out.&quot;…">
-<link rel="canonical" href="https://hornetbay.com/blog/sideways-by-default">
+<title>ENTER selects, SPACE fires — and where the weapon voices went — HORNET BAY</title>
+<meta name="description" content="A sharp-eared pilot report: &quot;Both ENTER and SPACE fire the weapons. Also, what happened to the audio when weapons selected?&quot; One regression, two…">
+<link rel="canonical" href="https://hornetbay.com/blog/enter-select-space-fire">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
-<meta property="og:url" content="https://hornetbay.com/blog/sideways-by-default">
-<meta property="og:title" content="Sideways by default: no overlay, no waiting — just the game — HORNET BAY">
-<meta property="og:description" content="Product call from the boss: &quot;Instead of waiting for the phone to rotate, just serve the game and fix for landscape. The user will figure it out.&quot;…">
-<meta property="og:image" content="https://hornetbay.com/shots/sideways-menu.png">
+<meta property="og:url" content="https://hornetbay.com/blog/enter-select-space-fire">
+<meta property="og:title" content="ENTER selects, SPACE fires — and where the weapon voices went — HORNET BAY">
+<meta property="og:description" content="A sharp-eared pilot report: &quot;Both ENTER and SPACE fire the weapons. Also, what happened to the audio when weapons selected?&quot; One regression, two…">
+<meta property="og:image" content="https://hornetbay.com/shots/enter-select-space-fire.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@hornetbay">
-<meta name="twitter:title" content="Sideways by default: no overlay, no waiting — just the game — HORNET BAY">
-<meta name="twitter:description" content="Product call from the boss: &quot;Instead of waiting for the phone to rotate, just serve the game and fix for landscape. The user will figure it out.&quot;…">
-<meta name="twitter:image" content="https://hornetbay.com/shots/sideways-menu.png">
+<meta name="twitter:title" content="ENTER selects, SPACE fires — and where the weapon voices went — HORNET BAY">
+<meta name="twitter:description" content="A sharp-eared pilot report: &quot;Both ENTER and SPACE fire the weapons. Also, what happened to the audio when weapons selected?&quot; One regression, two…">
+<meta name="twitter:image" content="https://hornetbay.com/shots/enter-select-space-fire.png">
 <link rel="alternate" type="application/rss+xml" title="Hornet Bay — New Features &amp; Bug Fixes" href="https://hornetbay.com/rss.xml">
 <style>
   :root {
@@ -94,16 +94,16 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Sideways by default: no overlay, no waiting \u2014 just the game e77e000",
+  "headline": "ENTER selects, SPACE fires \u2014 and where the weapon voices went PENDING",
   "datePublished": "2026-07-23",
-  "url": "https://hornetbay.com/blog/sideways-by-default",
-  "wordCount": 116,
+  "url": "https://hornetbay.com/blog/enter-select-space-fire",
+  "wordCount": 172,
   "author": {
     "@type": "Organization",
     "name": "Hornet Bay",
     "url": "https://hornetbay.com"
   },
-  "image": "https://hornetbay.com/shots/sideways-menu.png",
+  "image": "https://hornetbay.com/shots/enter-select-space-fire.png",
   "isPartOf": {
     "@type": "Blog",
     "name": "Hornet Bay \u2014 New Features & Bug Fixes",
@@ -119,12 +119,11 @@
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
 </header>
 <main>
-<article id="sideways-by-default">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">UX</span></span></div>
-    <h2><a class="title-link" href="/blog/sideways-by-default">Sideways by default: no overlay, no waiting — just the game</a> <span class="hash">e77e000</span></h2>
-    <a class="shot" href="/shots/sideways-menu.png"><img src="/shots/sideways-menu.png" alt="The title menu as served to a portrait phone: full landscape layout, spun 90 degrees" loading="lazy"></a>
-    <p>Product call from the boss: <i>"Instead of waiting for the phone to rotate, just serve the game and fix for landscape. The user will figure it out."</i> Correct. So the ROTATE YOUR DEVICE overlay is gone. A phone held upright now gets the game immediately — the whole thing laid out for landscape and spun 90 degrees, menu included (above). It looks sideways on an upright phone; the pilot turns the phone; done. The gyro, once permitted (one tap, asked on the first touch), simply flips which way the game spins if they turned the "wrong" way, and a viewport that genuinely rotates to landscape always wins natively. Rotation lock is now fully irrelevant either way.</p>
-    <p>Serving the menu inside a portrait viewport surfaced two fun bugs. <b>One:</b> engaging the spin at startup called the resize path before the HUD module existed — a TDZ crash that only fired in portrait, leaving the menu unbuilt (thank you, errbox). The re-layout is now deferred a frame. <b>Two:</b> the compact phone menu is gated on <code>@media (max-height: 480px)</code> — and a portrait viewport is 844 tall, so the full-size desktop menu rendered into a 390-tall game screen and the flex column crushed the button list to 33 pixels. The compact rules are now replicated under sideways mode, along with swapped vw/vh units throughout, and the suite checks the menu is genuinely tappable through the rotation: 51/51.</p>
+<article id="enter-select-space-fire">
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">INPUT</span><span class="tag">BUG FIX</span></span></div>
+    <h2><a class="title-link" href="/blog/enter-select-space-fire">ENTER selects, SPACE fires — and where the weapon voices went</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/enter-select-space-fire.png"><img src="/shots/enter-select-space-fire.png" alt="The flight manual's controls page with the corrected ENTER and SPACE rows" loading="lazy"></a>
+    <p>A sharp-eared pilot report: <i>"Both ENTER and SPACE fire the weapons. Also, what happened to the audio when weapons selected?"</i> One regression, two symptoms. At some point ENTER had been wired up as a second fire key and weapon selection was shuffled off to TAB — which meant that anyone reaching for ENTER, the Amiga original's weapon key, got a missile in the face instead of a menu. And the selection voice callout ("GUNS" / "SIDEWINDER" / "AMRAAM")? Never broken — the samples are all there and the path works — but the select code only runs when you <i>select</i>, and ENTER users were busy accidentally firing instead. Restored to spec: <b>ENTER cycles weapons</b> (with the voice callout confirming what's live), <b>SPACE fires</b>, TAB kept as an alias and 1/2/3 still jump straight to a weapon. Menu hint line and flight manual updated to match, verified on the harness — ENTER cycles aim120 → aim9 → gun with zero missiles leaving the rails — and the full touch gate re-run at 51/51.</p>
   </article>
 </main>
 <footer>

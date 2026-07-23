@@ -100,7 +100,20 @@
   "blogPost": [
     {
       "@type": "BlogPosting",
-      "headline": "Sideways by default: no overlay, no waiting \u2014 just the game PENDING",
+      "headline": "ENTER selects, SPACE fires \u2014 and where the weapon voices went PENDING",
+      "datePublished": "2026-07-23",
+      "url": "https://hornetbay.com/blog/enter-select-space-fire",
+      "wordCount": 172,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/enter-select-space-fire.png"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Sideways by default: no overlay, no waiting \u2014 just the game e77e000",
       "datePublished": "2026-07-23",
       "url": "https://hornetbay.com/blog/sideways-by-default",
       "wordCount": 116,
@@ -576,6 +589,12 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="enter-select-space-fire">
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">INPUT</span><span class="tag">BUG FIX</span></span></div>
+    <h2><a class="title-link" href="/blog/enter-select-space-fire">ENTER selects, SPACE fires — and where the weapon voices went</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/enter-select-space-fire.png"><img src="/shots/enter-select-space-fire.png" alt="The flight manual's controls page with the corrected ENTER and SPACE rows" loading="lazy"></a>
+    <p>A sharp-eared pilot report: <i>"Both ENTER and SPACE fire the weapons. Also, what happened to the audio when weapons selected?"</i> One regression, two symptoms. At some point ENTER had been wired up as a second fire key and weapon selection was shuffled off to TAB — which meant that anyone reaching for ENTER, the Amiga original's weapon key, got a missile in the face instead of a menu. And the selection voice callout ("GUNS" / "SIDEWINDER" / "AMRAAM")? Never broken — the samples are all there and the path works — but the select code only runs when you <i>select</i>, and ENTER users were busy accidentally firing instead. Restored to spec: <b>ENTER cycles weapons</b> (with the voice callout confirming what's live), <b>SPACE fires</b>, TAB kept as an alias and 1/2/3 still jump straight to a weapon. Menu hint line and flight manual updated to match, verified on the harness — ENTER cycles aim120 → aim9 → gun with zero missiles leaving the rails — and the full touch gate re-run at 51/51.</p>
+  </article>
   <article id="sideways-by-default">
     <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">UX</span></span></div>
     <h2><a class="title-link" href="/blog/sideways-by-default">Sideways by default: no overlay, no waiting — just the game</a> <span class="hash">e77e000</span></h2>
