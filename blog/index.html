@@ -100,6 +100,19 @@
   "blogPost": [
     {
       "@type": "BlogPosting",
+      "headline": "The mobile shakedown: a virtual phone, 35 checks, zero failures 227a009",
+      "datePublished": "2026-07-23",
+      "url": "https://hornetbay.com/blog/touch-shakedown",
+      "wordCount": 174,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/touch-shakedown.png"
+    },
+    {
+      "@type": "BlogPosting",
       "headline": "First solo: a quick-start card, a DEMO that demos, and a trackpad stick 9a4a5df",
       "datePublished": "2026-07-23",
       "url": "https://hornetbay.com/blog/quickstart-attract-trackpad",
@@ -498,6 +511,12 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="touch-shakedown">
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">BUG FIX</span></span></div>
+    <h2><a class="title-link" href="/blog/touch-shakedown">The mobile shakedown: a virtual phone, 35 checks, zero failures</a> <span class="hash">227a009</span></h2>
+    <a class="shot" href="/shots/touch-shakedown.png"><img src="/shots/touch-shakedown.png" alt="The reworked touch flight deck on an emulated phone: throttle lever, thumb stick, action cluster" loading="lazy"></a>
+    <p>Verdict on the first touch build: needs work — so it got a proper shakedown on an emulated phone (CDP touch emulation + real touch events, not just screenshots). The hunt found three real bugs and one ergonomic crime. <b>THR+/&minus; never worked:</b> the stick's grab zone painted over the throttle buttons and ate every touch — and even fixed, hold-buttons were the wrong idea anyway, so the throttle is now a proper <b>drag-to-set lever</b>: drag it to full, it stays, both thumbs free for the takeoff roll. <b>The DEMO attract ate your next tap:</b> the exit tap's leaked compatibility click landed on whatever menu button sat beneath it; the menu now re-shows a beat later so the stray click dies on the canvas. And the action cluster is tucked tight into the corner so it covers less of the radar display. The full loop — menu, attract, map, plane select, skip, quick-start, throttle, brakes, stick, weapons, gun burst, gear, views, pause, portrait nag, quit — now passes <b>35/35 scripted touch checks</b> before every deploy.</p>
+  </article>
   <article id="quickstart-attract-trackpad">
     <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">CONTROLS</span><span class="tag">UX</span></span></div>
     <h2><a class="title-link" href="/blog/quickstart-attract-trackpad">First solo: a quick-start card, a DEMO that demos, and a trackpad stick</a> <span class="hash">9a4a5df</span></h2>
