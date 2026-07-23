@@ -121,13 +121,23 @@ html.touch body { touch-action:none; }
   transform:translateX(-50%); display:flex; gap:1.4vmin; }
 #tsys .tbtn { font-size:2.4vmin; padding:1.1vmin 1.8vmin; border-radius:6px; }
 
-/* throttle — stacked above the stick, left edge */
-#tthr { position:fixed; left:calc(2.4vmin + env(safe-area-inset-left));
-  bottom:calc(40vmin + env(safe-area-inset-bottom)); display:flex; flex-direction:column; gap:1.6vmin; }
-#tthr .tbtn { width:11vmin; height:11vmin; padding:0; font-size:2.7vmin; border-radius:50%; }
+/* throttle — drag-to-set lever on the left edge, above the stick */
+#tthr { position:fixed; left:calc(2.6vmin + env(safe-area-inset-left));
+  bottom:calc(36vmin + env(safe-area-inset-bottom)); display:flex; flex-direction:column;
+  align-items:center; gap:1vmin; }
+#tthr-label { font-size:2.6vmin; font-weight:700; letter-spacing:1px; color:#cfe8ff; }
+#tthr-track { position:relative; width:9vmin; height:44vmin; border-radius:5vmin;
+  background:linear-gradient(to top, rgba(10,26,58,.30) 0%, rgba(10,26,58,.55) 100%);
+  border:2px solid rgba(111,160,224,.75); }
+#tthr-track::after { content:''; position:absolute; left:50%; top:6%; bottom:6%; width:2px;
+  transform:translateX(-50%); background:rgba(111,160,224,.35); }
+#tthr-handle { position:absolute; left:50%; bottom:0; width:11vmin; height:11vmin;
+  transform:translate(-50%, 50%); border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #ffd580, #d98f1f 70%);
+  border:2px solid rgba(255,213,128,.9); box-shadow:0 0 12px rgba(255,160,50,.55); }
 
 /* thumb stick — fixed base bottom-left, generous grab zone */
-#tstick { position:fixed; left:0; bottom:0; width:46%; height:64%; }
+#tstick { position:fixed; left:0; bottom:0; width:46%; height:46%; }
 #tstick-base { position:absolute; left:calc(4vmin + env(safe-area-inset-left));
   bottom:calc(5vmin + env(safe-area-inset-bottom)); width:29vmin; height:29vmin; border-radius:50%;
   background:radial-gradient(circle, rgba(10,26,58,.30) 55%, rgba(10,26,58,.55) 100%);
@@ -137,15 +147,15 @@ html.touch body { touch-action:none; }
   background:radial-gradient(circle at 35% 30%, #9fc4f5, #3a6bb5 70%);
   border:2px solid rgba(200,225,255,.8); box-shadow:0 0 12px rgba(60,120,220,.6); }
 
-/* action cluster — bottom right */
-#tact { position:fixed; right:calc(2.6vmin + env(safe-area-inset-right));
-  bottom:calc(4vmin + env(safe-area-inset-bottom)); display:grid; gap:1.6vmin;
+/* action cluster — tucked tight into the bottom-right corner */
+#tact { position:fixed; right:calc(1.2vmin + env(safe-area-inset-right));
+  bottom:calc(1.6vmin + env(safe-area-inset-bottom)); display:grid; gap:1.2vmin;
   grid-template-areas:"tgt ab fire" "wpn wpn fire"; align-items:end; justify-items:center; }
 #tact .tbtn[data-k="KeyT"] { grid-area:tgt; }
 #tact #t-ab { grid-area:ab; }
 #tact .tbtn[data-k="Tab"] { grid-area:wpn; }
-#tact .act { width:11vmin; height:11vmin; padding:0; font-size:2.7vmin; border-radius:50%; }
-#tact .fire { grid-area:fire; width:19vmin; height:19vmin; padding:0; font-size:3.6vmin;
+#tact .act { width:9.5vmin; height:9.5vmin; padding:0; font-size:2.4vmin; border-radius:50%; }
+#tact .fire { grid-area:fire; width:16vmin; height:16vmin; padding:0; font-size:3.2vmin;
   border-radius:50%; border-color:rgba(255,120,90,.85); color:#ffd9c8;
   background:rgba(80,20,10,.45); }
 #tact .fire.on { background:#ff5b4d; color:#200600; border-color:#ffb0a0; }
@@ -183,6 +193,7 @@ html.touch .ctl-grid { font-size:14px; }
   .menu-footer { margin-top:5px; }
   #pilot-record { font-size:10px; margin-bottom:4px; }
   .hint, .x-follow { font-size:9px; margin-top:3px; }
+  .x-follow { display:none; }    /* one footer line is enough on a phone */
 }
 /* touch bar clears the canvas status line at the bottom of intro states */
 #tintro { bottom:calc(10vmin + env(safe-area-inset-bottom)); }

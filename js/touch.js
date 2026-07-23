@@ -24,6 +24,9 @@ export function setupTouch(G) {
   root.id = 'touch-ui';
   root.innerHTML = `
     <div id="tflight" class="hidden">
+      <div id="tstick">
+        <div id="tstick-base"><div id="tstick-knob"></div></div>
+      </div>
       <div id="tsys">
         <button class="tbtn sys" data-k="KeyG">GEAR</button>
         <button class="tbtn sys" data-k="KeyH">HOOK</button>
@@ -33,11 +36,8 @@ export function setupTouch(G) {
         <button class="tbtn sys" data-k="KeyP">&#10074;&#10074;</button>
       </div>
       <div id="tthr">
-        <button class="tbtn thr" id="t-thrup">THR<br>+</button>
-        <button class="tbtn thr" id="t-thrdn">THR<br>&minus;</button>
-      </div>
-      <div id="tstick">
-        <div id="tstick-base"><div id="tstick-knob"></div></div>
+        <div id="tthr-label">THR</div>
+        <div id="tthr-track"><div id="tthr-handle"></div></div>
       </div>
       <div id="tact">
         <button class="tbtn act" data-k="KeyT">TGT</button>
@@ -86,8 +86,31 @@ export function setupTouch(G) {
   for (const b of root.querySelectorAll('#tsys .tbtn, #tact .tbtn[data-k]')) tapBtn(b, b.dataset.k);
   hold($('t-fire'), 'Space');       // gun: continuous while held; missiles: one per tap
   hold($('t-ab'), 'ShiftLeft');     // hold-to-burn, like the keyboard SHIFT
-  hold($('t-thrup'), 'KeyW');
-  hold($('t-thrdn'), 'KeyS');
+
+  // ---------------- throttle slider (drag to set, stays put — like a real lever) ----------------
+  const thrTrack = $('tthr-track'), thrHandle = $('tthr-handle');
+  let thrId = null;
+  const thrSet = (clientY) => {
+    const r = thrTrack.getBoundingClientRect();
+    const v = clamp(1 - (clientY - r.top) / r.height, 0, 1);
+    G.player.throttle = v;
+  };
+  thrTrack.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (thrId !== null) return;
+    thrId = e.changedTouches[0].identifier;
+    G.audio.ensure();
+    thrSet(e.changedTouches[0].clientY);
+  }, { passive: false });
+  thrTrack.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    for (const t of e.changedTouches) if (t.identifier === thrId) thrSet(t.clientY);
+  }, { passive: false });
+  const thrEnd = (e) => {
+    for (const t of e.changedTouches) if (t.identifier === thrId) thrId = null;
+  };
+  window.addEventListener('touchend', thrEnd);
+  window.addEventListener('touchcancel', thrEnd);
 
   // ---------------- thumb stick (left hand) ----------------
   const stickZone = $('tstick'), base = $('tstick-base'), knob = $('tstick-knob');
@@ -178,6 +201,7 @@ export function setupTouch(G) {
     syncIntro();
     const portrait = window.innerHeight > window.innerWidth;
     trotate.classList.toggle('hidden', !(portrait && (st === 'flying' || st === 'zoom')));
+    if (thrId === null && G.player) thrHandle.style.bottom = `${(G.player.throttle || 0) * 100}%`;
     requestAnimationFrame(sync);
   }
   sync();
@@ -203,7 +227,7 @@ export function setupTouch(G) {
   introBar.addEventListener('touchstart', fsTry);
   // touch-first hint line on the title screen
   const hint = document.querySelector('#menu .hint');
-  if (hint) hint.innerHTML = 'LEFT THUMB &mdash; STICK &nbsp;&middot;&nbsp; RIGHT THUMB &mdash; FIRE &nbsp;&middot;&nbsp; THR +/&minus; &mdash; THROTTLE &nbsp;&middot;&nbsp; ? MANUAL FOR MORE';
+  if (hint) hint.innerHTML = 'LEFT THUMB &mdash; STICK &nbsp;&middot;&nbsp; RIGHT THUMB &mdash; FIRE &nbsp;&middot;&nbsp; DRAG THR &mdash; THROTTLE &nbsp;&middot;&nbsp; ? MANUAL FOR MORE';
 
   // test hook: ?tstick=x,y pins the stick (headless captures / desktop QA)
   const ts = params.get('tstick');

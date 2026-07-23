@@ -373,7 +373,7 @@ function showQuickstart() {
   if (localStorage.getItem('hb-qs-hide') === '1') return;
   const touch = document.documentElement.classList.contains('touch');
   $('qs-grid').innerHTML = touch
-    ? `<div><b>THR +</b></div><div>hold &mdash; throttle to full</div>
+    ? `<div><b>THR</b></div><div>drag the lever to full</div>
        <div><b>BRK</b></div><div>brakes off</div>
        <div><b>STICK BACK</b></div><div>pull at 150 KT &mdash; you&#39;re flying</div>
        <div><b>GEAR</b></div><div>gear up when climbing</div>
@@ -551,13 +551,23 @@ function startDemo(attractMode) {
     attract = true;
     $('menu').classList.add('hidden');
     $('attract-hint').classList.remove('hidden');
-    const bail = () => {
+    const bail = (e) => {
+      if (e && e.cancelable) e.preventDefault();
       window.removeEventListener('keydown', bail, true);
       window.removeEventListener('mousedown', bail, true);
       window.removeEventListener('touchstart', bail, true);
+      if (!attract) return;
       attract = false;
       $('attract-hint').classList.add('hidden');
-      if (G.state === 'menu') showMenu();
+      // the exit tap leaks compat mouse/click events; while the menu is hidden
+      // they land harmlessly on the canvas, so re-show the menu a beat later
+      // and swallow stray mouse events in the meantime
+      const swallow = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+      for (const t of ['mousedown', 'mouseup', 'click']) window.addEventListener(t, swallow, true);
+      setTimeout(() => {
+        for (const t of ['mousedown', 'mouseup', 'click']) window.removeEventListener(t, swallow, true);
+        if (G.state === 'menu') showMenu();
+      }, 500);
     };
     window.addEventListener('keydown', bail, true);
     window.addEventListener('mousedown', bail, true);
