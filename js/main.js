@@ -67,11 +67,42 @@ camera.add(hero);
 const heroLight = new THREE.PointLight(0xcfe0ff, 0, 16, 1.6);
 heroLight.position.set(3.5, 2.5, -3);
 camera.add(heroLight);
-window.addEventListener('resize', () => {
-  renderer.setSize(Math.floor(window.innerWidth * RETRO_SCALE), Math.floor(window.innerHeight * RETRO_SCALE), false);
-  camera.aspect = window.innerWidth / window.innerHeight;
+// Resize is debounced and rotation-safe: iOS fires a storm of resize events
+// mid-rotation with stale geometry, and re-allocating the GL canvas on every
+// one has repeatedly crashed WebKit builds (GPU process kills the page).
+// Wait for the geometry to settle, skip degenerate sizes, resize once.
+let resizeT = 0;
+function applyResize() {
+  const w = window.innerWidth, h = window.innerHeight;
+  if (!w || !h) return;                        // degenerate mid-rotation geometry
+  renderer.setSize(Math.floor(w * RETRO_SCALE), Math.floor(h * RETRO_SCALE), false);
+  camera.aspect = clamp(w / h, 0.2, 5);        // never feed Infinity/NaN to the frustum
   camera.updateProjectionMatrix();
   hud.resize();
+}
+window.addEventListener('resize', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(applyResize, 180);
+});
+window.addEventListener('orientationchange', () => {
+  clearTimeout(resizeT);
+  resizeT = setTimeout(applyResize, 450);      // iOS final geometry lands late
+});
+
+// GL context loss: iOS can take the GPU away on rotation or backgrounding.
+// Without a handler the canvas just dies and the page looks crashed. Ask the
+// browser to restore; if it doesn't within a few seconds, reload cleanly.
+const glLostBox = $('gllost');
+let ctxLostT = 0;
+$('gl').addEventListener('webglcontextlost', (e) => {
+  e.preventDefault();                          // opt in to context restore
+  if (glLostBox) glLostBox.classList.remove('hidden');
+  clearTimeout(ctxLostT);
+  ctxLostT = setTimeout(() => location.reload(), 4000);
+});
+$('gl').addEventListener('webglcontextrestored', () => {
+  clearTimeout(ctxLostT);
+  if (glLostBox) glLostBox.classList.add('hidden');
 });
 
 // ---------------- game context ----------------

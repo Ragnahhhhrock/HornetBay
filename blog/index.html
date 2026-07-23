@@ -100,6 +100,19 @@
   "blogPost": [
     {
       "@type": "BlogPosting",
+      "headline": "The iPhone rotation crash: taming WebKit's GPU PENDING",
+      "datePublished": "2026-07-23",
+      "url": "https://hornetbay.com/blog/ios-rotation-crash",
+      "wordCount": 116,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/gl-recovery.png"
+    },
+    {
+      "@type": "BlogPosting",
       "headline": "Landscape-only mobile & the gear interlock c568f3d",
       "datePublished": "2026-07-23",
       "url": "https://hornetbay.com/blog/landscape-lock",
@@ -524,6 +537,13 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="ios-rotation-crash">
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">iOS</span><span class="tag">BUG FIX</span></span></div>
+    <h2><a class="title-link" href="/blog/ios-rotation-crash">The iPhone rotation crash: taming WebKit's GPU</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/gl-recovery.png"><img src="/shots/gl-recovery.png" alt="The GRAPHICS RESET — RECOVERING banner shown while the GL context is lost" loading="lazy"></a>
+    <p>A field report from an iPhone: load the site, rotate as instructed, game crashed. We can't reproduce WebKit in the lab, but the failure shape is a known iOS classic — <b>rotating the device kills or starves the WebGL context</b>, and every iOS generation has its own flavor of it (the canvas-resize memory leak of iOS 14, the context-loss waves of 16.7/17/18). Our code made it worse in two ways: it resized the GL canvas on <i>every</i> resize event — and iOS fires a storm of them mid-rotation with stale geometry — and it had no handler for the context actually dying, so the canvas just went black and stayed dead. From the pilot's seat: crashed.</p>
+    <p>Two fixes, both verified on the virtual device by forcibly killing the context with the WEBGL_lose_context extension. <b>One:</b> resizing is now debounced and rotation-safe — the geometry storm settles for 180ms (450ms after an orientation change, iOS lands its final dimensions late) before a single canvas re-allocation, degenerate zero-size frames are skipped, and the camera aspect is clamped so a NaN can never poison the projection matrix. <b>Two:</b> a proper context-loss handler — the browser is asked to restore, a GRAPHICS RESET — RECOVERING banner (above) keeps the pilot informed, and if the GPU doesn't come back within four seconds the page reloads itself cleanly instead of sitting dead. Full touch gate re-run after the surgery: 41/41. If you were the pilot who hit this — thanks for the report, and wheels up.</p>
+  </article>
   <article id="landscape-lock">
     <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">FEATURE</span></span></div>
     <h2><a class="title-link" href="/blog/landscape-lock">Landscape-only mobile &amp; the gear interlock</a> <span class="hash">c568f3d</span></h2>
