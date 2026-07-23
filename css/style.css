@@ -256,3 +256,38 @@ html.touch .qs-grid { font-size:15px; }
   transform:translateX(-50%); z-index:18; padding:8px 22px; font-family:"Courier New", ui-monospace, monospace;
   font-size:13px; font-weight:700; letter-spacing:2px; color:#ffd75e; white-space:nowrap;
   background:rgba(6,14,32,.72); border:1px solid rgba(255,180,55,.6); border-radius:6px; }
+
+
+/* ---------------- sideways-mode unit swaps ----------------
+   vw/vh always reference the REAL (portrait) viewport, even inside the spun
+   body — so landscape layouts written in viewport units must swap axes here. */
+html.fakeland .overlay, html.fakeland-ccw .overlay { padding-left:6vh; }
+html.fakeland #menu .title-block, html.fakeland #menu .menu-list,
+html.fakeland #menu .menu-footer, html.fakeland #menu .menu-mode-title,
+html.fakeland-ccw #menu .title-block, html.fakeland-ccw #menu .menu-list,
+html.fakeland-ccw #menu .menu-footer, html.fakeland-ccw #menu .menu-mode-title { max-width:44vh; }
+html.fakeland #menu .menu-list, html.fakeland-ccw #menu .menu-list { min-width:min(420px, 44vh); }
+html.fakeland .menu-list, html.fakeland-ccw .menu-list { max-height:62vw; }
+html.fakeland .brief-box, html.fakeland-ccw .brief-box { width:min(760px, 92vh); max-height:88vw; }
+html.fakeland .brief-box.wide, html.fakeland-ccw .brief-box.wide { width:min(860px, 94vh); }
+html.fakeland #tintro, html.fakeland-ccw #tintro { max-width:94vh; }
+html.fakeland .qs-card, html.fakeland-ccw .qs-card { max-width:min(92vh, 520px); }
+
+/* the (max-height:480px) compact menu above keys off the REAL viewport height,
+   which is 844 in sideways mode — replicate it so the menu fits the 390-tall
+   game screen instead of overflowing and crushing the list */
+html.fakeland .title-top, html.fakeland-ccw .title-top { font-size:9px; letter-spacing:2px; margin-bottom:4px; }
+html.fakeland .game-title, html.fakeland-ccw .game-title { font-size:34px; letter-spacing:3px; }
+html.fakeland .title-sub, html.fakeland-ccw .title-sub { margin-top:5px; font-size:9px; letter-spacing:2px; }
+html.fakeland .title-sim, html.fakeland-ccw .title-sim { margin-top:4px; font-size:9px; letter-spacing:2px; }
+html.fakeland .title-block, html.fakeland-ccw .title-block { margin-bottom:4px; }
+html.fakeland .menu-mode-title, html.fakeland-ccw .menu-mode-title { font-size:11px; margin-bottom:4px; }
+html.fakeland .menu-list, html.fakeland-ccw .menu-list { gap:4px; max-height:56vw; }
+html.fakeland .mbtn, html.fakeland-ccw .mbtn { padding:6px 12px; font-size:12px; }
+html.fakeland .menu-footer, html.fakeland-ccw .menu-footer { margin-top:5px; }
+html.fakeland #pilot-record, html.fakeland-ccw #pilot-record { font-size:10px; margin-bottom:4px; }
+html.fakeland .hint, html.fakeland .x-follow, html.fakeland-ccw .hint, html.fakeland-ccw .x-follow { font-size:9px; margin-top:3px; }
+html.fakeland .x-follow, html.fakeland-ccw .x-follow { display:none; }
+html.fakeland #menu, html.fakeland-ccw #menu { align-items:flex-start; padding-left:6vh; }
+html.fakeland #menu .title-block, html.fakeland #menu .menu-footer,
+html.fakeland-ccw #menu .title-block, html.fakeland-ccw #menu .menu-footer { text-align:left; }

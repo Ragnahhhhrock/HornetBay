@@ -50,23 +50,6 @@ export function setupTouch(G) {
   `;
   document.body.appendChild(root);
 
-  // The portrait overlay lives OUTSIDE #touch-ui on purpose: touch-ui sits at
-  // z-index 12, below the menu overlay (20) — inside it the "blocking" overlay
-  // was ghosted by the menu and taps fell straight through to the buttons.
-  // As a direct body child its z-60 genuinely tops every gameplay layer.
-  const proot = document.createElement('div');
-  proot.id = 'tportrait';
-  proot.className = 'hidden';
-  proot.innerHTML = `
-    <div class="tp-phone"><div class="tp-screen"></div></div>
-    <div class="tp-title">ROTATE YOUR DEVICE</div>
-    <div class="tp-sub">HORNET BAY IS LANDSCAPE-ONLY ON MOBILE</div>
-    <div class="tp-lock" id="tp-lock">STUCK ON THIS SCREEN? YOUR ROTATION LOCK IS PROBABLY ON &mdash;<br>
-      CONTROL CENTER (SWIPE DOWN FROM TOP-RIGHT) &rarr; TAP THE LOCK ICON</div>
-    <div class="tp-tap seen" id="tp-tap">TAP TO ENABLE SIDEWAYS MODE</div>
-  `;
-  document.body.appendChild(proot);
-
   // ---------------- button wiring ----------------
   // hold: key stays down between touchstart and touchend (throttle, burner, fire)
   const hold = (el, code) => {
@@ -240,68 +223,50 @@ export function setupTouch(G) {
     }
   }
 
-  // ---------------- visibility / rotate banner ----------------
-  // ---------------- landscape only: portrait gets a blocking rotate overlay ----------------
-  const tflight = $('tflight'), tportrait = $('tportrait');
-  const tpLock = $('tp-lock'), tpTap = $('tp-tap');
-  if (!window.DeviceOrientationEvent) tpTap.style.display = 'none';
+  // ---------------- sideways mode ----------------
+  // Portrait viewport on a phone: don't wait, don't nag — serve the game laid
+  // out for landscape and spun 90 degrees. The pilot physically turns the
+  // phone (they figure it out fast); the gyro, when permitted, flips direction
+  // if they turned the "wrong" way. A true landscape viewport always wins.
+  const tflight = $('tflight');
   const portraitMQ = window.matchMedia('(orientation: portrait)');
-  let portraitSince = 0;
-  let fakeDirNow = 0, flPending = 0, flPendingT = 0;   // sideways-mode state
-  function sync() {
-    const st = G.state;
-    const portrait = portraitMQ.matches;
-    tportrait.classList.toggle('hidden', !portrait);
-    tflight.classList.toggle('hidden', portrait || st !== 'flying');
-    const blocked = portrait && fakeDirNow === 0;   // sideways mode beats the overlay
-    tportrait.classList.toggle('hidden', !blocked);
-    tflight.classList.toggle('hidden', blocked || st !== 'flying');
-    if (!blocked) syncIntro(); else introBar.classList.add('hidden'), introMode = '';
-    // reveal the rotation-lock hints only after the overlay has been up a
-    // while — a first-timer rotates in a second and never needs them
-    if (blocked && !portraitSince) portraitSince = performance.now();
-    if (!blocked) portraitSince = 0;
-    tpLock.classList.toggle('seen', blocked && performance.now() - portraitSince > 6000);
-    if (thrId === null && G.player) thrHandle.style.bottom = `${(G.player.throttle || 0) * 100}%`;
-    requestAnimationFrame(sync);
-  }
-  sync();
-
-  // ---------------- sideways mode (rotation-lock workaround) ----------------
-  // iOS Portrait Orientation Lock keeps the WebView portrait no matter how the
-  // phone is held — the old overlay spun forever and one pilot got stuck there.
-  // Now, once the gyro says the phone is physically landscape, the whole game
-  // spins 90 degrees inside the portrait viewport (see .fakeland in the CSS)
-  // and play continues. The overlay only shows while we have no sensor data.
+  let fakeDirNow = 0, flPending = 0, flPendingT = 0;
   function setFakeland(dir) {
     if (dir === fakeDirNow) return;
     fakeDirNow = dir;
     document.documentElement.classList.toggle('fakeland', dir === 1);
     document.documentElement.classList.toggle('fakeland-ccw', dir === -1);
-    if (G.applyResize) G.applyResize();          // re-lay out with swapped dims
+    // deferred: at startup in portrait this fires before main.js has finished
+    // initializing (hud TDZ) — re-lay out on the next frame instead, and
+    // coalesce rapid flips while we're at it
+    requestAnimationFrame(() => { if (G.applyResize) G.applyResize(); });
   }
+  function applyOrientationMode() {
+    if (portraitMQ.matches) setFakeland(fakeDirNow || 1);   // guess CW; gyro corrects
+    else setFakeland(0);                                    // native landscape
+  }
+  portraitMQ.addEventListener('change', applyOrientationMode);
+  applyOrientationMode();
+
   function onTilt(e) {
-    if (e.gamma === null || e.gamma === undefined) return;
-    let want = 0;
-    if (portraitMQ.matches) {
-      const th = fakeDirNow !== 0 ? 45 : 60;      // hysteresis: no flip-flop
-      if (Math.abs(e.gamma) > th) want = e.gamma > 0 ? -1 : 1;
-    }
+    if (e.gamma === null || e.gamma === undefined || !portraitMQ.matches) return;
+    if (Math.abs(e.gamma) <= 55) return;         // held upright-ish: keep current side
+    const want = e.gamma > 0 ? -1 : 1;
     if (want !== flPending) { flPending = want; flPendingT = performance.now(); }
-    if (want !== fakeDirNow && performance.now() - flPendingT > 300) setFakeland(want);
-    // settling pulse: "we see you turning" while sideways mode engages
-    tpLock.classList.toggle('hot', fakeDirNow === 0 && portraitMQ.matches && Math.abs(e.gamma) > 60);
+    if (want !== fakeDirNow && performance.now() - flPendingT > 250) setFakeland(want);
   }
-  // listen immediately — a previously granted iOS permission streams at once;
-  // the overlay tap runs the permission dance for first-timers
+  // a previously granted iOS motion permission streams at once; first-timers
+  // are asked on their first tap (see the audio-ensure listener below)
   window.addEventListener('deviceorientation', onTilt);
-  tportrait.addEventListener('touchend', () => {
-    try {
-      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
-        DeviceOrientationEvent.requestPermission().catch(() => {});
-      }
-    } catch (e) { /* no sensors — the static hint still helps */ }
-  });
+
+  function sync() {
+    const st = G.state;
+    tflight.classList.toggle('hidden', st !== 'flying');
+    syncIntro();
+    if (thrId === null && G.player) thrHandle.style.bottom = `${(G.player.throttle || 0) * 100}%`;
+    requestAnimationFrame(sync);
+  }
+  sync();
 
   // ---------------- mobile niceties ----------------
   // canvas touches shouldn't rubber-band or pull-to-refresh (menus still scroll)
@@ -311,8 +276,16 @@ export function setupTouch(G) {
   window.addEventListener('contextmenu', (e) => {
     if (e.target.closest('#touch-ui')) e.preventDefault();
   });
-  // audio needs a first gesture on mobile
-  window.addEventListener('touchstart', () => G.audio.ensure(), { once: true });
+  // audio needs a first gesture on mobile — and iOS motion access needs one
+  // too, so the same first tap quietly asks (enables gyro direction-flips)
+  window.addEventListener('touchstart', () => {
+    G.audio.ensure();
+    try {
+      if (window.DeviceOrientationEvent && typeof DeviceOrientationEvent.requestPermission === 'function') {
+        DeviceOrientationEvent.requestPermission().catch(() => {});
+      }
+    } catch (e) {}
+  }, { once: true });
   // fullscreen once the pilot commits to a sortie (best-effort; iPhone Safari
   // has no page fullscreen — silently skipped there)
   const fsTry = () => {
