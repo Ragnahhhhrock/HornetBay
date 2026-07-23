@@ -1,7 +1,7 @@
 // Hornet Bay service worker — makes the game installable and offline-capable.
 // Strategy: network-first for code/pages (deploys show up immediately),
 // cache-first for static art (shots/icons), cache as offline fallback.
-const CACHE = 'hb-v1';
+const CACHE = 'hb-v2';   // v2: brand-consistent icons/favicon (X-style badge)
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (e) => e.waitUntil(clients.claim()));
