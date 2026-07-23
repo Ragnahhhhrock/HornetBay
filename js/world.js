@@ -1286,7 +1286,9 @@ export class Carrier {
     // top = stern, bottom = bow (the deck box's top-face UV mapping)
     const c = document.createElement('canvas'); c.width = 256; c.height = 1024;
     const g = c.getContext('2d');
-    const cX = (x) => (x + 38) / 76 * 256, cY = (z) => (z + 168) / 336 * 1024;
+    // the box top-face UV mirrors x: paint port/starboard flipped so features
+    // land on their true deck positions (angle deck to PORT of the island)
+    const cX = (x) => (38 - x) / 76 * 256, cY = (z) => (z + 168) / 336 * 1024;
     g.fillStyle = '#23262b'; g.fillRect(0, 0, 256, 1024);   // near-black deck, like the original
     g.strokeStyle = '#c9cdd2'; g.lineWidth = 3; g.strokeRect(5, 5, 246, 1014);
     // axial-deck dashed centreline (stern to bow)
@@ -1372,27 +1374,33 @@ export class Carrier {
       hg.computeVertexNormals();
       this.group.add(new THREE.Mesh(hg, new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide })));
 
-      // island (starboard): stacked levels, window band, mast + rotating radar
+      // island (starboard, aft of midships like CVN-65): the signature big
+      // BOX — flat-roofed cube with billboard radar panels, window band at
+      // the bridge level, and only a small mast above the roof
       const isl = new THREE.Group();
       const ib = (w, h, d, x, y, z, m) => { const q = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m || gM); q.position.set(x, y, z); isl.add(q); return q; };
-      ib(16, 14, 34, -30, deckY + 7, 30);          // base
-      ib(14, 7, 28, -30, deckY + 17.5, 30);       // level 2
-      ib(15, 5, 24, -30, deckY + 23.5, 30);       // bridge house
-      ib(15.6, 1.8, 24.6, -30, deckY + 25, 30, LM(0x141c26)); // window band
-      ib(10, 2.4, 16, -30, deckY + 29, 30);       // top platform
-      ib(9, 0.8, 34, -30, deckY + 0.6, 30, dM);   // catwalk skirting
-      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 1.1, 22, 8), dM);
-      mast.position.set(-30, deckY + 41, 34); isl.add(mast);
-      const yard = new THREE.Mesh(new THREE.BoxGeometry(9, 0.5, 0.5), dM);
-      yard.position.set(-30, deckY + 46, 34); isl.add(yard);
-      const yard2 = yard.clone(); yard2.position.y = deckY + 49; yard2.scale.x = 0.7; isl.add(yard2);
+      ib(16, 0.8, 32, -30, deckY + 0.6, -40, dM);           // catwalk skirting
+      ib(15, 21, 30, -30, deckY + 10.5, -40);               // THE BOX (four levels)
+      ib(15.7, 2.0, 30.7, -30, deckY + 17.5, -40, LM(0x141c26)); // window band
+      ib(11, 2.2, 22, -30, deckY + 22.2, -40);              // roof deckhouse
+      // SCANFAR billboard panels: dark squares on the outboard + aft faces
+      const panelM = LM(0x1a2028);
+      const bp1 = new THREE.Mesh(new THREE.PlaneGeometry(10, 10), panelM);
+      bp1.position.set(-37.7, deckY + 10, -40); bp1.rotation.y = -Math.PI / 2; isl.add(bp1);
+      const bp2 = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), panelM);
+      bp2.position.set(-30, deckY + 10, -55.2); bp2.rotation.y = Math.PI; isl.add(bp2);
+      // small mast + rotating radar on the roof — nothing like the old tower
+      const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.0, 14, 8), dM);
+      mast.position.set(-30, deckY + 30.3, -36); isl.add(mast);
+      const yard = new THREE.Mesh(new THREE.BoxGeometry(7, 0.5, 0.5), dM);
+      yard.position.set(-30, deckY + 33, -36); isl.add(yard);
       this.radar = new THREE.Group();
-      this.radar.position.set(-30, deckY + 52.5, 34);
+      this.radar.position.set(-30, deckY + 38, -36);
       const bar1 = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 1.2), wM);
       const bar2 = new THREE.Mesh(new THREE.BoxGeometry(6, 0.6, 1.0), wM);
       bar2.position.y = 1.2; this.radar.add(bar1, bar2); isl.add(this.radar);
-      const dome = new THREE.Mesh(new THREE.SphereGeometry(1.6, 10, 8), wM);
-      dome.position.set(-30, deckY + 48, 26); isl.add(dome);
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(1.5, 10, 8), wM);
+      dome.position.set(-27, deckY + 24.5, -47); isl.add(dome);
       this.group.add(isl);
       // big "65" on both island faces
       const c65 = document.createElement('canvas'); c65.width = 128; c65.height = 128;
@@ -1402,10 +1410,10 @@ export class Carrier {
       const t65 = new THREE.CanvasTexture(c65);
       for (const s of [-1, 1]) {
         const p = new THREE.Mesh(new THREE.PlaneGeometry(9, 9), new THREE.MeshBasicMaterial({ map: t65, transparent: true }));
-        p.position.set(-30 + 8.1 * s, deckY + 7, 30); p.rotation.y = s > 0 ? Math.PI / 2 : -Math.PI / 2;
+        p.position.set(-30 + 7.7 * s, deckY + 10, -40); p.rotation.y = s > 0 ? Math.PI / 2 : -Math.PI / 2;
         this.group.add(p);
       }
-      this.islandOffset = { x: -30, z: 30 };
+      this.islandOffset = { x: -30, z: -40 };
 
       // arrestor wires (3D) across the angled deck — a0/a1 set by _deckTexture()
       const { a0, a1 } = this.angleDeck;
@@ -1503,8 +1511,8 @@ export class Carrier {
       const addL = (x, y, z, c) => { np.push(x, y, z); nc.push(...c); };
       for (let z = -160; z <= 160; z += 12) for (const s of [-1, 1]) addL(37.5 * s, deckY + 0.6, z, [0.7, 0.8, 1]);
       for (let t = 0.08; t < 0.99; t += 0.1) addL(spA[0] + (spB[0] - spA[0]) * t, deckY + 0.6, spA[1] + (spB[1] - spA[1]) * t, [0.7, 0.8, 1]);   // sponson edge
-      for (let i = 0; i < 22; i++) addL(-30 + rand(-6, 6), deckY + rand(4, 24), 30 + rand(-13, 13), [1, 0.85, 0.55]);
-      addL(-30, deckY + 53.5, 34, [1, 1, 1]);   // masthead
+      for (let i = 0; i < 22; i++) addL(-30 + rand(-6, 6), deckY + rand(4, 22), -40 + rand(-13, 13), [1, 0.85, 0.55]);
+      addL(-30, deckY + 39.5, -36, [1, 1, 1]);   // masthead
       const ngeo = new THREE.BufferGeometry();
       ngeo.setAttribute('position', new THREE.Float32BufferAttribute(np, 3));
       ngeo.setAttribute('color', new THREE.Float32BufferAttribute(nc, 3));

@@ -311,10 +311,10 @@ export class Player {
         return;
       }
     }
-    // carrier island
+    // carrier island (starboard box, aft of midships)
     if (!carrier.isSub) {
       const il = carrier.toLocal(p, _v);
-      if (Math.abs(il.x + 30) < 9 && Math.abs(il.z - 30) < 17 && il.y < 42 && il.y > -3) {
+      if (Math.abs(il.x + 30) < 9 && Math.abs(il.z + 40) < 17 && il.y < 38 && il.y > -3) {
         G.onCrashed('HIT THE ISLAND'); return;
       }
     }
