@@ -1,6 +1,7 @@
 // world.js — San Francisco Bay Area: terrain, ocean, sky, city, bridges, carrier, airports
 import * as THREE from 'three';
 import { clamp, lerp, fbm, noise2, rand } from './util.js';
+import { Ships } from './ships.js';
 
 const _gloomCol = new THREE.Color(0.32, 0.34, 0.38);   // overcast gray for rainy weather
 
@@ -319,6 +320,8 @@ export class World {
     this.carrier = new Carrier(this, new THREE.Vector3(-30000, 0, 10000), Math.PI / 2, false);
     this.enemySub = new Carrier(this, new THREE.Vector3(-42000, 0, -14000), Math.PI / 2, true);
     this.enemySub.group.visible = false;
+    // the Big E never sails alone: battle-group picket ring + bay traffic
+    this.ships = new Ships(this);
     this.setTimeOfDay('day');
   }
 
@@ -1231,6 +1234,7 @@ export class World {
     this._reflowSpecks(camPos, playerY);
     this.carrier.update(dt);
     this.enemySub.update(dt);
+    if (this.ships) this.ships.update(dt);
     this._updateTraffic(dt);
     // weather blend: ease toward the target and apply the gloom. The satellite
     // map views (briefing / plane select / zoom) suppress it — no rain streaks
