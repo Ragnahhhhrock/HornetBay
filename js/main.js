@@ -336,10 +336,17 @@ window.addEventListener('keydown', (e) => {
   } else if (G.state === 'briefing') {
     if (e.code === 'Enter' || e.code === 'Space') { G.intro.afterBrief && G.intro.afterBrief(); }
     if (e.code === 'Escape') showMenu();
+  } else if (G.state === 'debrief') {
+    // any of the usual confirm/escape keys gets you back into the cockpit
+    if (e.code === 'Enter' || e.code === 'Space' || e.code === 'Escape') {
+      $('debrief').classList.add('hidden'); G.state = 'flying';
+    }
   }
 });
 $('debrief-menu').onclick = () => { $('debrief').classList.add('hidden'); showMenu(); };
-$('debrief-next').onclick = () => { $('debrief').classList.add('hidden'); showMenu(); };
+// RESUME FLIGHT: back into the cockpit and keep flying the world you just
+// saved (the mission is scored and over; what's left is free flight)
+$('debrief-next').onclick = () => { $('debrief').classList.add('hidden'); G.state = 'flying'; };
 // flight manual on demand — corner button or ? key; auto-pauses the sim while open
 G._manualPaused = false;
 G.openManual = () => {

@@ -408,7 +408,7 @@ export class World {
     // the unlit road ribbons would glow after dark — dim them with the sun
     const dim = 1 - cfg.night * 0.62;
     if (this._roadMat) this._roadMat.color.setScalar(dim);
-    if (this._roadLineMat) this._roadLineMat.color.setHex(0xd8b830).multiplyScalar(dim);
+    if (this._roadLineMat) this._roadLineMat.color.setHex(0x646a72).multiplyScalar(dim);
   }
 
   _buildOcean() {
@@ -755,19 +755,19 @@ export class World {
   }
 
   _buildRoads() {
-    // gray asphalt ribbons draped over the terrain, with painted markings:
-    // white edge lines and a dashed yellow centreline for the two-way traffic
+    // gray asphalt ribbons draped over the terrain, with dim painted markings:
+    // muted gray edge lines and a dashed centreline for the two-way traffic
     const c = document.createElement('canvas'); c.width = 64; c.height = 64;
     const g2 = c.getContext('2d');
-    g2.fillStyle = '#707780'; g2.fillRect(0, 0, 64, 64);        // light asphalt gray
-    g2.fillStyle = '#e8e8e0';                                    // white edge lines
+    g2.fillStyle = '#3f434a'; g2.fillRect(0, 0, 64, 64);        // dark asphalt gray
+    g2.fillStyle = '#6e747c';                                    // dim gray edge lines
     g2.fillRect(2, 0, 3, 64); g2.fillRect(59, 0, 3, 64);
-    g2.fillStyle = '#f0c830'; g2.fillRect(29, 6, 5, 24);         // yellow centre dash
+    g2.fillStyle = '#878d94'; g2.fillRect(29, 6, 5, 24);         // dim gray centre dash
     const tex = new THREE.CanvasTexture(c);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
     tex.anisotropy = 8;                                          // crisp at glancing angles
     const mat = new THREE.MeshBasicMaterial({ map: tex });   // unlit, like the original
-    const lineMat = new THREE.LineBasicMaterial({ color: 0xd8b830, fog: true });
+    const lineMat = new THREE.LineBasicMaterial({ color: 0x646a72, fog: true });
     this._roadMat = mat; this._roadLineMat = lineMat;   // dimmed by setTimeOfDay
     for (let ri = 0; ri < ROADS.length; ri++) {
       const P = this._roadPath(ROADS[ri], ri);

@@ -262,8 +262,9 @@ export class Ships {
     // --- maritime traffic between the Bay and the Pacific ---
     // shipping lane through the Golden Gate (inbound leg south, outbound leg
     // north, both clear of Alcatraz), looped out-and-back
-    // validated against the game's groundHeight: every leg keeps 500m+ off
-    // land (including Alcatraz), passing under the Golden Gate twice per loop
+    // every leg validated against the game's groundHeight: terrain shallower
+    // than -4m counts as land (the ocean plane sits at -2.5m, so anything
+    // higher renders dry), plus a 500m horizontal margin incl. Alcatraz
     const lane = [
       [-26000, -1200], [-7000, -600], [2000, -500], [6000, -1500], [10000, -2200],
       [14000, -1200], [17000, 1500],   // turn basin in the central bay
@@ -276,10 +277,10 @@ export class Ships {
       { len: 145, beam: 21, model: buildCargo({ len: 145, beam: 21, rows: 4 }), route: lane2.slice(5).concat(lane2.slice(0, 5)), speed: 5.0, turn: 0.07 },
       { len: 22, beam: 7, model: buildFishing(), route: [[-12000, -4000], [-5500, -3000], [-5000, -6500], [-8000, -7000]], speed: 3.5, turn: 0.25 },
       { len: 22, beam: 7, model: buildFishing(), route: [[11500, -1600], [14000, -800], [15500, 1000], [12500, -2200]], speed: 3.2, turn: 0.25 },
-      { len: 22, beam: 7, model: buildFishing(), route: [[2500, -1200], [5000, -1800], [7500, -1000], [5000, -300]], speed: 3.0, turn: 0.25 },
+      { len: 22, beam: 7, model: buildFishing(), route: [[2500, -1200], [5000, -1800], [7500, -1000], [4000, -1000]], speed: 3.0, turn: 0.25 },
       { len: 11, beam: 3.6, model: buildSailboat(true),  route: [[4500, -800], [7500, -1400], [10500, -1600], [8000, -2200], [5000, -1800]], speed: 3.0, turn: 0.3 },
       { len: 11, beam: 3.6, model: buildSailboat(true),  route: [[12000, -600], [15000, 500], [16500, 2200], [13500, -1500]], speed: 2.8, turn: 0.3 },
-      { len: 11, beam: 3.6, model: buildSailboat(false), route: [[3000, -1500], [6000, -2200], [10500, -2300], [9500, -1500], [5500, -300]], speed: 4.0, turn: 0.3 },
+      { len: 11, beam: 3.6, model: buildSailboat(false), route: [[3000, -1500], [6000, -2200], [10500, -2300], [9500, -1500], [6500, -1200]], speed: 4.0, turn: 0.3 },
     ];
     this.traffic = trafficDefs.map(d => {
       const t = new TrafficShip(world, d.model, d.route, d.speed, d.turn);
