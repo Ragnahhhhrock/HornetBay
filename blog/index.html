@@ -100,7 +100,20 @@
   "blogPost": [
     {
       "@type": "BlogPosting",
-      "headline": "The Exchange: a print-on-demand squadron store, built API-first PENDING",
+      "headline": "Q toggles the menu now: quit out, Q back in PENDING",
+      "datePublished": "2026-07-24",
+      "url": "https://hornetbay.com/blog/q-resume-flight",
+      "wordCount": 73,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/q-resume-flight.png"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "The Exchange: a print-on-demand squadron store, built API-first 7fb9f03",
       "datePublished": "2026-07-24",
       "url": "https://hornetbay.com/blog/the-exchange",
       "wordCount": 100,
@@ -680,6 +693,13 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="q-resume-flight">
+    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">BUGFIX</span><span class="tag">CONTROLS</span></span></div>
+    <h2><a class="title-link" href="/blog/q-resume-flight">Q toggles the menu now: quit out, Q back in</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/q-resume-flight.png"><img src="/shots/q-resume-flight.png" alt="The Hornet Bay main menu showing Q RESUME FLIGHT at the top, with the frozen cockpit HUD behind it" loading="lazy"></a>
+    <p>A pilot reported the trap: mid-mission you hit <b>Q</b> to call up the main menu &mdash; and there was no way back. The menu slammed down over the cockpit and the only way out was to abandon the sortie and relaunch. The sortie itself was never the problem &mdash; your jet waits exactly where you left it while the attract demo borrows the camera &mdash; the menu just never offered the way back.</p>
+    <p>Now it does, two ways. Quit to the menu with Q and you&rsquo;ll find a new top entry: <b>Q &mdash; RESUME FLIGHT</b>, tagged BACK IN THE COCKPIT. Hit Q again (or click it) and the menu folds away mid-frame, mission intact, hands back on the stick. The flag clears the moment you launch a fresh sortie, so there&rsquo;s no ghost resume waiting after you&rsquo;ve moved on. The subtle part of the fix: the resume key is polled in the frame loop rather than fired from the key event itself &mdash; otherwise the same keypress gets seen by both states and bounces you straight back out to the menu. Fifty-one checks green, and the Bay forgives an accidental Q.</p>
+  </article>
   <article id="the-exchange">
     <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">SITE</span><span class="tag">BRAND</span></span></div>
     <h2><a class="title-link" href="/blog/the-exchange">The Exchange: a print-on-demand squadron store, built API-first</a> <span class="hash">7fb9f03</span></h2>

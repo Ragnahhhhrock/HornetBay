@@ -214,6 +214,7 @@ function buildMenu(mode = 'main') {
     return;
   }
   $('menu-title').textContent = '';   // main mode: the logo block above says it
+  if (G._menuResume) addBtn('Q', 'RESUME FLIGHT', 'BACK IN THE COCKPIT', () => resumeFlight());
   addBtn('1', 'DEMO', '', () => startDemo(true));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
   addBtn('3', 'TRAINING: DEMO OF MANEUVERS', 'SOON', () => G.msg('TRAINING NOT AVAILABLE THIS TOUR', 'info'));
@@ -376,6 +377,7 @@ $('pause-quit').onclick = () => { $('pause').classList.add('hidden'); showMenu()
 // ---------------- mission lifecycle ----------------
 function launchMission(def, opts = {}) {
   G.missionDef = def;
+  G._menuResume = false;   // a fresh sortie replaces the one the menu remembered
   wakeLockTry();   // keep the screen awake for the sortie
   // safety net: the F-16 never goes to the boat, whatever path got us here
   if (G.player.type === 'f16') {
@@ -646,10 +648,25 @@ function togglePause() {
 }
 // Q — bail straight back to the main menu from flying / paused / dead
 function quitToMenu() {
+  // Q from the cockpit: the sortie survives the menu — Q again takes you back
+  G._menuResume = (G.state === 'flying' || G.state === 'paused');
   G._manualPaused = false;
   $('controls').classList.add('hidden');
   $('pause').classList.add('hidden');
   showMenu();
+}
+
+// Q pressed on the menu with a live sortie behind it: fold the menu away and
+// hand the jet back. The player object never moved — only the attract demo
+// borrowed the camera, so stopDemo() is all the cleanup we need.
+function resumeFlight() {
+  if (!G._menuResume) return;
+  G._menuResume = false;
+  stopDemo();
+  $('menu').classList.add('hidden');
+  $('pause').classList.add('hidden');
+  G.state = 'flying';
+  G.audio.radioClick();
 }
 
 // ---------------- cameras ----------------
@@ -845,6 +862,10 @@ function handleDiscreteInput(dt) {
       if (!$('controls').classList.contains('hidden')) G.closeManual();   // ESC closes the manual first
       else togglePause();
     }
+    // Q on the menu with a live sortie behind it: back into the cockpit.
+    // polled here (not in the keydown router) so the same keypress can't be
+    // seen twice and bounce straight back out to the menu
+    else if (I.pressed('KeyQ') && G.state === 'menu' && G._menuResume) resumeFlight();
     else if (I.pressed('KeyQ') && (G.state === 'paused' || G.state === 'dead')) quitToMenu();
     return;
   }
