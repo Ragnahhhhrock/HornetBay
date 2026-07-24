@@ -586,6 +586,7 @@ export class HUD {
         case 'stolen': c.fillStyle = AMBER; break;
         case 'carrier': c.fillStyle = '#40d868'; break;
         case 'raft': c.fillStyle = '#ff8830'; break;
+        case 'airliner': c.fillStyle = '#cfe8ff'; break;   // civil traffic: pale sky white
         case 'missile': c.fillStyle = Math.sin(G.time * 14) > 0 ? RED : '#4a0d05'; break;
         case 'sub': c.fillStyle = '#ff58c8'; break;
         default: c.fillStyle = WHITE;

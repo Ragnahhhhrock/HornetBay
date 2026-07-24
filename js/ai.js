@@ -9,14 +9,14 @@ const _v = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Euler()
 export class AIAircraft {
   constructor(scene, world, type, opts = {}) {
     this.scene = scene; this.world = world; this.type = type;
-    this.model = buildModel(type);
+    this.model = buildModel(type, opts.livery);
     scene.add(this.model);
     this.pos = this.model.position;
     this.pos.copy(opts.pos || new THREE.Vector3());
     this.heading = opts.heading ?? 0;
     this.speed = opts.speed ?? 220;
     this.targetSpeed = this.speed;
-    this.hp = opts.hp ?? (type === 'b747' ? 400 : type === 'cruise' ? 60 : 100);
+    this.hp = opts.hp ?? ({ b747: 400, b744: 420, dc10: 300, b737: 200, md90: 180, cruise: 60 }[type] || 100);
     this.hostile = opts.hostile ?? false;
     this.identified = false;
     this.name = opts.name || type.toUpperCase();
@@ -223,6 +223,12 @@ export class AIAircraft {
     if (this.dead) return;
     this.hp -= dmg;
     if (this.onEvent) this.onEvent('hit', this);
+    // shooting at a civilian airliner draws an immediate radio reprimand
+    if (byPlayer && this.kind === 'airliner' && this.hp > 0 && G.time - (this._cfWarn || -30) > 6) {
+      this._cfWarn = G.time;
+      G.msg('CHECK FIRE! CIVILIAN AIRLINER!', 'warn');
+      if (G.radio) G.radio(`NORAD: VIPER, CHECK FIRE, CHECK FIRE! THAT IS A CIVILIAN AIRLINER!`);
+    }
     if (this.hp <= 0) this.kill(G, false, byPlayer);
     else if (this.hp < 45) this.smoking = true;
   }

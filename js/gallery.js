@@ -10,6 +10,10 @@ const ITEMS = [
   { type: 'f16',   name: 'F-16 FIGHTING FALCON',       info: 'LAND-BASED AIR-DEFENCE HOT-ROD — NO TAILHOOK' },
   { type: 'b747',  name: 'AIR FORCE ONE (VC-25A)',     info: 'BOEING 747-200B — THE 1994 PRESIDENTIAL MOUNT — MIND THE PAINT' },
   { type: 'mig29', name: 'MIG-29 FULCRUM',             info: 'ENEMY BOGEY — TWIN-TAIL AGILE FIGHTER' },
+  { type: 'b744',  name: 'ALLIED AIRLINES 747-400',    info: 'SFO HEAVY — 388 SOULS ABOARD — FRIENDLY SKIES: CHECK YOUR FIRE', livery: 0 },
+  { type: 'b737',  name: 'LIBERTY AIR 737-400',        info: 'SHORT-HAUL SHUTTLE — 146 SOULS ABOARD — POLISHED SILVER: CHECK YOUR FIRE', livery: 1 },
+  { type: 'dc10',  name: 'PACIFIC EMPRESS DC-10',      info: 'TRIJET HEAVY — 268 SOULS ABOARD — THE DEFECTOR FLEW ONE OF THESE', livery: 3 },
+  { type: 'md90',  name: 'CASCADE AIR MD-90',          info: 'T-TAIL MAD DOG — 158 SOULS ABOARD — REAR TWINS: CHECK YOUR FIRE', livery: 2 },
 ];
 
 export class Gallery {
@@ -62,7 +66,7 @@ export class Gallery {
   _show(i) {
     this.idx = ((i % ITEMS.length) + ITEMS.length) % ITEMS.length;
     if (this.model) this.G.scene.remove(this.model);
-    this.model = buildModel(ITEMS[this.idx].type);
+    this.model = buildModel(ITEMS[this.idx].type, ITEMS[this.idx].livery || 0);
     this.model.position.copy(this.anchor);
     if (this.G.cleanShot && this.model.userData.gear) this.model.userData.gear.visible = false;   // marketing poses: wheels up
     this.G.scene.add(this.model);
@@ -106,7 +110,7 @@ export class Gallery {
     c.font = `${11 * s}px "Courier New", monospace`;
     c.fillText(it.info, w / 2, h * 0.90);
     c.fillStyle = '#6a9a6a';
-    c.fillText('ARROWS / DRAG — ROTATE     + / - / WHEEL — ZOOM     1-4 / TAB — NEXT AIRCRAFT     Q — MENU', w / 2, h * 0.94);
+    c.fillText('ARROWS / DRAG — ROTATE     + / - / WHEEL — ZOOM     1-8 / TAB — NEXT AIRCRAFT     Q — MENU', w / 2, h * 0.94);
     c.textAlign = 'left';
   }
 }

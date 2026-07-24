@@ -354,6 +354,155 @@ export function build707() {
   return g;
 }
 
+// ---------------- commercial airliners (SFO traffic, 1994) ----------------
+// The carriers are fictional-but-evocative: schemes tip a hat to the airlines
+// that actually worked SFO in 1994 without borrowing a single trademark.
+export const AIRLINE_LIVERIES = [
+  { name: 'ALLIED',  full: 'ALLIED AIRLINES', fuse: 0xf2f3f5, belly: 0x5a6470, cheat: 0x24407a, tail: 0x24407a, accent: 0xffb737, engines: 0x5a6470 },  // battleship gray/blue
+  { name: 'LIBERTY', full: 'LIBERTY AIR',     fuse: 0xd8dce0, belly: 0xd8dce0, cheat: 0xa02028, tail: 0xd8dce0, accent: 0x24407a, engines: 0xb8bcc0 },  // polished silver, red cheat
+  { name: 'CASCADE', full: 'CASCADE AIR',     fuse: 0xf4f6f8, belly: 0x1c2c4c, cheat: 0x1c2c4c, tail: 0x1c2c4c, accent: 0xffffff, engines: 0x1c2c4c },  // white over navy widget
+  { name: 'EMPRESS', full: 'PACIFIC EMPRESS', fuse: 0xf0f2f4, belly: 0x14213c, cheat: 0xc8a020, tail: 0x14213c, accent: 0xc8a020, engines: 0x14213c },  // navy/gold international
+];
+
+const _nameTexCache = {};
+function _nameTex(text, hex) {
+  const key = text + '|' + hex;
+  if (_nameTexCache[key]) return _nameTexCache[key];
+  const c = document.createElement('canvas'); c.width = 512; c.height = 64;
+  const g2 = c.getContext('2d');
+  g2.fillStyle = '#' + hex.toString(16).padStart(6, '0');
+  g2.font = 'bold 46px Arial, sans-serif';
+  g2.textAlign = 'center'; g2.textBaseline = 'middle';
+  g2.fillText(text, 256, 36);
+  const t = new THREE.CanvasTexture(c);
+  _nameTexCache[key] = t;
+  return t;
+}
+
+// shared airframe dresser: belly, cheatline, window band, titles, fin accent
+function _dressAirliner(g, L, r1, r2, len, o) {
+  const belly = cyl(r1 * 0.98, r2 * 0.98, len * 0.88, L.belly, 14);
+  belly.scale.set(1.02, 0.5, 1); belly.position.set(0, -r1 * 0.42, o.bellyZ || -1); g.add(belly);
+  const cheat = cyl(r1 + 0.05, r2 + 0.05, len * 0.8, L.cheat, 14);
+  cheat.scale.set(1, 0.2, 1); cheat.position.set(0, o.cheatY, o.cheatZ || -0.5); g.add(cheat);
+  // window band: a dark sleeve hugging the crown reads as the window line
+  const win = cyl(r1 + 0.04, r2 + 0.04, len * 0.72, 0x10161f, 14);
+  win.scale.set(1, 0.09, 1); win.position.set(0, o.winY, o.winZ || 0); g.add(win);
+  // airline titles on the forward fuselage, both sides
+  const tex = _nameTex(L.full, L.cheat === 0xd8dce0 ? 0x24407a : L.cheat);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(o.nameW, o.nameH),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * (r1 + 0.06), o.nameY, o.nameZ);
+    p.rotation.y = s * Math.PI / 2;
+    g.add(p);
+  }
+}
+
+export function build744(livery = 0) {
+  const L = AIRLINE_LIVERIES[livery % AIRLINE_LIVERIES.length];
+  const g = new THREE.Group();
+  const fus = cyl(3.6, 3.2, 62, L.fuse, 14); g.add(fus);
+  const nose = cone(3.6, 10, L.fuse, 14); nose.position.z = 36; g.add(nose);
+  const hump = box(5.5, 2.4, 20, L.fuse); hump.position.set(0, 3.6, 20); g.add(hump);
+  const tailCone = cone(3.0, 9, L.fuse, 10); tailCone.rotation.x = Math.PI; tailCone.position.z = -35; g.add(tailCone);
+  _dressAirliner(g, L, 3.6, 3.2, 62, { cheatY: 0.9, winY: 2.0, nameW: 17, nameH: 1.9, nameY: 2.9, nameZ: 21 });
+  for (const s of [1, -1]) {
+    const ud = box(0.06, 0.35, 14, 0x10161f); ud.position.set(s * 2.78, 4.3, 20); g.add(ud);
+  }
+  const wG = wingGeo([[2.5, 4], [2.5, -8], [30, -8], [30, -5.5]], 0.5);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(L.fuse)); w.scale.x = s; w.position.y = -0.5; g.add(w); }
+  // 747-400 winglets
+  for (const s of [1, -1]) { const wl = box(0.22, 3.6, 4.2, L.cheat); wl.position.set(s * 30, 1.4, -6.6); g.add(wl); }
+  for (const s of [1, -1]) for (const [ex, ez] of [[9, 0], [17, -2]]) {
+    const en = cyl(1.3, 1.1, 5, L.engines, 10); en.position.set(s * ex, -3.0, ez + 1); g.add(en);
+  }
+  const tG = wingGeo([[0, 2], [0, -5], [11, -7.5], [11, -5.5]], 0.6);
+  const tail = new THREE.Mesh(tG, M(L.tail)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 2.5, -28); g.add(tail);
+  const tB = wingGeo([[0, 1.8], [0, -4.8], [4.5, -5.6], [4.5, -4.2]], 0.62);
+  const tailB = new THREE.Mesh(tB, M(L.accent)); tailB.rotation.z = Math.PI / 2; tailB.position.set(0, 2.5, -28); g.add(tailB);
+  const sG = wingGeo([[1.5, 1], [1.5, -3], [11, -3.5], [11, -2]], 0.4);
+  for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(L.fuse)); st.scale.x = s; st.position.set(0, 1, -30); g.add(st); }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'b744' };
+  addNavLights(g, 30, -34, 2.5);
+  return g;
+}
+
+export function build737(livery = 0) {
+  const L = AIRLINE_LIVERIES[livery % AIRLINE_LIVERIES.length];
+  const g = new THREE.Group();
+  const fus = cyl(1.9, 1.75, 30, L.fuse, 12); g.add(fus);
+  const nose = cone(1.9, 5, L.fuse, 12); nose.position.z = 17.5; g.add(nose);
+  const tailCone = cone(1.6, 5.5, L.fuse, 10); tailCone.rotation.x = Math.PI; tailCone.position.z = -17.5; g.add(tailCone);
+  _dressAirliner(g, L, 1.9, 1.75, 30, { cheatY: 0.55, winY: 1.1, nameW: 9.5, nameH: 1.1, nameY: 1.45, nameZ: 10 });
+  const wG = wingGeo([[1.3, 1.5], [1.3, -4], [14.5, -6], [14.5, -4.5]], 0.35);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(L.fuse)); w.scale.x = s; w.position.y = -0.4; g.add(w); }
+  for (const s of [1, -1]) {
+    const en = cyl(0.9, 0.8, 3.2, L.engines, 8); en.position.set(s * 4.6, -1.7, -0.5); g.add(en);
+  }
+  const tG = wingGeo([[0, 1.5], [0, -3.5], [6.5, -5], [6.5, -3.6]], 0.45);
+  const tail = new THREE.Mesh(tG, M(L.tail)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 1.6, -15); g.add(tail);
+  const tB = wingGeo([[0, 1.3], [0, -3.2], [2.8, -3.7], [2.8, -2.7]], 0.47);
+  const tailB = new THREE.Mesh(tB, M(L.accent)); tailB.rotation.z = Math.PI / 2; tailB.position.set(0, 1.6, -15); g.add(tailB);
+  const sG = wingGeo([[1, 0.8], [1, -2], [5.5, -2.4], [5.5, -1.4]], 0.3);
+  for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(L.fuse)); st.scale.x = s; st.position.set(0, 0.7, -16); g.add(st); }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'b737' };
+  addNavLights(g, 14.5, -17, 1.4);
+  return g;
+}
+
+export function buildDC10(livery = 0) {
+  const L = AIRLINE_LIVERIES[livery % AIRLINE_LIVERIES.length];
+  const g = new THREE.Group();
+  const fus = cyl(3.0, 2.8, 50, L.fuse, 14); g.add(fus);
+  const nose = cone(3.0, 8, L.fuse, 12); nose.position.z = 29; g.add(nose);
+  const tailCone = cone(2.6, 8, L.fuse, 10); tailCone.rotation.x = Math.PI; tailCone.position.z = -29; g.add(tailCone);
+  _dressAirliner(g, L, 3.0, 2.8, 50, { cheatY: 0.8, winY: 1.7, nameW: 14, nameH: 1.6, nameY: 2.4, nameZ: 17 });
+  const wG = wingGeo([[2.2, 3], [2.2, -6], [26, -7.5], [26, -5.5]], 0.45);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(L.fuse)); w.scale.x = s; w.position.y = -0.6; g.add(w); }
+  for (const s of [1, -1]) for (const [ex, ez] of [[8, 0], [15, -1.5]]) {
+    const en = cyl(1.15, 1.0, 4.6, L.engines, 10); en.position.set(s * ex, -2.6, ez); g.add(en);
+  }
+  // the trijet's signature: engine #2 buried in the fin root, intake ramp above the rear fuselage
+  const tEng = cyl(1.0, 0.9, 9, L.engines, 10); tEng.position.set(0, 4.4, -24.5); g.add(tEng);
+  const ramp = box(1.6, 1.2, 5, L.tail); ramp.position.set(0, 3.6, -20); g.add(ramp);
+  const tG = wingGeo([[0, 2], [0, -4.5], [9.5, -6.5], [9.5, -5]], 0.55);
+  const tail = new THREE.Mesh(tG, M(L.tail)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 2, -23); g.add(tail);
+  const tB = wingGeo([[0, 1.6], [0, -4.2], [4, -4.9], [4, -3.9]], 0.57);
+  const tailB = new THREE.Mesh(tB, M(L.accent)); tailB.rotation.z = Math.PI / 2; tailB.position.set(0, 2, -23); g.add(tailB);
+  const sG = wingGeo([[1.4, 1], [1.4, -2.8], [9.5, -3.2], [9.5, -1.9]], 0.38);
+  for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(L.fuse)); st.scale.x = s; st.position.set(0, 1, -25); g.add(st); }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'dc10' };
+  addNavLights(g, 26, -28, 2);
+  return g;
+}
+
+export function buildMD90(livery = 0) {
+  const L = AIRLINE_LIVERIES[livery % AIRLINE_LIVERIES.length];
+  const g = new THREE.Group();
+  const fus = cyl(1.7, 1.55, 42, L.fuse, 12); g.add(fus);
+  const nose = cone(1.7, 4.5, L.fuse, 12); nose.position.z = 23.2; g.add(nose);
+  const tailCone = cone(1.4, 8, L.fuse, 10); tailCone.rotation.x = Math.PI; tailCone.position.z = -25; g.add(tailCone);
+  _dressAirliner(g, L, 1.7, 1.55, 42, { cheatY: 0.5, winY: 1.0, nameW: 10, nameH: 1.0, nameY: 1.35, nameZ: 12 });
+  // rear-set wing, rear-mounted engines, T-tail — the Maddog silhouette
+  const wG = wingGeo([[1.2, 1], [1.2, -3], [13.5, -4.5], [13.5, -3.2]], 0.3);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(L.fuse)); w.scale.x = s; w.position.set(0, -0.3, -6); g.add(w); }
+  for (const s of [1, -1]) {
+    const en = cyl(0.75, 0.65, 3.8, L.engines, 8); en.position.set(s * 1.8, 0.3, -17.5); g.add(en);
+    const pylon = box(0.5, 0.5, 2.2, L.fuse); pylon.position.set(s * 1.5, 0.3, -16.5); g.add(pylon);
+  }
+  const tG = wingGeo([[0, 1.5], [0, -3], [7, -4.2], [7, -3]], 0.4);
+  const tail = new THREE.Mesh(tG, M(L.tail)); tail.rotation.z = Math.PI / 2; tail.position.set(0, 1.5, -21); g.add(tail);
+  const tB = wingGeo([[0, 1.3], [0, -2.8], [3, -3.3], [3, -2.4]], 0.42);
+  const tailB = new THREE.Mesh(tB, M(L.accent)); tailB.rotation.z = Math.PI / 2; tailB.position.set(0, 1.5, -21); g.add(tailB);
+  // stabilizers on top of the fin — the T
+  const sG = wingGeo([[0.6, 0.5], [0.6, -1.7], [5.5, -2.1], [5.5, -1.1]], 0.25);
+  for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(L.tail)); st.scale.x = s; st.position.set(0, 8.3, -23.2); g.add(st); }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'md90' };
+  addNavLights(g, 13.5, -24, 1.2);
+  return g;
+}
+
 // ---------------- cruise missile ----------------
 export function buildCruiseMissile() {
   const g = new THREE.Group();
@@ -405,13 +554,17 @@ export function buildSub() {
   return g;
 }
 
-export function buildModel(type) {
+export function buildModel(type, livery = 0) {
   switch (type) {
     case 'f18': return buildFA18();
     case 'f16': return buildF16();
     case 'mig29': return buildMiG29();
     case 'b747': return build747();
     case 'b707': return build707();
+    case 'b744': return build744(livery);
+    case 'b737': return build737(livery);
+    case 'dc10': return buildDC10(livery);
+    case 'md90': return buildMD90(livery);
     case 'cruise': return buildCruiseMissile();
     case 'raft': return buildRaft();
     case 'sub': return buildSub();

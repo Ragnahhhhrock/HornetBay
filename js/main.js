@@ -14,6 +14,7 @@ import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
 import { buildModel } from './models.js';
+import { Traffic } from './traffic.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -170,7 +171,7 @@ G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen 
 G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION/CLEAR/RAIN
 
 // ---------------- menu (original 1-8 structure) ----------------
-const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6'];
+const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7'];
 let menuMode = 'main';
 function buildMenu(mode = 'main') {
   menuMode = mode;
@@ -395,6 +396,7 @@ function launchMission(def, opts = {}) {
   G.audio.endChute();
   for (const b of G.bandits) b.dispose();
   G.bandits = [];
+  G.traffic = new Traffic(G);   // SFO keeps its schedules whatever the sortie
   for (const m of G.missiles) m._die();
   G.missiles = [];
   G.time = 0; G.score = 0; G.kills = 0; G.gunHits = 0; G.shotsFired = 0;
@@ -413,6 +415,8 @@ function launchMission(def, opts = {}) {
   // weather selection from the menu (missions are authored clear)
   G.world.setWeather(G.weatherSel === 'mission' ? 'clear' : G.weatherSel);
   scriptT = 0; runScript._gear = false;
+  runScript._init = runScript._through = runScript._joined = runScript._bogey = false;
+  runScript._phase = 0; runScript._pt = 0;
   G.msg(def.title, 'info');
   G.audio.ensure();
   if (opts.zoom) {
@@ -490,6 +494,21 @@ G.onAircraftDown = (unit, byPlayer) => {
   }
   if (unit.type === 'cruise') { G.msg('CRUISE MISSILE DESTROYED', 'good'); }
   if (unit.type === 'sub') { G.msg('SHADOW SUB DESTROYED!', 'good'); }
+  if (unit.kind === 'airliner') {
+    if (byPlayer) {
+      // the one thing a Navy pilot must never do
+      G.score = Math.max(0, G.score - 5000);
+      G.msg(`COURT MARTIAL! ${unit.label} DOWN — ${unit.souls || 150} SOULS  −5000 PTS`, 'bad');
+      G.radio(`NORAD: VIPER 1-1, YOU JUST SHOT DOWN A CIVILIAN AIRLINER. RTB AND HAND OVER YOUR WINGS.`);
+      G.audio.fail();
+      if (G.missionDef.id !== 'free' && !G.over) {
+        G.failMission('COURT MARTIAL',
+          `${unit.name} WAS A CIVILIAN AIRLINER WITH ${unit.souls || 150} SOULS ABOARD.\nTHERE WERE NO SURVIVORS.\n\nYOUR WINGS ARE FORFEIT. YOUR CAREER IS OVER.`);
+      }
+    } else {
+      G.msg(`${unit.label} CRASHED — ALL SOULS LOST`, 'bad');
+    }
+  }
 };
 G.onPlayerHit = (dmg, byWhom) => {
   if (G.player.dead || G.player.ejected) return;
@@ -643,13 +662,20 @@ function stopDemo() {
 
 // ---------------- pause ----------------
 function togglePause() {
-  if (G.state === 'flying') { G.state = 'paused'; $('pause').classList.remove('hidden'); }
-  else if (G.state === 'paused') { G.state = 'flying'; $('pause').classList.add('hidden'); }
+  if (G.state === 'flying') { G.state = 'paused'; $('pause').classList.remove('hidden'); G.audio.pause(true); }
+  else if (G.state === 'paused') { G.state = 'flying'; $('pause').classList.add('hidden'); G.audio.pause(false); }
 }
 // Q — bail straight back to the main menu from flying / paused / dead
 function quitToMenu() {
   // Q from the cockpit: the sortie survives the menu — Q again takes you back
   G._menuResume = (G.state === 'flying' || G.state === 'paused');
+  if (G._menuResume) {
+    // remember the sortie's sky: the menu restyles the world to its own
+    // backdrop, so resumeFlight() has to put the mission's time/weather back
+    G._resumeEnv = { tod: G.world.mode || 'day', wx: G.world.weatherTarget ? 'rain' : 'clear' };
+    G.audio.updateFlight(0, false, 0);   // engines fall to idle while the menu is up
+  }
+  G.audio.pause(true);   // the pause chirp, whether or not the sortie survives
   G._manualPaused = false;
   $('controls').classList.add('hidden');
   $('pause').classList.add('hidden');
@@ -663,10 +689,16 @@ function resumeFlight() {
   if (!G._menuResume) return;
   G._menuResume = false;
   stopDemo();
+  // the menu dressed the world in its own backdrop — put the sortie's sky back
+  if (G._resumeEnv) {
+    G.world.setTimeOfDay(G._resumeEnv.tod);
+    G.world.setWeather(G._resumeEnv.wx);
+    G._resumeEnv = null;
+  }
   $('menu').classList.add('hidden');
   $('pause').classList.add('hidden');
   G.state = 'flying';
-  G.audio.radioClick();
+  G.audio.pause(false);   // released — back in the cockpit
 }
 
 // ---------------- cameras ----------------
@@ -780,8 +812,8 @@ function updateCamera(dt) {
 // ---------------- targeting & weapons ----------------
 function updateTargeting(dt) {
   const P = G.player;
-  // build target list
-  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && (b.kind === 'bandit' || b.kind === 'stolen'));
+  // build target list — airliners are legitimate radar contacts too, God help them
+  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && (b.kind === 'bandit' || b.kind === 'stolen' || b.kind === 'airliner'));
   if (G.playerTarget && (G.playerTarget.dead || G.playerTarget.removeMe)) { G.playerTarget = null; G.lockLevel = 0; }
   if (G.input.pressed('KeyT')) {
     if (!targets.length) { G.playerTarget = null; }
@@ -894,7 +926,8 @@ function handleDiscreteInput(dt) {
   if (I.pressed('Digit2')) selW('aim9');
   if (I.pressed('Digit3')) selW('gun');
   if (I.pressed('KeyR')) {
-    const ranges = [[2, 2 * NM], [10, 10 * NM], [40, 40 * NM]];
+    // longest to shortest, like a real scope stepping down: 40 > 10 > 2 > 40
+    const ranges = [[40, 40 * NM], [10, 10 * NM], [2, 2 * NM]];
     const i = ranges.findIndex(r => r[0] === G.radarRangeNM);
     const [nm, m] = ranges[(i + 1) % 3];
     G.radarRangeNM = nm; G.radarRange = m;
@@ -921,6 +954,8 @@ function handleDiscreteInput(dt) {
     const order = ['cockpit', 'chase', 'orbit', 'tower'];
     G.view = order[(order.indexOf(G.view) + 1) % order.length];
   }
+  // X — straight back to the cockpit from any view, no cycling
+  if (I.pressed('KeyX') && G.view !== 'cockpit') { G.view = 'cockpit'; G.msg('COCKPIT VIEW', 'info'); }
   // view magnification (the original's XMAG) — works in every view
   const XSTEPS = [1, 1.5, 2, 3, 4, 6, 8];
   if (I.pressed('Equal') || I.pressed('Minus')) {
@@ -962,11 +997,8 @@ function handleDiscreteInput(dt) {
     G.chute = new Chute(scene, P.pos, cv, deckY);   // the pilot floats down under a canopy
     G.audio.eject();                            // engine cuts to the sound of rushing air
     G.msg('EJECTED! THE JET IS GONE.', 'warn');
-    if (G.missionDef.id === 'free') {
-      setTimeout(() => { if (G.state === 'flying' || G.state === 'dead') { launchMission(G.missionDef); } }, 8000);
-    } else {
-      G.state = 'dead'; G.deadT = 0; G.crashReason = 'EJECTED OVER HOSTILE WATERS';
-    }
+    // whatever the sortie, the pilot walks (or swims) home via the main menu
+    G.state = 'dead'; G.deadT = 0; G.crashReason = 'EJECTED OVER HOSTILE WATERS';
   }
   if (I.throttleSet >= 0) P.throttle = I.throttleSet === 0 ? 1 : I.throttleSet;
   // original: keypad steers the external point of view (held keys move smoothly)
@@ -995,7 +1027,16 @@ function handleDiscreteInput(dt) {
 // ---------------- scripted input (headless testing / attract mode) ----------------
 let SCRIPT = null, scriptT = 0;
 function runScript(dt) {
+  if (G.state !== 'flying') return;   // wait out the intro zoom — the clock and
+                                      // the teleports only run once airborne
   scriptT += dt;
+  const _wlogEnd = window.__wlog ? (tag) => {
+    if (window.__wlog.length < 4000) {
+      const P = G.player;
+      const f = P.fwd;
+      window.__wlog.push([+G.time.toFixed(2), tag, Math.round(P.pos.x), Math.round(P.pos.y), Math.round(P.pos.z), P.onGround ? 'og' : 'air', Math.round(P.speed), +G.input.pitch.toFixed(2), +G.input.roll.toFixed(2), Math.round(P.vel.y), +f.x.toFixed(2), +f.y.toFixed(2), +f.z.toFixed(2)]);
+    }
+  } : null;
   const I = G.input, P = G.player;
   const _right = new THREE.Vector3(1, 0, 0).applyQuaternion(P.quat);
   const _upY = new THREE.Vector3(0, 1, 0).applyQuaternion(P.quat).y;
@@ -1014,6 +1055,164 @@ function runScript(dt) {
       if (P.gearDown && P.pos.y > 40 && !runScript._gear) { runScript._gear = true; I.justPressed.add('KeyL'); }
       if (scriptT > 30) I.roll = rollTo(0.5);  // gentle turn back
     }
+  } else if (SCRIPT === 'trap' || SCRIPT === 'land') {
+    // precision approach autopilot: PD-steer onto a 3.5° glideslope to the
+    // wires (carrier) or the numbers (runway), used for the tutorial reels
+    const isTrap = SCRIPT === 'trap';
+    const NMg = 1852;
+    const glideTan = Math.tan(3.5 * Math.PI / 180);
+    let aimX, aimY, aimZ, ax, az, headDeg;
+    if (isTrap) {
+      const C = G.world.carrier;
+      const ch = Math.cos(C.heading), sh = Math.sin(C.heading);
+      aimX = C.group.position.x - ch * C.ols.aim.x + sh * C.ols.aim.z;
+      aimY = C.group.position.y + C.deckY;
+      aimZ = C.group.position.z - sh * C.ols.aim.x - ch * C.ols.aim.z;
+      ax = -ch * C.ols.ax + sh * C.ols.az; az = -sh * C.ols.ax - ch * C.ols.az;
+    } else {
+      const rw = G.world.runways.find(r => r.id === 'sfo');
+      ax = Math.sin(rw.hdg); az = -Math.cos(rw.hdg);
+      aimX = rw.x - ax * (rw.len / 2 - 300); aimY = rw.elev + 2; aimZ = rw.z - az * (rw.len / 2 - 300);
+    }
+    const relX = P.pos.x - aimX, relZ = P.pos.z - aimZ;
+    const along = relX * ax + relZ * az;            // - = behind the aim point
+    const range = Math.max(1, -along);
+    if (!runScript._init) {
+      runScript._init = true;
+      // teleport onto final, configured, on speed — above the 95 m/s stall,
+      // slow enough that deck-relative speed stays under the 105 trap limit
+      const r0 = isTrap ? 3400 : 4200;
+      const spd0 = isTrap ? 106 : 104;
+      G.setPlayerStart({
+        pos: new THREE.Vector3(aimX - ax * r0, aimY + glideTan * r0 + 2, aimZ - az * r0),
+        heading: Math.atan2(ax, -az), speed: spd0,
+      });
+      P.vel.y = -spd0 * glideTan;
+      P.gearDown = true; if (isTrap) P.hookDown = true;
+      I.keys.delete('ShiftLeft');
+    }
+    if (P.onGround) {   // trapped or rolling out: hands off, ride it out
+      I.pitch = 0; I.roll = 0; I.keys.delete('KeyW'); I.keys.delete('ShiftLeft');
+      if (!P.onGround.trapped && !isTrap) { P.brakes = true; P.throttle = 0; }
+      if (isTrap && !P.onGround.trapped) {   // bolter — go around and re-enter
+        I.keys.add('KeyW'); I.keys.add('ShiftLeft'); P.brakes = false;
+        if (!P.onGround) runScript._init = false;
+      }
+      return;
+    }
+    // steer at a point 900 m ahead on the corridor, on the glidepath
+    const lead = Math.max(0, range - 900);
+    const tx = aimX - ax * lead, ty = aimY + glideTan * lead, tz = aimZ - az * lead;
+    const d = new THREE.Vector3(tx - P.pos.x, 0, tz - P.pos.z);
+    const f = P.fwd;
+    const desiredH = Math.atan2(d.x, -d.z), curH = Math.atan2(f.x, -f.z);
+    const dh = wrapAngle(desiredH - curH);
+    I.roll = rollTo(clamp(dh * 1.3, -0.5, 0.5));
+    // vertical channel: command sink rate onto the glidepath (carrier: no flare,
+    // fly the ball into the wires; runway: flare to a gentle 1.2 m/s kiss)
+    const yDes = ty;
+    let vyDes = clamp((yDes - P.pos.y) * 0.10, -9, 5);
+    if (!isTrap && range < 500) vyDes = -1.2;
+    let pi = clamp(dh * 0.6, -0.3, 0.3) + clamp((vyDes - P.vel.y) * 0.09, -0.5, 0.55);
+    I.pitch = clamp(pi, -0.5, 0.6);
+    // on-speed with direct throttle nudges
+    const spdDes = isTrap ? 106 : 104;
+    P.throttle = clamp(P.throttle + (spdDes - P.speed) * 0.006, 0.25, 1);
+  } else if (SCRIPT === 'bridge') {
+    // low pass under the Golden Gate center span
+    if (!runScript._init) {
+      runScript._init = true;
+      G.setPlayerStart({ pos: new THREE.Vector3(4500, 72, 0), heading: Math.PI * 1.5, speed: 180 });
+      P.throttle = 0.5;
+      I.keys.add('KeyW'); I.keys.delete('ShiftLeft');
+    }
+    if (P.pos.x > 250) {   // inbound: hold 45 m over the water, centered on z 0
+      const zErr = 0 - P.pos.z;
+      I.roll = rollTo(clamp(-zErr * 0.004, -0.35, 0.35));
+      const vyDes = clamp((45 - P.pos.y) * 0.25, -8, 8);
+      I.pitch = clamp((vyDes - P.vel.y) * 0.09, -0.4, 0.4);
+      if (P.pos.x < 600) runScript._minY = Math.min(runScript._minY || 9999, P.pos.y);
+    } else if (!runScript._through) {   // through the span — victory pull
+      runScript._through = true;
+    }
+    if (runScript._through) {
+      I.pitch = 0.55; I.roll = rollTo(0);
+      if (P.pos.y > 400) {
+        const gamma2 = Math.asin(clamp(P.vel.y / Math.max(P.speed, 1), -1, 1));
+        I.pitch = clamp((0.05 - gamma2) * 3, -0.4, 0.5);
+      }
+    }
+  } else if (SCRIPT === 'intercept') {
+    // scramble against a heavy bogey: find it, join up, form on the wing
+    if (!runScript._init) {
+      runScript._init = true;
+      G.setPlayerStart({ pos: new THREE.Vector3(10000, 1500, 24000), heading: Math.PI * 0.5, speed: 260 });
+      P.throttle = 0.8;
+      const bg = G.spawnAI('b744', {
+        pos: new THREE.Vector3(20000, 1700, 24000), heading: Math.PI * 0.5, speed: 220,
+        name: 'ALLIED 412', label: 'ALLIED', livery: 0, mode: 'route', noEvade: true,
+        waypoints: [new THREE.Vector3(80000, 1700, 24000)],   // eastbound, away from us
+      });
+      bg.kind = 'airliner'; bg.identified = false; runScript._bogey = bg;
+      G.playerTarget = bg; G.lockLevel = 0;
+    }
+    const bg = runScript._bogey;
+    if (!bg || bg.dead) { I.pitch = 0; I.roll = 0; return; }
+    // station: 140 m abeam the bogey's right wing, slightly back
+    const st = new THREE.Vector3(140, 0, 40).applyQuaternion(bg.quat).add(bg.pos);
+    const d = st.clone().sub(P.pos);
+    const dist = d.length();
+    if (dist > 900) {   // convert: lead-pursuit like the combat script
+      const aim = bg.pos.clone().addScaledVector(bg.vel, clamp(dist / 300, 0, 8));
+      const dd = aim.sub(P.pos); dd.normalize();
+      const f = P.fwd;
+      const desiredH = Math.atan2(dd.x, -dd.z), curH = Math.atan2(f.x, -f.z);
+      const dh = wrapAngle(desiredH - curH);
+      const gamma = Math.asin(clamp(P.vel.y / Math.max(P.speed, 1), -1, 1));
+      I.roll = rollTo(clamp(dh * 1.5, -0.7, 0.7));
+      const gammaDes = clamp(Math.asin(clamp(dd.y, -1, 1)), -0.3, 0.3);
+      I.pitch = clamp(dh * 0.8, -0.35, 0.35) + clamp((gammaDes - gamma) * 1.2, -0.3, 0.3);
+      if (P.speed < 320) { I.keys.add('KeyW'); I.keys.delete('KeyS'); } else { I.keys.delete('KeyW'); }
+      if (dist > 6000 && P.speed < 340) I.keys.add('ShiftLeft'); else I.keys.delete('ShiftLeft');
+    } else {   // in close: slide onto the wing and match speed
+      d.normalize();
+      const f = P.fwd;
+      const desiredH = Math.atan2(d.x, -d.z), curH = Math.atan2(f.x, -f.z);
+      const dh = wrapAngle(desiredH - curH);
+      const gamma = Math.asin(clamp(P.vel.y / Math.max(P.speed, 1), -1, 1));
+      I.roll = rollTo(clamp(dh * 1.1, -0.4, 0.4));
+      const gammaDes = clamp(Math.asin(clamp(d.y, -1, 1)), -0.2, 0.2);
+      I.pitch = clamp(dh * 0.7, -0.25, 0.25) + clamp((gammaDes - gamma) * 1.4, -0.25, 0.25);
+      I.keys.delete('ShiftLeft');
+      const spdErr = bg.speed - P.speed;
+      if (spdErr > 3) { I.keys.add('KeyW'); I.keys.delete('KeyS'); }
+      else if (spdErr < -3) { I.keys.add('KeyS'); I.keys.delete('KeyW'); }
+      else { I.keys.delete('KeyW'); I.keys.delete('KeyS'); }
+      if (dist < 60 && !runScript._joined) { runScript._joined = G.time; }
+    }
+  } else if (SCRIPT === 'acro') {
+    // airshow over the bay: loop, aileron roll, Immelmann — timed open-loop
+    // figures on a deterministic clock (warp recording), with recoveries
+    runScript._pt += dt;
+    if (!runScript._init) {
+      runScript._init = true; runScript._phase = 0; runScript._pt = 0;
+      G.setPlayerStart({ pos: new THREE.Vector3(9000, 1300, 6000), heading: Math.PI * 1.5, speed: 280 });
+      P.throttle = 1;
+      I.keys.add('KeyW'); I.keys.add('ShiftLeft');
+    }
+    const ph = runScript._phase, t = runScript._pt;
+    const gamma = Math.asin(clamp(P.vel.y / Math.max(P.speed, 1), -1, 1));
+    const next = () => { runScript._phase++; runScript._pt = 0; };
+    if (ph === 0) { I.pitch = 0; I.roll = 0; if (t > 2) next(); }                    // show pass
+    else if (ph === 1) { I.pitch = 0.85; if (gamma > 2.9 || t > 6) next(); }         // loop pull
+    else if (ph === 2) { I.pitch = 0.5; if (gamma > 0 && gamma < 0.25 && P.vel.y < 0) next(); } // complete the loop
+    else if (ph === 3) { I.pitch = clamp((0.05 - gamma) * 3, -0.4, 0.5); I.roll = 0; if (t > 2) next(); }  // breathe
+    else if (ph === 4) { I.pitch = 0.1; I.roll = 0.9; if (Math.abs(bankNow) > 5.8 || t > 3) next(); }      // aileron roll
+    else if (ph === 5) { I.roll = 0; I.pitch = clamp((0.05 - gamma) * 3, -0.4, 0.5); if (t > 2) next(); }  // wings level
+    else if (ph === 6) { I.pitch = 0.85; if (gamma > 2.5 || t > 4) next(); }         // Immelmann up
+    else if (ph === 7) { I.pitch = 0.15; I.roll = 0.9; if (Math.abs(bankNow) < 0.6 && t > 1) next(); }     // roll out on top
+    else { I.roll = 0; I.pitch = clamp((0.1 - gamma) * 3, -0.4, 0.5); I.keys.delete('ShiftLeft'); }        // cruise off
+    if (P.pos.y < 250 && gamma < 0) { I.pitch = 0.55; I.roll = rollTo(0); }          // floor
   } else if (SCRIPT === 'combat') {
     if (P.onGround) { // do the takeoff first
       if (scriptT < 0.5) return;
@@ -1071,6 +1270,7 @@ function runScript(dt) {
       runScript._sel = false;
     }
   }
+  if (_wlogEnd) _wlogEnd(SCRIPT);
 }
 
 // ---------------- main loop ----------------
@@ -1180,12 +1380,17 @@ function stepGame(dt) {
   hero.visible = (G.state === 'menu');
 
   if (G.state === 'menu' && demoJet) {
-    G.time += dt;
-    hero.rotation.y += dt * 0.45;   // the star's slow turntable
     heroLight.intensity = 60 * (G.world.night01 || 0);   // lit after dark
-    demoJet.update(dt, G);
-    G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
-    G.fx.update(dt);
+    if (!G._menuResume) {
+      G.time += dt;
+      hero.rotation.y += dt * 0.45;   // the star's slow turntable
+      demoJet.update(dt, G);
+      G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
+      G.fx.update(dt);
+    }
+    // else: PAUSED BEHIND THE MENU — a live sortie is waiting on the Q key,
+    // so the whole simulation freezes: no game clock, no world drift (the
+    // carrier stays exactly where the approach left it), no demo flight.
   } else if (G.intro.active) {
     // satellite map / briefing / plane select / zoom intro states — suppress
     // the weather here so rain and murk never blot out the planning map
@@ -1221,9 +1426,10 @@ function stepGame(dt) {
       if (P.dead && !G.crashHandled) P._updateDead(dt, G);
       else if (P.ejected) P._updateBallistic(dt, G);
       G.deadT += dt;
-      if (G.deadT > (G.chute ? 9 : 3) && !G.over) {   // let the chute ride play out
-        if (G.missionDef.id === 'free') launchMission(G.missionDef);
-        else G.failMission('AIRCRAFT LOST', G.crashReason + '.\nThe Navy will bill your next of kin for one fighter jet.');
+      if (G.deadT > (G.chute ? 9 : 3) && !G.over) {   // let the wreck / chute ride play out
+        // then it's straight back to the menu — no paperwork, no debrief
+        save.best = Math.max(save.best, G.score); persist();
+        quitToMenu();
       }
     }
     // entities
@@ -1233,6 +1439,7 @@ function stepGame(dt) {
       b.update(dt, G);
       if (b.removeMe) { b.dispose(); G.bandits.splice(i, 1); }
     }
+    if (G.traffic) G.traffic.update(dt);   // SFO airline movements, 24/7
     for (let i = G.missiles.length - 1; i >= 0; i--) {
       const m = G.missiles[i];
       m.update(dt);
@@ -1300,6 +1507,7 @@ function syncNavLights(dt) {
 const params = new URLSearchParams(location.search);
 FIXDT = parseFloat(params.get('fixdt') || '0');
 SCRIPT = params.get('script');
+if (params.get('wlog')) window.__wlog = [];   // warp instrumentation hook
 if (params.get('night')) G.dayNightSel = 'night';   // test hook: force night
 if (params.get('rain')) G.weatherSel = 'rain';      // test hook: force rain
 if (params.get('clean')) G.cleanShot = true;        // test hook: HUD-free captures
@@ -1345,6 +1553,95 @@ else if (auto) {
     G.player.model.scale.setScalar(4);
   }
 }
+// ---- tutorial caption tracks: big step cards burned into rec= footage ----
+// timed against scriptT (the warp clock) so captions always match the flying
+const CAPTIONS = {
+  takeoff: [
+    { t0: 0.5, t1: 5, step: 'STEP 1 OF 4', lines: ['SPAWN ON THE CAT — SHUTTLE LOCKED, BRAKES ON'] },
+    { t0: 5, t1: 10.5, step: 'STEP 2 OF 4', lines: ['FULL POWER: HOLD W — THEN SHIFT FOR BURNER'] },
+    { t0: 10.5, t1: 15.5, step: 'STEP 3 OF 4', lines: ['BRAKES OFF (B) — THE CAT THROWS YOU AT 150+ KT'] },
+    { t0: 15.5, t1: 22, step: 'STEP 4 OF 4', lines: ['ROTATE OFF THE DECK EDGE, GEAR UP (L), CLIMB AWAY'] },
+  ],
+  trap: [
+    { t0: 0.5, t1: 6, step: 'STEP 1 OF 5', lines: ['THE PATTERN: 3 MILES BEHIND THE BOAT, 700 FT, ~150 KT'] },
+    { t0: 6, t1: 13, step: 'STEP 2 OF 5', lines: ['CONFIGURE: GEAR DOWN (G), HOOK DOWN (H), FLAPS OF SPEED'] },
+    { t0: 13, t1: 21, step: 'STEP 3 OF 5', lines: ['FLY THE MEATBALL — KEEP THE BALL ON THE 3.5° GLIDESLOPE'] },
+    { t0: 21, t1: 30, step: 'STEP 4 OF 5', lines: ['AIM FOR THE WIRES — NEVER FLARE, NEVER CHOP THE POWER'] },
+    { t0: 30, t1: 38, step: 'STEP 5 OF 5', lines: ['TRAP! WIRE CAUGHT — THROTTLE IDLE, WELCOME ABOARD'] },
+  ],
+  'runway-takeoff': [
+    { t0: 0.5, t1: 5, step: 'STEP 1 OF 4', lines: ['LINE UP ON THE CENTERLINE — BRAKES HELD'] },
+    { t0: 5, t1: 10, step: 'STEP 2 OF 4', lines: ['THROTTLE TO FULL (W), BURNER IF YOU LIKE — BRAKES OFF (B)'] },
+    { t0: 10, t1: 15, step: 'STEP 3 OF 4', lines: ['AT 140 KT: GENTLE BACK STICK — FLY, DON\'T YANK'] },
+    { t0: 15, t1: 21, step: 'STEP 4 OF 4', lines: ['POSITIVE CLIMB: GEAR UP (L), HOLD 10° NOSE-UP'] },
+  ],
+  land: [
+    { t0: 0.5, t1: 6, step: 'STEP 1 OF 5', lines: ['SET UP 5 MILES OUT: 400 KT → 150 KT, WINGS LEVEL'] },
+    { t0: 6, t1: 12, step: 'STEP 2 OF 5', lines: ['GEAR DOWN (G) — PICTURE: RUNWAY GROWS STEADILY, NO ZOOM'] },
+    { t0: 12, t1: 19, step: 'STEP 3 OF 5', lines: ['HOLD 3.5° DOWN — SMALL THROTTLE NUDGES, NOT SAWING'] },
+    { t0: 19, t1: 26, step: 'STEP 4 OF 5', lines: ['OVER THE NUMBERS: THROTTLE IDLE, FLARE — KISS THE TARMAC'] },
+    { t0: 26, t1: 34, step: 'STEP 5 OF 5', lines: ['ROLLOUT: BRAKES (B), STAY ON THE CENTERLINE'] },
+  ],
+  combat: [
+    { t0: 0.5, t1: 6, step: 'STEP 1 OF 5', lines: ['T PICKS THE NEAREST BOGEY — WATCH THE RADAR CONTACT'] },
+    { t0: 6, t1: 13, step: 'STEP 2 OF 5', lines: ['CLOSE FAST: BURNER IN, THEN SPEEDBRAKE (B) TO THE FIGHT'] },
+    { t0: 13, t1: 22, step: 'STEP 3 OF 5', lines: ['FIGHT AT CORNER SPEED ~300 KT — TURNS ARE WON HERE'] },
+    { t0: 22, t1: 33, step: 'STEP 4 OF 5', lines: ['PULL LEAD, GROW THE LOCK TONE — FOX TWO ON THE MERGE'] },
+    { t0: 33, t1: 48, step: 'STEP 5 OF 5', lines: ['SPLASH — CHECK SIX, RE-ENGAGE. NEVER FOLLOW A FIREBALL DOWN'] },
+  ],
+  bridge: [
+    { t0: 0.5, t1: 5, step: 'STEP 1 OF 4', lines: ['LINE UP EAST OF THE GATE, CENTERED ON THE SPAN'] },
+    { t0: 5, t1: 11, step: 'STEP 2 OF 4', lines: ['DOWN LOW: 150 FT OVER THE WATER, WINGS LEVEL'] },
+    { t0: 11, t1: 18, step: 'STEP 3 OF 4', lines: ['STEADY THROTTLE — AIM BETWEEN THE TOWERS, NO RUDDER'] },
+    { t0: 18, t1: 26, step: 'STEP 4 OF 4', lines: ['UNDER THE DECK! THEN PULL UP HARD AND OWN THE SKY'] },
+  ],
+  intercept: [
+    { t0: 0.5, t1: 6, step: 'STEP 1 OF 5', lines: ['BOGEY ON THE SCOPE: T LOCKS THE NEAREST CONTACT'] },
+    { t0: 6, t1: 14, step: 'STEP 2 OF 5', lines: ['CONVERT: BURNER TO CUT THE CORNER INSIDE HIS TURN'] },
+    { t0: 14, t1: 24, step: 'STEP 3 OF 5', lines: ['EYES OUT THE HUD — CLOSE TO VISUAL RANGE, NO RADAR TRAIL'] },
+    { t0: 24, t1: 34, step: 'STEP 4 OF 5', lines: ['JOIN THE WING: MATCH HIS SPEED, SLIDE IN GENTLY'] },
+    { t0: 34, t1: 44, step: 'STEP 5 OF 5', lines: ['ON STATION — THIS IS AN AIRLINER. CHECK FIRE, ALWAYS'] },
+  ],
+  acro: [
+    { t0: 0.5, t1: 5, step: 'FIGURE 1 — THE LOOP', lines: ['FULL POWER, THEN PULL 4G SMOOTHLY OVER THE TOP'] },
+    { t0: 10, t1: 15, step: 'FIGURE 1 — THE LOOP', lines: ['IDLE DOWN THE BACK, RECOVER LEVEL AT YOUR ENTRY HEIGHT'] },
+    { t0: 17, t1: 23, step: 'FIGURE 2 — AILERON ROLL', lines: ['NOSE 10° UP, FULL STICK — ROLL AROUND THE NOSE'] },
+    { t0: 25, t1: 31, step: 'FIGURE 3 — IMMELMANN', lines: ['HALF LOOP UP, ROLL OUT ON TOP — TRADE SPEED FOR HEIGHT'] },
+    { t0: 31, t1: 38, step: 'RECOVERY', lines: ['WINGS LEVEL, POWER BACK — THAT\'S THE WHOLE AIRSHOW'] },
+  ],
+};
+function drawRecCaptions(ctx, t) {
+  const track = CAPTIONS[params.get('captions') || SCRIPT];
+  if (!track) return;
+  const cur = track.find(c => t >= c.t0 && t < c.t1);
+  // persistent corner bug on every frame
+  ctx.save();
+  ctx.textAlign = 'right'; ctx.font = 'bold 22px "Courier New", monospace';
+  ctx.fillStyle = 'rgba(255,183,55,0.55)';
+  ctx.fillText('HORNETBAY.COM', 1252, 700);
+  ctx.restore();
+  if (!cur) return;
+  const W = 1280, H = 720;
+  const lines = cur.lines, lh = 54, hasStep = !!cur.step;
+  const bh = lh * lines.length + (hasStep ? 84 : 44);
+  const y0 = H - bh - 34;
+  ctx.save();
+  ctx.fillStyle = 'rgba(3,12,32,0.84)';
+  ctx.fillRect(0, y0, W, bh);
+  ctx.fillStyle = '#ffb737'; ctx.fillRect(0, y0, 12, bh);
+  ctx.fillRect(0, y0, W, 3);
+  let ty = y0 + 42;
+  if (hasStep) {
+    ctx.textAlign = 'left'; ctx.font = 'bold 27px "Courier New", monospace';
+    ctx.fillStyle = '#96beeb';
+    ctx.fillText(cur.step, 44, ty); ty += 16;
+  }
+  ctx.font = 'bold 42px "Courier New", monospace';
+  ctx.fillStyle = '#ffb737';
+  for (const ln of lines) { ty += lh; ctx.fillText(ln, 44, ty); }
+  ctx.restore();
+}
+
 // shared headless warp: works for mission AND intro-flow states
 if (params.get('hold') === '1') G.intro.hold = true;
 const xm = params.get('xmag');
@@ -1378,6 +1675,7 @@ if (auto && warpT > 0) {
     }
   };
   for (let i = 0; i < warpT * 60; i++) {
+    try {
     if (burn && G.player) {
       G.player.throttle = 1; G.player.abLatch = true; G.player.brakes = false;
     }
@@ -1396,10 +1694,15 @@ if (auto && warpT > 0) {
       if (!recCtx) { const c = document.createElement('canvas'); c.width = 1280; c.height = 720; recCtx = c.getContext('2d'); }
       recCtx.drawImage($('gl'), 0, 0, 1280, 720);
       recCtx.drawImage($('hud'), 0, 0, 1280, 720);
+      drawRecCaptions(recCtx, scriptT);
       recBuf.push({ i: recIdx++, d: recCtx.canvas.toDataURL('image/jpeg', 0.75) });
       if (recBuf.length >= 10) { recPost(recBuf); recBuf = []; }
     }
     if (G.state !== warpStartState && (G.state === 'debrief' || G.state === 'menu')) break;
+    } catch (e) {
+      window.__werr = e.message + ' || ' + (e.stack || '').split('\n').slice(1, 3).join(' || ');
+      break;
+    }
   }
   if (recN > 0) { if (recBuf.length) recPost(recBuf); document.title = 'REC-DONE'; }
   window.__warped = true;

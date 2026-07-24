@@ -504,6 +504,97 @@ export const MISSIONS = [
     }
   },
 },
+// ------------------------------------------------ M7 THE DEFECTOR
+{
+  id: 'm7', num: 7, title: 'THE DEFECTOR', code: 'SEPT 13, 1994 — 2310 HRS',
+  time: 'night', planeChoice: true,
+  brief: [
+    'NORAD STRATEGIC COMMAND',
+    'LOCATION: SAN FRANCISCO',
+    'DATE: SEPTEMBER 13, 1994 — 2310 HRS', '',
+    'OPERATION SPARROW', '',
+    'AT 2200 HRS A CHARTERED PACIFIC EMPRESS DC-10',
+    'DEPARTED SHEMYA AFB FOR SAN FRANCISCO.', '',
+    'ABOARD: DR. YURI KORSHAKOV, SENIOR DESIGNER',
+    'OF THE SHTORM-7 HYPERSONIC WEAPON PROGRAM.',
+    'HE IS DEFECTING. THE PLANS ARE IN HIS BRIEFCASE.', '',
+    'THE SHADOW SUB HAS LAUNCHED MIG-29S TO',
+    'SPLASH THE AIRLINER BEFORE IT LANDS.', '',
+    'ESCORT SPARROW TO A SAFE LANDING AT SFO.',
+    'THE PASSENGER MUST SURVIVE.', '',
+    'NOTE: CIVILIAN TRAFFIC IS IN THE PATTERN.',
+    'CHECK YOUR TARGETS BEFORE YOU FIRE.',
+  ],
+  briefing: 'Escort the defector airliner to SFO.',
+  loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — NIGHT INTERCEPT',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    // the defector flight: a chartered Pacific Empress DC-10 (livery 3),
+    // straight in over the Golden Gate for runway 10L
+    this.sparrow = G.spawnAI('dc10', {
+      pos: V(-42000, 4800, 17000), heading: Math.PI / 2 + 0.12, speed: 210, hp: 500,
+      name: 'PACIFIC EMPRESS 77', label: 'SPARROW', livery: 3,
+      mode: 'land', noEvade: true,
+      waypoints: [
+        V(-8000, 1500, 19000),    // abeam the Golden Gate
+        V(4000, 700, 19300),      // over the city, long final
+        V(12003, 6, 19652),       // touchdown on 10L
+      ],
+    });
+    this.sparrow.kind = 'airliner'; this.sparrow.identified = true; this.sparrow.souls = 96;
+    this.sparrow.onEvent = (ev) => { if (ev === 'landed') this.sparrowDown = true; };
+    // first pair of Fulcrums off the shadow sub, 60 mi west of the Gate
+    const sp = G.world.enemySub.pos;
+    this.migs = [];
+    this._launchWave = (base, cd) => {
+      for (let i = 0; i < 2; i++) {
+        const m = G.spawnAI('mig29', {
+          pos: V(sp.x + 3000 + i * 2500, 800 + i * 600, sp.z + base + i * 5000), heading: Math.PI / 2, speed: 300,
+          hostile: true, name: 'MIG-29', label: 'MIG-29', mode: 'attack',
+          skill: 0.9, agility: 1.15,
+        });
+        m.target = this.sparrow; m.kind = 'bandit'; m.identified = true;
+        m.fireCooldown = cd + i * 9;
+        this.migs.push(m);
+      }
+    };
+    this._launchWave(0, 20);
+    this.wave2 = false; this.sparrowDown = false; this.hitWarned = false; this.firstSplash = false;
+    G.waypoint = this.sparrow.pos;
+    G.radio('FLEET COM: VIPER 1-1, OPERATION SPARROW IS GO. A CHARTERED DC-10 IS INBOUND FROM THE PACIFIC CARRYING A DEFECTOR WITH THE SHTORM PLANS.');
+    G.radio('FLEET COM: THE SHADOW SUB HAS FULCRUMS IN THE AIR TASKED TO SPLASH HER. GET BETWEEN THEM AND THE AIRLINER.');
+  },
+  update(G, dt) {
+    G.waypoint = this.migs.find(m => !m.dead)?.pos || this.sparrow.pos;
+    if (this.sparrow.dead) {
+      G.failMission('THE SPARROW IS DOWN',
+        'THE DEFECTOR\'S DC-10 IS IN THE SEA.\nTHE SHTORM PLANS AND DR. KORSHAKOV ARE LOST FOREVER.\n\nTHE SUB\'S WOLFPACK IS LAUGHING AT US.');
+      return;
+    }
+    if (!this.firstSplash && this.migs.some(m => m.dead)) {
+      this.firstSplash = true;
+      G.radio('SPARROW: WE SEE THE FIREBALL! KEEP THEM OFF US, VIPER!');
+    }
+    if (!this.hitWarned && this.sparrow.hp < 480) {
+      this.hitWarned = true;
+      G.msg('SPARROW IS HIT', 'bad');
+      G.radio('SPARROW: WE\'RE HIT! NUMBER TWO ENGINE IS WINDMILLING — VIPER, WE NEED YOU NOW!');
+    }
+    // second wolfpack launches as the airliner nears the Gate
+    if (!this.wave2 && (this.migs.every(m => m.dead) || this.sparrow.pos.x > -20000)) {
+      this.wave2 = true;
+      this._launchWave(4000, 16);
+      G.msg('SECOND WAVE — MORE FULCRUMS OFF THE SUB!', 'warn');
+      G.radio('FLEET COM: SECOND WAVE! TWO MORE FULCRUMS OFF THE SUB — THEY ARE DESPERATE NOW.');
+    }
+    if (this.sparrowDown) {
+      for (const m of this.migs) if (!m.dead) { m.mode = 'route'; m.target = null; m.waypoints = [V(-120000, 9000, -8000)]; }
+      G.addScore(3000);
+      G.completeMission('MISSION COMPLETE',
+        'PACIFIC EMPRESS 77 IS ON THE GROUND AT SFO.\nDR. KORSHAKOV AND THE SHTORM PLANS ARE IN\nFRIENDLY HANDS.\n\nTHE SUB LAUNCHED EVERYTHING IT HAD.\nIT WASN\'T ENOUGH.\n\nSCORE +3000 + KILL BONUSES');
+    }
+  },
+},
 // ------------------------------------------------ FREE FLIGHT
 {
   id: 'free', num: 99, title: 'FREE FLIGHT', code: 'NO ENEMY ACTIVITY',
