@@ -1,0 +1,56 @@
+name: Social auto-post
+
+on:
+  push:
+    branches: [main]
+    paths: ['blog/index.html']
+  workflow_dispatch:
+    inputs:
+      title:
+        description: 'Post title (leave empty to post the latest journal entry)'
+        required: false
+        default: ''
+      text:
+        description: 'Post body'
+        required: false
+        default: ''
+      image_url:
+        description: 'Image URL'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  post:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Post update
+        env:
+          MODE: ${{ github.event_name }}
+          IN_TITLE: ${{ github.event.inputs.title }}
+          IN_TEXT: ${{ github.event.inputs.text }}
+          IN_IMAGE: ${{ github.event.inputs.image_url }}
+          X_API_KEY: ${{ secrets.X_API_KEY }}
+          X_API_SECRET: ${{ secrets.X_API_SECRET }}
+          X_ACCESS_TOKEN: ${{ secrets.X_ACCESS_TOKEN }}
+          X_ACCESS_SECRET: ${{ secrets.X_ACCESS_SECRET }}
+          META_PAGE_ID: ${{ secrets.META_PAGE_ID }}
+          META_PAGE_TOKEN: ${{ secrets.META_PAGE_TOKEN }}
+          META_IG_USER_ID: ${{ secrets.META_IG_USER_ID }}
+          YT_CLIENT_ID: ${{ secrets.YT_CLIENT_ID }}
+          YT_CLIENT_SECRET: ${{ secrets.YT_CLIENT_SECRET }}
+          YT_REFRESH_TOKEN: ${{ secrets.YT_REFRESH_TOKEN }}
+        run: python3 social/post_update.py
+      - name: Save posted-state
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .social-state.json
+          git commit -m "social: mark posted [skip ci]" || echo "nothing to commit"
+          git push
