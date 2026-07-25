@@ -749,7 +749,7 @@ function updateCamera(dt) {
   // spectate camera: ride another aircraft (J cycles). overrides the player views.
   const spec = G.specTarget && !G.specTarget.dead && !G.specTarget.removeMe ? G.specTarget : null;
   if (spec) {
-    if (P.model) P.model.visible = true;
+    if (P.model) P.model.visible = false;   // no own jet / cockpit while spectating
     const sf = spec.fwd(_v2);
     const big = /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
     const sdist = (24 + (spec.speed || 120) * 0.03) * big;
@@ -764,7 +764,7 @@ function updateCamera(dt) {
     return;
   }
   // own jet must not block the cockpit view
-  if (P.model) P.model.visible = G.view !== 'cockpit';
+  if (P.model) P.model.visible = G.view !== 'cockpit' && G.view !== 'cockpitoff';
   if (G.view === 'chase') {
     const f = P.fwd.clone();
     const dist = window.__camdist > 0 ? window.__camdist : 24 + P.speed * 0.03;
@@ -783,7 +783,7 @@ function updateCamera(dt) {
     camera.lookAt(_v2.copy(P.pos).addScaledVector(f, 60));
     camera.fov = damp(camera.fov, (55 + P.speed * 0.045) / G.xmag, 3, dt);
     camera.updateProjectionMatrix();
-  } else if (G.view === 'cockpit') {
+  } else if (G.view === 'cockpit' || G.view === 'cockpitoff') {
     const f = P.fwd.clone();
     camera.position.copy(P.pos).addScaledVector(f, 1.6).add(_v.set(0, 1.55, 0).applyQuaternion(P.quat));
     camera.quaternion.copy(P.quat).multiply(_qy180); // face the nose, not the tail
@@ -819,7 +819,7 @@ function updateCamera(dt) {
   }
   // camera shake (sonic boom, heavy damage, hard knocks)
   if (G.shakeT > 0.01) {
-    const mag = G.shakeT * (G.view === 'cockpit' ? 0.22 : 0.5);
+    const mag = G.shakeT * (G.view === 'cockpit' || G.view === 'cockpitoff' ? 0.22 : 0.5);
     camera.position.x += (Math.random() - 0.5) * mag;
     camera.position.y += (Math.random() - 0.5) * mag;
     camera.position.z += (Math.random() - 0.5) * mag;
@@ -968,12 +968,12 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyC') && P.stores.chaff > 0) { P.stores.chaff--; P.chaffT = G.time; G.audio.chaff(); for (let i = 0; i < 8; i++) G.fx.smoke(P.pos, 0.8, 3, 0xaaaaaa); }
   if (I.pressed('KeyF') && P.stores.flares > 0) { P.stores.flares--; P.flareT = G.time; G.audio.chaff(); for (let i = 0; i < 6; i++) G.fx.fire(_v.copy(P.pos).addScaledVector(P.vel, -0.03 * i), 0.6, 4); }
   if (I.pressed('KeyV')) {
-    const order = ['cockpit', 'chase', 'orbit', 'tower'];
+    const order = ['cockpit', 'cockpitoff', 'chase', 'orbit', 'tower'];
     G.view = order[(order.indexOf(G.view) + 1) % order.length];
     G.specTarget = null;   // leaving spectate
   }
   // X — straight back to the cockpit from any view, no cycling
-  if (I.pressed('KeyX') && G.view !== 'cockpit') { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
+  if (I.pressed('KeyX') && (G.view !== 'cockpit' || G.specTarget)) { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
   // J — spectate: ride along with every other aircraft in the area, in turn.
   // airliners, MiGs, the defector, the wingman — everything on the scope.
   if (I.pressed('KeyJ')) {

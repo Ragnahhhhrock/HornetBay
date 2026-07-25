@@ -62,7 +62,13 @@ export class HUD {
       if (G.mapview) G.mapview.draw(c, w, h, G);
       return;
     }
-    if (G.view === 'cockpit') {
+    if (G.specTarget) {
+      // spectate: riding another aircraft — no cockpit, no own-ship symbology
+      this._messages(c, G, s);
+      const slabel = 'SPECTATE — ' + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
+      c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
+      c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
+    } else if (G.view === 'cockpit') {
       this._hudGlass(c, st);
       c.save();
       c.clip(this._glassPath());         // all symbology stays on the combiner glass
@@ -85,7 +91,8 @@ export class HUD {
       this._warnings(c, G, P, s);
       this._extBar(c, st);
       const vlabel = G.view === 'tower' ? (G.towerName || 'TOWER VIEW')
-        : G.view === 'orbit' ? 'EXTERNAL VIEW' : 'CHASE VIEW';
+        : G.view === 'orbit' ? 'EXTERNAL VIEW'
+        : G.view === 'cockpitoff' ? 'COCKPIT OFF' : 'CHASE VIEW';
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
       c.textAlign = 'center'; c.fillText(`${vlabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
     }

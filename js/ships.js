@@ -1,7 +1,7 @@
 // ships.js — carrier battle group escorts + bay maritime traffic.
 // The Enterprise never sails alone: four station-keeping escorts in a picket
-// ring, plus cargo ships, fishing boats and pleasure craft plying the lanes
-// between the Bay and the Pacific through the Golden Gate.
+// ring, plus cargo ships, oil tankers, cruise ships, fishing boats and
+// pleasure craft plying the lanes between the Bay and the Pacific.
 // Conventions match models.js: nose = +Z, up = +Y, right = +X, flat-shaded
 // Lambert low-poly. Ocean surface sits at y = -2.5; ship groups ride at y = 0.
 import * as THREE from 'three';
@@ -128,6 +128,62 @@ function buildCargo(opt) {
   const mh = lightSprite(0xffffff, 2.6); mh.position.set(0, deckY + 16, -len * 0.38); g.add(mh);
   const pt = lightSprite(0xff2828, 1.8); pt.position.set(-beam * 0.5, deckY + 10, -len * 0.38); g.add(pt);
   const sb = lightSprite(0x28ff40, 1.8); sb.position.set(beam * 0.5, deckY + 10, -len * 0.38); g.add(sb);
+  g.userData.lights = [mh, pt, sb];
+  return g;
+}
+
+// oil tanker: long flush deck, cargo below — pipeline amidships, castle aft
+function buildTanker(opt) {
+  const { len, beam } = opt;
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(hullGeo(len, beam, 12), M(0x272c31)));          // black hull
+  const boot = new THREE.Mesh(hullGeo(len * 0.995, beam * 0.995, 2.6), M(RUST));
+  boot.position.y = -1.4; g.add(boot);
+  const deckY = 7;
+  const deck = box(beam * 0.94, 1.0, len * 0.9, 0x5a3a32); deck.position.set(0, deckY + 0.3, -len * 0.02); g.add(deck);
+  // accommodation castle + funnel, right aft
+  const castle = box(beam * 0.78, 14, len * 0.1, WHITE); castle.position.set(0, deckY + 7, -len * 0.4); g.add(castle);
+  const fun = cylY(2.2, 2.8, 7, 0x30363c, 8); fun.position.set(0, deckY + 17, -len * 0.44); g.add(fun);
+  // pipeline down the deck centreline + pump manifold amidships
+  const pipe = cylY(0.5, 0.5, len * 0.62, 0xb8b0a0, 6); pipe.rotation.x = Math.PI / 2; pipe.position.set(0, deckY + 1.6, len * 0.06); g.add(pipe);
+  const manifold = box(3.2, 2.2, 4.2, 0x8a8478); manifold.position.set(0, deckY + 1.8, 0); g.add(manifold);
+  const fore = box(beam * 0.5, 2.4, len * 0.05, 0x3a4046); fore.position.set(0, deckY + 1.4, len * 0.42); g.add(fore);
+  const mh = lightSprite(0xffffff, 2.6); mh.position.set(0, deckY + 18, -len * 0.4); g.add(mh);
+  const pt = lightSprite(0xff2828, 1.8); pt.position.set(-beam * 0.5, deckY + 10, -len * 0.4); g.add(pt);
+  const sb = lightSprite(0x28ff40, 1.8); sb.position.set(beam * 0.5, deckY + 10, -len * 0.4); g.add(sb);
+  g.userData.lights = [mh, pt, sb];
+  return g;
+}
+
+// cruise liner: white hull, stacked wedding-cake decks with window bands,
+// big funnel aft in line colours — the floating hotel on the lane
+function buildCruise(opt) {
+  const { len, beam } = opt;
+  const g = new THREE.Group();
+  g.add(new THREE.Mesh(hullGeo(len, beam, 13), M(0xf2f4f6)));          // white hull
+  const stripe = new THREE.Mesh(hullGeo(len * 0.995, beam * 0.995, 1.4), M(0x1c2440)); // navy sheer stripe
+  stripe.position.y = 4.6; g.add(stripe);
+  const deckY = 8.5;
+  const tiers = [
+    { w: 0.88, h: 3.4, d: 0.82, z: -0.02 },
+    { w: 0.80, h: 3.2, d: 0.68, z: -0.05 },
+    { w: 0.70, h: 3.0, d: 0.52, z: -0.09 },
+  ];
+  let ty = deckY;
+  for (const t of tiers) {
+    const d = box(beam * t.w, t.h, len * t.d, WHITE); d.position.set(0, ty + t.h / 2, len * t.z); g.add(d);
+    const win = box(beam * t.w + 0.15, t.h * 0.32, len * t.d * 0.96, 0x1a2230); win.position.set(0, ty + t.h * 0.55, len * t.z); g.add(win);
+    ty += t.h;
+  }
+  // funnel with the line's amber band
+  const fun = cylY(2.6, 3.2, 8, 0xdfe3e6, 10); fun.position.set(0, ty + 3.4, -len * 0.16); g.add(fun);
+  const band = cylY(2.65, 2.65, 2.2, 0xd88f2a, 10); band.position.set(0, ty + 6.2, -len * 0.16); g.add(band);
+  const bridge = box(beam * 0.62, 2.6, len * 0.08, WHITE); bridge.position.set(0, ty + 1.3, len * 0.3); g.add(bridge);
+  const bgls = box(beam * 0.64, 1.0, len * 0.06, 0x1a2230); bgls.position.set(0, ty + 1.9, len * 0.3); g.add(bgls);
+  const mast = cylY(0.2, 0.35, 9, WHITE, 6); mast.position.set(0, ty + 7, len * 0.3); g.add(mast);
+  const mh = lightSprite(0xffffff, 2.6); mh.position.set(0, ty + 12, len * 0.3); g.add(mh);
+  const pt = lightSprite(0xff2828, 1.8); pt.position.set(-beam * 0.5, deckY + 8, len * 0.28); g.add(pt);
+  const sb = lightSprite(0x28ff40, 1.8); sb.position.set(beam * 0.5, deckY + 8, len * 0.28); g.add(sb);
   g.userData.lights = [mh, pt, sb];
   return g;
 }
@@ -272,18 +328,26 @@ export class Ships {
       [-2000, 600], [-9000, 1400], [-24000, 1800],
     ];
     const lane2 = lane.map(([x, z]) => [x + 700, z - 500]);   // second freighter, offset
+    const lane3 = lane.map(([x, z]) => [x + 350, z - 250]);   // mid-channel — between the two validated lanes
     const trafficDefs = [
-      { len: 170, beam: 24, model: buildCargo({ len: 170, beam: 24, rows: 6 }), route: lane,  speed: 5.5, turn: 0.07 },
-      { len: 145, beam: 21, model: buildCargo({ len: 145, beam: 21, rows: 4 }), route: lane2.slice(5).concat(lane2.slice(0, 5)), speed: 5.0, turn: 0.07 },
-      { len: 22, beam: 7, model: buildFishing(), route: [[-12000, -4000], [-5500, -3000], [-5000, -6500], [-8000, -7000]], speed: 3.5, turn: 0.25 },
-      { len: 22, beam: 7, model: buildFishing(), route: [[11500, -1600], [14000, -800], [15500, 1000], [12500, -2200]], speed: 3.2, turn: 0.25 },
-      { len: 22, beam: 7, model: buildFishing(), route: [[2500, -1200], [5000, -1800], [7500, -1000], [4000, -1000]], speed: 3.0, turn: 0.25 },
-      { len: 11, beam: 3.6, model: buildSailboat(true),  route: [[4500, -800], [7500, -1400], [10500, -1600], [8000, -2200], [5000, -1800]], speed: 3.0, turn: 0.3 },
-      { len: 11, beam: 3.6, model: buildSailboat(true),  route: [[12000, -600], [15000, 500], [16500, 2200], [13500, -1500]], speed: 2.8, turn: 0.3 },
-      { len: 11, beam: 3.6, model: buildSailboat(false), route: [[3000, -1500], [6000, -2200], [10500, -2300], [9500, -1500], [6500, -1200]], speed: 4.0, turn: 0.3 },
+      { vtype: 'freighter', name: 'MV BAY TRADER',    len: 170, beam: 24, model: buildCargo({ len: 170, beam: 24, rows: 6 }), route: lane,  speed: 5.5, turn: 0.07 },
+      { vtype: 'freighter', name: 'MV GOLDEN HAULER', len: 145, beam: 21, model: buildCargo({ len: 145, beam: 21, rows: 4 }), route: lane2.slice(5).concat(lane2.slice(0, 5)), speed: 5.0, turn: 0.07 },
+      // supertankers — giants of the lane: slow, deep-laden, barely turn
+      { vtype: 'tanker', name: 'MT PETRO PACIFIC', len: 360, beam: 54, model: buildTanker({ len: 360, beam: 54 }), route: lane.slice(9).concat(lane.slice(0, 9)), speed: 3.5, turn: 0.04 },
+      { vtype: 'tanker', name: 'MT GOLDEN CRUDE',  len: 340, beam: 50, model: buildTanker({ len: 340, beam: 50 }), route: lane3.slice(12).concat(lane3.slice(0, 12)), speed: 3.8, turn: 0.04 },
+      { vtype: 'tanker', name: 'MT ATLANTIC BULK', len: 320, beam: 48, model: buildTanker({ len: 320, beam: 48 }), route: lane2.slice(4).concat(lane2.slice(0, 4)), speed: 4.0, turn: 0.04 },
+      // the cruise liner — the fast mover on the lane
+      { vtype: 'cruise', name: 'MS BAY MONARCH',    len: 230, beam: 30, model: buildCruise({ len: 230, beam: 30 }), route: lane3.slice(6).concat(lane3.slice(0, 6)), speed: 6.8, turn: 0.06 },
+      { vtype: 'fishing', name: null, len: 22, beam: 7, model: buildFishing(), route: [[-12000, -4000], [-5500, -3000], [-5000, -6500], [-8000, -7000]], speed: 3.5, turn: 0.25 },
+      { vtype: 'fishing', name: null, len: 22, beam: 7, model: buildFishing(), route: [[11500, -1600], [14000, -800], [15500, 1000], [12500, -2200]], speed: 3.2, turn: 0.25 },
+      { vtype: 'fishing', name: null, len: 22, beam: 7, model: buildFishing(), route: [[2500, -1200], [5000, -1800], [7500, -1000], [4000, -1000]], speed: 3.0, turn: 0.25 },
+      { vtype: 'yacht', name: null, len: 11, beam: 3.6, model: buildSailboat(true),  route: [[4500, -800], [7500, -1400], [10500, -1600], [8000, -2200], [5000, -1800]], speed: 3.0, turn: 0.3 },
+      { vtype: 'yacht', name: null, len: 11, beam: 3.6, model: buildSailboat(true),  route: [[12000, -600], [15000, 500], [16500, 2200], [13500, -1500]], speed: 2.8, turn: 0.3 },
+      { vtype: 'yacht', name: null, len: 11, beam: 3.6, model: buildSailboat(false), route: [[3000, -1500], [6000, -2200], [10500, -2300], [9500, -1500], [6500, -1200]], speed: 4.0, turn: 0.3 },
     ];
     this.traffic = trafficDefs.map(d => {
       const t = new TrafficShip(world, d.model, d.route, d.speed, d.turn);
+      t.vtype = d.vtype; t.name = d.name;   // mission scripts reference these
       const wakeLen = d.len * (1.2 + d.speed * 0.15);
       const wake = makeWake(d.beam, wakeLen, 0.15);
       wake.position.set(0, 0.65, -d.len / 2 - wakeLen / 2 + 6);
