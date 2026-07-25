@@ -73,6 +73,7 @@ export class Gallery {
   }
   update(dt, I) {
     if (!this.G.cleanShot) this.yaw += dt * 0.35;   // idle showroom spin (off for posed captures)
+    else if (this.G.forceSpin) this.yaw += dt * this.G.forceSpin;   // ?spin= capture hook: orbit in clean mode
     const R = 1.9 * dt;
     if (I.down('ArrowLeft') || I.down('KeyA')) this.yaw -= R;
     if (I.down('ArrowRight') || I.down('KeyD')) this.yaw += R;

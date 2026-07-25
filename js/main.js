@@ -1520,7 +1520,19 @@ if (viewP) G.view = viewP;
 if (auto === 'menu') { /* stay on menu */ }
 else if (auto === 'demo') { startDemo(true); }   // attract mode
 else if (auto === 'map') { startFreeFlightMap(); }
-else if (auto === 'gallery') { $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter(); }
+else if (auto === 'gallery') {
+  // anchor first: _show() places the model at the anchor
+  if (params.get('ax')) G.gallery.anchor.x = +params.get('ax');
+  if (params.get('ay')) G.gallery.anchor.y = +params.get('ay');
+  if (params.get('az')) G.gallery.anchor.z = +params.get('az');
+  $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter();
+  // capture hooks for promo footage: gi=aircraft slot, gd=dist, gp=pitch, gy=yaw, spin=orbit rad/s
+  if (params.get('gi')) G.gallery._show(+params.get('gi'));
+  if (params.get('gd')) G.gallery.dist = +params.get('gd');
+  if (params.get('gp')) G.gallery.pitch = +params.get('gp');
+  if (params.get('gy')) G.gallery.yaw = +params.get('gy');
+  if (params.get('spin')) G.forceSpin = +params.get('spin');
+}
 else if (auto && auto.startsWith('brief:')) { startBriefing(auto.slice(6)); }
 else if (auto && auto.startsWith('planesel:')) {
   const def = MISSIONS.find(m => m.id === auto.slice(9));
