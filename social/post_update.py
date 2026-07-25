@@ -86,6 +86,20 @@ def ig_post(text, image_url, igid, tok):
     assert st == 200 and 'id' in j2, f'IG publish {st}: {r[:250]}'
     return j2['id']
 
+def ig_image_url(url):
+    """IG containers officially want JPEG; prefer a .jpg sibling of the image."""
+    if not url or not url.lower().endswith('.png'):
+        return url
+    alt = url[:-4] + '.jpg'
+    try:
+        req = urllib.request.Request(alt, method='HEAD')
+        with urllib.request.urlopen(req, timeout=15) as r:
+            if r.status == 200:
+                return alt
+    except Exception:
+        pass
+    return url
+
 # --------------------------------------------------------------- blog parse
 def latest_article():
     src = open(BLOG, encoding='utf-8').read()
@@ -153,9 +167,10 @@ def main():
         except Exception as e:
             report.append(f'Facebook: FAIL {e}')
         igid = os.environ.get('META_IG_USER_ID', '')
-        if igid and img:
+        ig_img = ig_image_url(img) if img else None
+        if igid and ig_img:
             try:
-                report.append(f"Instagram: OK (media {ig_post(long_text, img, igid, ptok)})")
+                report.append(f"Instagram: OK (media {ig_post(long_text, ig_img, igid, ptok)})")
             except Exception as e:
                 report.append(f'Instagram: FAIL {e}')
         else:
