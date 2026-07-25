@@ -746,6 +746,23 @@ function updateCamera(dt) {
     camera.fov = damp(camera.fov, 55, 2, dt); camera.updateProjectionMatrix();
     return;
   }
+  // spectate camera: ride another aircraft (J cycles). overrides the player views.
+  const spec = G.specTarget && !G.specTarget.dead && !G.specTarget.removeMe ? G.specTarget : null;
+  if (spec) {
+    if (P.model) P.model.visible = true;
+    const sf = spec.fwd(_v2);
+    const big = /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
+    const sdist = (24 + (spec.speed || 120) * 0.03) * big;
+    _v.copy(spec.pos).addScaledVector(sf, -sdist); _v.y += 7 * big;
+    camPos.x = damp(camPos.x, _v.x, 4.5, dt);
+    camPos.y = damp(camPos.y, Math.max(_v.y, 2.5), 4.5, dt);
+    camPos.z = damp(camPos.z, _v.z, 4.5, dt);
+    camera.position.copy(camPos);
+    camera.up.set(0, 1, 0);
+    camera.lookAt(_v.copy(spec.pos).addScaledVector(sf, 50 * big));
+    camera.fov = damp(camera.fov, 55 / G.xmag, 3, dt); camera.updateProjectionMatrix();
+    return;
+  }
   // own jet must not block the cockpit view
   if (P.model) P.model.visible = G.view !== 'cockpit';
   if (G.view === 'chase') {
@@ -953,9 +970,31 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyV')) {
     const order = ['cockpit', 'chase', 'orbit', 'tower'];
     G.view = order[(order.indexOf(G.view) + 1) % order.length];
+    G.specTarget = null;   // leaving spectate
   }
   // X — straight back to the cockpit from any view, no cycling
-  if (I.pressed('KeyX') && G.view !== 'cockpit') { G.view = 'cockpit'; G.msg('COCKPIT VIEW', 'info'); }
+  if (I.pressed('KeyX') && G.view !== 'cockpit') { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
+  // J — spectate: ride along with every other aircraft in the area, in turn.
+  // airliners, MiGs, the defector, the wingman — everything on the scope.
+  if (I.pressed('KeyJ')) {
+    const others = G.bandits.filter(b => !b.dead && !b.removeMe);
+    if (!others.length) { G.specTarget = null; G.msg('NO OTHER AIRCRAFT IN THE AREA', 'info'); }
+    else {
+      const n = (others.indexOf(G.specTarget) + 1) % (others.length + 1);
+      G.specTarget = n === others.length ? null : others[n];
+      G.msg(G.specTarget ? 'SPECTATING \u2014 ' + (G.specTarget.name || G.specTarget.type) + '  (J FOR NEXT)' : 'BACK IN YOUR OWN COCKPIT', 'info');
+    }
+  }
+  // U — HUD on/off, for clean screens and footage
+  if (I.pressed('KeyU')) {
+    G.hudOff = !G.hudOff;
+    $('hud').style.display = G.hudOff ? 'none' : '';
+    if (!G.hudOff) G.msg('HUD ON', 'info');
+  }
+  // spectated contact went down or left the area — back to your own jet
+  if (G.specTarget && (G.specTarget.dead || G.specTarget.removeMe)) {
+    G.specTarget = null; G.msg('CONTACT LOST — BACK IN YOUR COCKPIT', 'info');
+  }
   // view magnification (the original's XMAG) — works in every view
   const XSTEPS = [1, 1.5, 2, 3, 4, 6, 8];
   if (I.pressed('Equal') || I.pressed('Minus')) {

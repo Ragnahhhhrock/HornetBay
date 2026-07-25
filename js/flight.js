@@ -9,9 +9,9 @@ import { buildModel } from './models.js';
 // 25,000 lbs of fuel that lasts ~10 min at full throttle, 7% idle thrust
 export const PLANES = {
   f18: { label: 'F/A-18 HORNET', maxThrust: 11.5, abBoost: 13.0, dragK: 0.000114, maxRoll: 3.4,
-         gMax: 10, stall: 95, rotate: 80, fuel: 25000, burnMil: 40, burnAB: 95, ceiling: 12487 },
+         gMax: 10, stall: 95, rotate: 80, fuel: 25000, burnMil: 20, burnAB: 47.5, ceiling: 12487 },
   f16: { label: 'F-16 FALCON',   maxThrust: 11.0, abBoost: 12.0, dragK: 0.000108, maxRoll: 4.6,
-         gMax: 11, stall: 90, rotate: 76, fuel: 18000, burnMil: 37.5, burnAB: 87.5, ceiling: 12487 },
+         gMax: 11, stall: 90, rotate: 76, fuel: 18000, burnMil: 18.75, burnAB: 43.75, ceiling: 12487 },
 };
 
 const _e = new THREE.Euler(), _dq = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
