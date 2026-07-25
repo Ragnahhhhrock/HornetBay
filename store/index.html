@@ -93,7 +93,7 @@
 <script>
 /* Paste the storefront token (ptkn_...) here once the Fourthwall shop exists.
    With an empty token the page runs in PREVIEW mode with the planned catalog. */
-const FW_TOKEN = '';
+const FW_TOKEN = 'ptkn_aea6bcf1-a8a9-4661-a6bd-81a3bb387182';
 const FW_API = 'https://storefront-api.fourthwall.com/v1';
 const CURRENCY = 'USD';
 
@@ -183,7 +183,7 @@ document.getElementById('checkout').onclick = async () => {
   }
   try {
     const shop = await (await fetch(`${FW_API}/shop?storefront_token=${FW_TOKEN}`)).json();
-    shopDomain = shop.checkoutDomain || shop.domain || shop.url?.replace(/^https?:\/\//,'') || 'shop.fourthwall.com';
+    shopDomain = shop.checkoutDomain || shop.publicDomain || (shop.domain ? shop.domain + '.fourthwall.com' : 'shop.fourthwall.com');
     const cols = await (await fetch(`${FW_API}/collections?storefront_token=${FW_TOKEN}`)).json();
     const list = cols.results || cols.collections || cols;
     const all = list.find(c => /all/i.test(c.handle || c.slug || c.title)) || list[0];
@@ -196,7 +196,11 @@ document.getElementById('checkout').onclick = async () => {
       return {name: p.name || p.title, price: typeof pr === 'number' && pr > 100 ? pr/100 : pr,
               currency: v.unitPrice?.currency || p.price?.currency || CURRENCY,
               img, desc: (p.description || '').replace(/<[^>]+>/g,'').slice(0,160),
-              cat: (p.productType || p.type || 'GEAR').toUpperCase(), variantId: v.id, live: !!v.id};
+              cat: (() => { const nm = (p.name || p.title || '').toUpperCase();
+                return /TEE|HOODIE|CAP|HAT/.test(nm) ? 'APPAREL' : /MUG/.test(nm) ? 'DRINKWARE'
+                     : /STICKER/.test(nm) ? 'STICKERS' : /POSTER|PRINT/.test(nm) ? 'PRINTS'
+                     : /PATCH/.test(nm) ? 'PATCHES' : 'GEAR'; })(),
+        variantId: v.id, live: !!v.id};
     });
     renderChips([...new Set(catalog.map(p => p.cat))]);
     renderGrid('ALL');
