@@ -87,7 +87,7 @@ export class Gallery {
     for (let k = 0; k < ITEMS.length; k++) if (I.pressed('Digit' + (k + 1))) this._show(k);
     if (I.pressed('KeyQ') || I.pressed('Escape')) { this.exit(); return; }
     if (this.model) {
-      this._e.set(this.pitch, this.yaw, 0, 'YXZ');
+      this._e.set(this.pitch, this.yaw, this.roll || 0, 'YXZ');
       this.model.quaternion.setFromEuler(this._e);
     }
     const cam = this.G.camera, a = this.anchor;

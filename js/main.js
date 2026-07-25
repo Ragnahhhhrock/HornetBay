@@ -1570,7 +1570,14 @@ else if (auto === 'gallery') {
   if (params.get('gd')) G.gallery.dist = +params.get('gd');
   if (params.get('gp')) G.gallery.pitch = +params.get('gp');
   if (params.get('gy')) G.gallery.yaw = +params.get('gy');
+  if (params.get('gr')) G.gallery.roll = +params.get('gr');
   if (params.get('spin')) G.forceSpin = +params.get('spin');
+  // chroma hook: flat backdrop + hide everything but the gallery model (cutout captures)
+  if (params.get('chroma')) {
+    G.scene.background = new THREE.Color('#' + params.get('chroma'));
+    for (const c of G.scene.children)
+      if (c !== G.gallery.model && !c.isLight) c.visible = false;
+  }
 }
 else if (auto && auto.startsWith('brief:')) { startBriefing(auto.slice(6)); }
 else if (auto && auto.startsWith('planesel:')) {
