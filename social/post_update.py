@@ -132,7 +132,7 @@ def main():
             print(f'image download failed ({e}); posting without image')
             img = None
 
-    report, x_ok_or_absent = [], False
+    report, x_ok_or_absent, fb_ok = [], False, False
 
     xc = tuple(os.environ.get(k, '') for k in
                ('X_API_KEY', 'X_API_SECRET', 'X_ACCESS_TOKEN', 'X_ACCESS_SECRET'))
@@ -149,7 +149,7 @@ def main():
     long_text = f'{title}\n\n{para}\n{url}'
     if pid and ptok:
         try:
-            report.append(f"Facebook: OK (post {fb_post(long_text, img, pid, ptok)})")
+            report.append(f"Facebook: OK (post {fb_post(long_text, img, pid, ptok)})"); fb_ok = True
         except Exception as e:
             report.append(f'Facebook: FAIL {e}')
         igid = os.environ.get('META_IG_USER_ID', '')
@@ -165,7 +165,7 @@ def main():
 
     print('\n'.join(report))
 
-    if slug and x_ok_or_absent:
+    if slug and (x_ok_or_absent or fb_ok):
         posted = json.load(open(STATE)) if os.path.exists(STATE) else {'posted': []}
         if slug not in posted['posted']:
             posted['posted'].append(slug)
