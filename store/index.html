@@ -59,6 +59,15 @@
   #checkout { width: 100%; margin-top: 16px; padding: 10px; border: 1px solid var(--amber); background: var(--amber); color: #070b18; font: inherit; font-weight: bold; letter-spacing: 2px; cursor: pointer; }
   #drawer .close { position: absolute; top: 12px; right: 14px; background: none; border: none; color: var(--ink-dim); font: inherit; font-size: 18px; cursor: pointer; }
   footer { max-width: 1060px; margin: 40px auto 0; padding-top: 18px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-dim); }
+  .lifestyle { max-width: 1060px; margin: 0 auto 26px; }
+  .life-head { font-size: 13px; letter-spacing: .18em; color: var(--amber, #FFB737); border-left: 3px solid var(--amber, #FFB737); padding-left: 10px; margin-bottom: 12px; }
+  .life-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 700px) { .life-grid { grid-template-columns: 1fr; } }
+  .life-grid figure { margin: 0; border: 1px solid var(--line); background: rgba(255,255,255,.03); }
+  .life-grid img { width: 100%; aspect-ratio: 1024 / 1472; object-fit: cover; display: block; }
+  .life-grid figcaption { padding: 10px 12px; font-size: 12px; letter-spacing: .08em; color: var(--ink-dim); }
+  .life-grid figcaption b { color: var(--ink); letter-spacing: .1em; }
+  .life-note { margin-top: 8px; font-size: 11px; color: var(--ink-dim); }
 </style>
 </head>
 <body>
@@ -75,6 +84,20 @@
 </header>
 <div id="notice" style="max-width:1060px;margin-left:auto;margin-right:auto;"></div>
 <main>
+  <section class="lifestyle">
+    <div class="life-head">WORN ON THE FLIGHT LINE — THE SQUADRON LAUREL</div>
+    <div class="life-grid">
+      <figure>
+        <img src="/store/laurel-tee-model.jpg" alt="Model on an airfield tarmac at golden hour wearing the navy Squadron Laurel Tee with the laurel emblem on the left chest" loading="lazy">
+        <figcaption><b>SQUADRON LAUREL TEE</b> &middot; laurel on the left chest, where a patch belongs</figcaption>
+      </figure>
+      <figure>
+        <img src="/store/laurel-hoodie-model.jpg" alt="Model at a dusk runway overlook wearing the navy Squadron Laurel Hoodie with the laurel emblem on the left chest" loading="lazy">
+        <figcaption><b>SQUADRON LAUREL HOODIE</b> &middot; left-chest laurel, dusk watch approved</figcaption>
+      </figure>
+    </div>
+    <p class="life-note">Lookbook photography generated for the squadron — see the product renders below for the exact print.</p>
+  </section>
   <div class="chips" id="chips"></div>
   <div class="grid" id="grid"></div>
 </main>
