@@ -104,6 +104,19 @@
   "blogPost": [
     {
       "@type": "BlogPosting",
+      "headline": "Print files: wheels properly up PENDING",
+      "datePublished": "2026-07-26",
+      "url": "https://hornetbay.com/blog/stl-wheels-up-fix",
+      "wordCount": 23,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/stl-wheels-up.jpg"
+    },
+    {
+      "@type": "BlogPosting",
       "headline": "Studio portraits: bigger models, no background fe16a27",
       "datePublished": "2026-07-26",
       "url": "https://hornetbay.com/blog/print-bay-studio-portraits",
@@ -1033,6 +1046,18 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="stl-wheels-up-fix">
+    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
+    <h2><a class="title-link" href="/blog/stl-wheels-up-fix">Print files: wheels properly up</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/stl-wheels-up.jpg"><img src="/shots/stl-wheels-up.jpg" alt="Wireframe side view of the printable F/A-18 — belly flush on the build plate, no landing gear" loading="lazy"></a>
+    <p>A sharp-eyed inspection of the print files found stowaways: the Hornet and Falcon STLs were shipping with their landing gear still down. Fixed:</p>
+    <ol>
+      <li><b>The bug.</b> The exporter hides the gear, hook and afterburner <i>groups</i> before triangulating &mdash; but the triangle walk only checked each mesh&rsquo;s own visibility flag, and children of a hidden group kept their own flags set. The renderers hid the subtree; the file didn&rsquo;t.</li>
+      <li><b>The fix.</b> The walk now checks visibility all the way up the ancestor chain. The F/A-18 STL dropped from 58&nbsp;KB to 29&nbsp;KB and the F-16 from 50&nbsp;KB to 21&nbsp;KB &mdash; half the file was wheels.</li>
+      <li><b>Every file regenerated.</b> All 22 models re-exported, every zip repacked (PRINTING.txt unchanged &mdash; scales and sizes never moved), and the free fishing-boat sample refreshed too. Only the two fighters were affected, but the whole fleet got a fresh, verified build.</li>
+      <li><b>Verified on the plate.</b> Side-view wireframes of the new files show the fuselage belly sitting flush at z=0 with nothing hanging below &mdash; ready to print wheels-up, as the box always promised.</li>
+    </ol>
+  </article>
   <article id="print-bay-studio-portraits">
     <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
     <h2><a class="title-link" href="/blog/print-bay-studio-portraits">Studio portraits: bigger models, no background</a> <span class="hash">fe16a27</span></h2>
@@ -1123,7 +1148,7 @@
     </ol>
     <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
   </article>
-<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-37">FEATURE&nbsp;&middot;&nbsp;37</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-12">SITE&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-8">BUG FIX&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-5">CONTROLS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-4">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-3">MERCH&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-2">AUDIO&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-2">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-2">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-1">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
+<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-37">FEATURE&nbsp;&middot;&nbsp;37</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-12">SITE&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-5">CONTROLS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-4">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-4">MERCH&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-2">AUDIO&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-2">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-2">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-1">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
   <article id="time-acceleration">
     <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/time-acceleration">Time acceleration: 2x, 4x, 8x</a> <span class="hash">885dc92</span></h2>

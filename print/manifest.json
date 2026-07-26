@@ -7,11 +7,11 @@
   "price": 4,
   "blurb": "The mount itself — carrier-capable strike fighter, gear up, ready for the cat.",
   "file": "fa18-hornet.stl",
-  "kb": 58,
+  "kb": 29,
   "scale": 118,
   "dims": {
-   "x": 116,
-   "y": 46.4,
+   "x": 111.8,
+   "y": 34.5,
    "z": 150
   }
  },
@@ -23,11 +23,11 @@
   "price": 4,
   "blurb": "The land-based hot-rod. No tailhook — the boat said no.",
   "file": "f16-falcon.stl",
-  "kb": 50,
+  "kb": 21,
   "scale": 110,
   "dims": {
-   "x": 103,
-   "y": 56.6,
+   "x": 98.5,
+   "y": 49.7,
    "z": 150
   }
  },
