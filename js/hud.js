@@ -177,6 +177,13 @@ export class HUD {
       c.fillText(`SWP ${deg}°`, w * 0.695, h * 0.73);
       c.fillStyle = GREEN;
     }
+    // wingman status under the weapons readout — amber when he's in trouble
+    if (G.wingman && G.wingman.ai) {
+      const line = G.wingman.hudLine();
+      c.fillStyle = line.includes('DEFENSIVE') || line.includes('KIA') ? AMBER : GREEN;
+      c.fillText(line, w * 0.695, h * 0.76);
+      c.fillStyle = GREEN;
+    }
     c.textAlign = 'left';
   }
 
@@ -605,6 +612,9 @@ export class HUD {
         case 'carrier': c.fillStyle = '#40d868'; break;
         case 'raft': c.fillStyle = '#ff8830'; break;
         case 'airliner': c.fillStyle = '#cfe8ff'; break;   // civil traffic: pale sky white
+        case 'patrol': c.fillStyle = '#58d8ff'; break;     // P-3: friendly blue
+        case 'awacs': c.fillStyle = '#58d8ff'; break;      // Screwtops: same friendly blue
+        case 'wingman': c.fillStyle = '#58ff98'; break;    // your wingman: bright green
         case 'missile': c.fillStyle = Math.sin(G.time * 14) > 0 ? RED : '#4a0d05'; break;
         case 'sub': c.fillStyle = '#ff58c8'; break;
         default: c.fillStyle = WHITE;

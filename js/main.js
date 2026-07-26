@@ -13,6 +13,10 @@ import { MISSIONS } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
+import { HeliOps } from './rotors.js';
+import { P3Patrol } from './patrol.js';
+import { Awacs } from './awacs.js';
+import { Wingman, ORDERS } from './wingman.js';
 import { buildModel } from './models.js';
 import { Traffic } from './traffic.js';
 import { stats } from './stats.js';
@@ -357,9 +361,33 @@ async function submitTomcatCode() {
 { const tcc = new URLSearchParams(location.search).get('tomcat'); if (tcc) sha256hex(tcc).then(h => { if (h === TOMCAT_HASH) { save.tomcat = true; persist(); } }); }
 const tomcatOverlayOpen = () => !document.getElementById('tomcat-unlock').classList.contains('hidden');
 
+// ---- wingman orders card (comma key, like the classic comms menu) ----
+const wingOrdersOpen = () => !document.getElementById('wingman-orders').classList.contains('hidden');
+function openWingOrders() {
+  if (!G.wingman || !G.wingman.alive) { G.msg(G.wingman && G.wingman.state === 'DEAD' ? 'VIPER TWO IS GONE, LEAD' : 'NO WINGMAN ABOARD THIS SORTIE', 'warn'); return; }
+  const el = $('wingman-orders');
+  // highlight the current order
+  const cur = G.wingman.order;
+  for (const row of el.querySelectorAll('.wo-row')) row.classList.toggle('current', ORDERS[+row.dataset.o] === cur);
+  el.classList.remove('hidden');
+  G.audio.radioClick();
+}
+function closeWingOrders() { $('wingman-orders').classList.add('hidden'); }
+
 // plane select + map select + briefing keys
 window.addEventListener('keydown', (e) => {
   if (tomcatOverlayOpen()) return;   // the unlock card owns the keyboard
+  if (wingOrdersOpen()) {            // the orders card owns digits while it's up
+    if (e.code === 'Backquote' || e.code === 'Escape') closeWingOrders();
+    else if (/^Digit[1-4]$/.test(e.code)) {
+      const o = ORDERS[+e.code.slice(5) - 1];
+      closeWingOrders();
+      G.audio.radioClick();
+      G.wingman.issueOrder(o);
+    }
+    return;
+  }
+  if (e.code === 'Backquote' && G.state === 'flying' && !G.player.dead) { openWingOrders(); return; }
   if (G.state === 'planesel') {
     if (e.code === 'KeyT') {
       G.dayNightSel = G.dayNightSel === 'mission' ? 'day' : G.dayNightSel === 'day' ? 'night' : 'mission';
@@ -450,6 +478,14 @@ function launchMission(def, opts = {}) {
   for (const b of G.bandits) b.dispose();
   G.bandits = [];
   G.traffic = new Traffic(G);   // SFO keeps its schedules whatever the sortie
+  if (G.heliOps) G.heliOps.dispose();
+  G.heliOps = new HeliOps(G);   // the cruiser flies its Seahawk, shuttles work the pads
+  if (G.p3) G.p3.dispose();
+  G.p3 = new P3Patrol(G);       // the Orion holds its oval west of the group
+  if (G.awacs) G.awacs.dispose();
+  G.awacs = new Awacs(G);       // VAW-123 keeps the big picture from on high
+  if (G.wingman) { G.wingman.dispose(); G.wingman = null; }
+  if (def.id !== 'free') G.wingman = new Wingman(G);   // VIPER TWO rides every mission
   for (const m of G.missiles) m._die();
   G.missiles = [];
   G.time = 0; G.score = 0; G.kills = 0; G.gunHits = 0; G.shotsFired = 0;
@@ -1028,9 +1064,11 @@ function handleDiscreteInput(dt) {
   const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
   const wOrder = P.type === 'f14' ? ['aim54', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'];
   if (I.pressed('Enter') || I.pressed('Tab')) selW(wOrder[(wOrder.indexOf(P.weapon) + 1) % wOrder.length]);
-  if (I.pressed('Digit1')) selW(wOrder[0]);
-  if (I.pressed('Digit2')) selW('aim9');
-  if (I.pressed('Digit3')) selW('gun');
+  if (!wingOrdersOpen()) {
+    if (I.pressed('Digit1')) selW(wOrder[0]);
+    if (I.pressed('Digit2')) selW('aim9');
+    if (I.pressed('Digit3')) selW('gun');
+  }
   // S — swing the Tomcat's wings (spread <-> swept); noop for fixed wings
   if (I.pressed('KeyS') && P.type === 'f14') {
     P.sweepTarget = P.sweepTarget ? 0 : 1;
@@ -1097,6 +1135,7 @@ function handleDiscreteInput(dt) {
     const others = [
       ...G.bandits.filter(b => !b.dead && !b.removeMe),
       ...(G.world && G.world.ships ? G.world.ships.all : []),
+      ...(G.heliOps ? G.heliOps.helis : []),
       ...(G._carrierSpec ? [G._carrierSpec] : []),
     ].sort((a, b) => a.pos.distanceTo(P.pos) - b.pos.distanceTo(P.pos));
     if (!others.length) { G.specTarget = null; G.msg('NO CONTACTS IN THE AREA', 'info'); }
@@ -1609,6 +1648,14 @@ function stepGame(dt) {
       if (b.removeMe) { b.dispose(); G.bandits.splice(i, 1); }
     }
     if (G.traffic) G.traffic.update(dt);   // SFO airline movements, 24/7
+    if (G.heliOps) G.heliOps.update(dt);
+    if (G.p3) G.p3.update(dt);
+    if (G.awacs) G.awacs.update(dt);
+    if (G.wingman) {
+      const wm = G.wingman;
+      if (wm.state === 'PREFLIGHT' && G.state === 'flying' && !P.onGround && !P.dead && P.pos.y > 30) wm.launch();
+      wm.update(dt);
+    }
     for (let i = G.missiles.length - 1; i >= 0; i--) {
       const m = G.missiles[i];
       m.update(dt);

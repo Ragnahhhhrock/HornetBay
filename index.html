@@ -124,6 +124,7 @@
       <div><b>T</b></div><div>Cycle radar target</div>
       <div><b>R</b></div><div>Radar range (Hornet/Falcon: 40 / 10 / 2 NM &nbsp;&middot;&nbsp; Tomcat AWG-9: 100 / 40 / 10 / 2 NM)</div>
       <div><b>S</b></div><div>F-14 only: swing the wings — SPREAD 20° for lift, SWEPT 68° for speed. Watch the stall margin swept slow</div>
+      <div><b>`</b></div><div>Wingman orders (missions): 1 attack my target · 2 cover me · 3 form up · 4 send him home. VIPER TWO launches with you, holds your wing, and hollers when he's in trouble</div>
       <div><b>B</b></div><div>Wheel brakes / airbrake</div>
       <div><b>G</b></div><div>Landing gear</div>
       <div><b>H</b></div><div>Arrestor hook (F/A-18 only — the F-16 has none)</div>
@@ -182,6 +183,17 @@
     <input id="tc-input" maxlength="64" autocomplete="off" spellcheck="false" placeholder="UNLOCK CODE">
     <div id="tc-error" class="hidden">THAT CODE DIDN'T CHECK OUT &mdash; MIND THE DASHES</div>
     <div class="tc-hint">ENTER &mdash; SUBMIT &nbsp;&middot;&nbsp; ESC &mdash; BACK</div>
+  </div>
+</div>
+
+<div id="wingman-orders" class="hidden">
+  <div class="tc-card wo-card">
+    <div class="tc-title">WINGMAN ORDERS &mdash; VIPER TWO</div>
+    <div class="wo-row" data-o="0"><b>1</b> ATTACK MY TARGET <span class="wo-sub">engage whoever you have locked</span></div>
+    <div class="wo-row" data-o="1"><b>2</b> COVER ME <span class="wo-sub">watch your six, pounce on threats</span></div>
+    <div class="wo-row" data-o="2"><b>3</b> FORM UP <span class="wo-sub">return to station on your wing</span></div>
+    <div class="wo-row" data-o="3"><b>4</b> RETURN TO BASE <span class="wo-sub">heads home, leaves the fight</span></div>
+    <div class="tc-hint">1&ndash;4 &mdash; ISSUE ORDER &nbsp;&middot;&nbsp; ` / ESC &mdash; CLOSE</div>
   </div>
 </div>
 

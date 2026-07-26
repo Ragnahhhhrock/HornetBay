@@ -284,8 +284,9 @@ export class Player {
     this.contrailT -= dt;
     if (this.gForce > 2.3 && this.speed > 90 && this.contrailT <= 0 && G && G.fx) {
       this.contrailT = 0.045;
-      const tipX = this.type === 'f14' ? lerp(9.2, 5.9, this.sweep01) : 4.3;
-      const tipZ = this.type === 'f14' ? lerp(-1.4, -3.2, this.sweep01) : -1.2;
+      // swept tips ride aft and slightly inboard: 3.1 + 6.4*cos(48deg) / 0.4 - 6.4*sin(48deg)
+      const tipX = this.type === 'f14' ? lerp(9.2, 7.3, this.sweep01) : 4.3;
+      const tipZ = this.type === 'f14' ? lerp(-1.4, -4.0, this.sweep01) : -1.2;
       for (const s of [-1, 1]) {
         _v.set(s * tipX, 0.25, tipZ).applyQuaternion(this.quat).add(this.pos);
         G.fx.contrail(_v);
@@ -415,8 +416,9 @@ export class Player {
     }
     if (u.stabL) { const a = (inp.pitch || 0) * -0.5; u.stabL.rotation.x = a; u.stabR.rotation.x = a; }
     if (u.wings) {   // F-14 swing wings sweep aft as sweep01 -> 1 (20deg -> 68deg)
+      // +y rotation moves the +x wingtip toward -z (the tail): l +a / r -a
       const a = this.sweep01 * 0.84;
-      u.wings.l.rotation.y = -a; u.wings.r.rotation.y = a;
+      u.wings.l.rotation.y = a; u.wings.r.rotation.y = -a;
     }
     // store visuals
     if (u.stores) {

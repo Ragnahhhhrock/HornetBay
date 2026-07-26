@@ -230,7 +230,7 @@ html.touch .ctl-grid { font-size:14px; }
 /* ================= QUICK START card ================= */
 #quickstart { position:fixed; inset:0; z-index:18; display:flex; align-items:center; justify-content:center;
   background:rgba(4,10,24,.35); cursor:pointer; }
-#quickstart.hidden, #attract-hint.hidden, #gllost.hidden, #tomcat-unlock.hidden { display:none; }
+#quickstart.hidden, #attract-hint.hidden, #gllost.hidden, #tomcat-unlock.hidden, #wingman-orders.hidden { display:none; }
 
 /* F-14 Tomcat unlock card */
 #tomcat-unlock { position:fixed; inset:0; z-index:40; display:flex; align-items:center; justify-content:center;
@@ -246,6 +246,15 @@ html.touch .ctl-grid { font-size:14px; }
   text-align:center; text-transform:uppercase; outline:none; }
 #tc-input:focus { border-color:#ffb437; box-shadow:0 0 12px rgba(255,180,55,.35); }
 #tc-error { color:#ff6a5e; font-size:11.5px; letter-spacing:1px; margin-top:10px; }
+
+/* wingman orders card */
+#wingman-orders { position:fixed; inset:0; z-index:40; display:flex; align-items:flex-start; justify-content:flex-start;
+  background:transparent; pointer-events:none; }
+.wo-card { margin:18vh 0 0 6vw; text-align:left; pointer-events:auto; }
+.wo-row { color:#cfe8ff; font-size:13px; letter-spacing:1px; padding:7px 10px; border:1px solid transparent; border-radius:6px; }
+.wo-row b { color:#ffd75e; margin-right:10px; }
+.wo-row .wo-sub { color:#6f8db0; font-size:11px; margin-left:12px; }
+.wo-row.current { border-color:rgba(255,180,55,.55); background:rgba(255,180,55,.08); }
 #tc-error.hidden { display:none; }
 .tc-hint { margin-top:12px; font-size:10px; color:#5c78a0; letter-spacing:1.5px; }
 

@@ -358,6 +358,7 @@ export class World {
     this._buildBayBridge();
     this._buildAlcatraz();
     this._buildAirports();
+    this._buildHelipads();
     this._buildFarallon();
     this._buildEA();
     this._buildRoads();
@@ -1146,6 +1147,40 @@ export class World {
     const sign = new THREE.Mesh(new THREE.PlaneGeometry(40, 20), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) }));
     sign.position.set(14000, g + 34, 23500 - 36); sign.rotation.y = Math.PI; this.scene.add(sign);
     this.addCollider(14000, g + 21, 23500, 36, 23, 36);
+  }
+
+  _buildHelipads() {
+    // civic/navy helipads the shuttle birds work between: SFO, Oakland, Moffett,
+    // Alameda NAS and the downtown SF waterfront
+    const defs = [
+      { name: 'SFO HELIPAD',      x: 13800, z: 20600 },
+      { name: 'OAKLAND HELIPAD',  x: 26500, z: 16200 },
+      { name: 'MOFFETT HELIPAD',  x: 10300, z: 33650 },
+      { name: 'ALAMEDA HELIPAD',  x: 21200, z: 12100 },
+      { name: 'SF HELIPORT',      x: 6400,  z: 7300  },
+    ];
+    // one shared pad texture: concrete disc, yellow ring, white H
+    const c = document.createElement('canvas'); c.width = c.height = 128;
+    const x2 = c.getContext('2d');
+    x2.fillStyle = '#565e64'; x2.beginPath(); x2.arc(64, 64, 62, 0, 7); x2.fill();
+    x2.strokeStyle = '#d8c840'; x2.lineWidth = 6;
+    x2.beginPath(); x2.arc(64, 64, 52, 0, 7); x2.stroke();
+    x2.fillStyle = '#f2f4f6';
+    x2.fillRect(52, 42, 6, 44); x2.fillRect(70, 42, 6, 44); x2.fillRect(56, 60, 16, 7);
+    const tex = new THREE.CanvasTexture(c);
+    this.helipads = defs.map(d => {
+      const y = Math.max(0.4, groundHeight(d.x, d.z) + 0.35);
+      const grp = new THREE.Group();
+      const pad = new THREE.Mesh(new THREE.CylinderGeometry(9, 9.6, 0.5, 20),
+        new THREE.MeshLambertMaterial({ color: 0x4b5258, flatShading: true }));
+      pad.position.set(d.x, y - 0.22, d.z);
+      const top = new THREE.Mesh(new THREE.CircleGeometry(9, 20),
+        new THREE.MeshBasicMaterial({ map: tex }));
+      top.rotation.x = -Math.PI / 2; top.position.set(d.x, y + 0.04, d.z);
+      grp.add(pad); grp.add(top);
+      this.scene.add(grp);
+      return { name: d.name, x: d.x, z: d.z, y: y + 0.05, group: grp, booked: null };
+    });
   }
 
   _buildAirports() {

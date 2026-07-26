@@ -24,7 +24,7 @@ export class AudioEngine {
   setMusicOn() { /* music removed at user request */ }
 
   async _loadSamples() {
-    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom', 'gatling', 'voice_gun', 'voice_sidewinder', 'voice_amraam'];
+    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom', 'gatling', 'voice_gun', 'voice_sidewinder', 'voice_amraam', 'voice_phoenix'];
     await Promise.all(files.map(async n => {
       try {
         let ab;
@@ -199,7 +199,7 @@ export class AudioEngine {
   }
   // spoken weapon callout on ENTER — "GUNS" / "SIDEWINDER" / "AMRAAM"
   weaponSelect(w) {
-    const n = { gun: 'voice_gun', aim9: 'voice_sidewinder', aim120: 'voice_amraam' }[w];
+    const n = { gun: 'voice_gun', aim9: 'voice_sidewinder', aim120: 'voice_amraam', aim54: 'voice_phoenix' }[w];
     if (n && this.buf[n]) this._play(n, 1.0);
     else this.radioClick();
   }

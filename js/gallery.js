@@ -24,6 +24,9 @@ const ITEMS = [
   { cat: 'air', type: 'md90',  name: 'CASCADE AIR MD-90',          info: 'T-TAIL MAD DOG — 158 SOULS ABOARD — REAR TWINS: CHECK YOUR FIRE', livery: 2 },
   { cat: 'air', type: 'b707',  name: 'BOEING 707 INTERCONTINENTAL', info: 'THE CLASSIC LONG-HAULER — STILL WORKING THE IDENT RUNS OUT OF SFO' },
   { cat: 'air', type: 'cruise', name: 'CRUISE MISSILE',             info: 'THE MOFFETT BANDIT — LOW, FAST, AND NOT HERE TO SIGHTSEE' },
+  { cat: 'air', type: 'p3',     name: 'P-3 ORION',                  info: 'U.S. NAVY SUB HUNTER — 500 FT OVER THE SEA LANES, MAD BOOM OUT' },
+  { cat: 'air', type: 'seahawk', name: 'SH-60 SEAHAWK',             info: 'U.S. NAVY ROTOR — FLIES THE CRUISER\'S AFT DECK CIRCUIT AND THE BAY PADS' },
+  { cat: 'air', type: 'e2c',    name: 'E-2C HAWKEYE',               info: 'VAW-123 SCREWTOPS — THE EYES OF THE FLEET, ROTODOME TURNING AT 23,000 FT' },
   // ---- ships ----
   { cat: 'ship', name: 'USS ENTERPRISE (CVN-65)', info: 'THE BIG E — NUCLEAR SUPERCARRIER — YOUR HOME PLATE',
     dist: 620, zmin: 150, zmax: 1500,

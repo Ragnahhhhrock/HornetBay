@@ -682,12 +682,174 @@ export function buildSub() {
   return g;
 }
 
+// ---------------- SH-60 Seahawk ----------------
+export function buildSeahawk() {
+  const g = new THREE.Group();
+  const C = 0x5c6672, CD = 0x424a54, GL = 0x18242e;   // haze grey over dark
+  // cabin + nose
+  const cab = box(2.3, 1.9, 4.6, C); cab.position.set(0, 0.15, 1.2); g.add(cab);
+  const nose = cone(1.05, 1.8, C, 8); nose.scale.set(1.1, 0.95, 1); nose.position.set(0, -0.05, 4.3); g.add(nose);
+  // glasshouse
+  const glass = box(2.0, 0.85, 1.5, GL); glass.position.set(0, 0.75, 3.0); glass.rotation.x = 0.28; g.add(glass);
+  const chin = box(1.2, 0.5, 0.9, GL); chin.position.set(0, -0.15, 3.9); g.add(chin);
+  // engine nacelles either side of the mast
+  for (const s of [1, -1]) {
+    const nac = box(0.8, 0.8, 2.6, CD); nac.position.set(s * 1.25, 1.35, 0.6); g.add(nac);
+    const exh = cyl(0.26, 0.26, 0.7, 0x22262a, 6); exh.position.set(s * 1.7, 1.35, -0.5); exh.rotation.z = s * Math.PI / 2; g.add(exh);
+  }
+  // tail boom + pylon + canted fin
+  const boom = cyl(0.62, 0.34, 6.8, C, 8); boom.position.set(0, 0.55, -4.7); g.add(boom);
+  const stab = box(3.0, 0.14, 0.9, C); stab.position.set(0, 0.75, -6.2); g.add(stab);
+  const fin = box(0.16, 1.7, 1.1, C); fin.position.set(0, 1.35, -7.6); fin.rotation.x = -0.5; g.add(fin);
+  // tail rotor on the port face of the fin
+  const tr = new THREE.Group(); tr.position.set(-0.22, 1.5, -7.7);
+  for (let i = 0; i < 4; i++) {
+    const b = box(0.09, 1.05, 0.16, 0x1c2024); b.position.y = 0;
+    const holder = new THREE.Group(); holder.rotation.z = i * Math.PI / 2;
+    b.position.set(0, 0.55, 0); holder.add(b); tr.add(holder);
+  }
+  tr.rotation.y = Math.PI / 2;   // plane of rotation faces sideways
+  g.add(tr);
+  // main rotor mast + 4 blades on a hub
+  const mast = cyl(0.14, 0.14, 0.8, CD, 6); mast.rotation.x = 0; mast.rotation.z = 0;
+  mast.geometry = new THREE.CylinderGeometry(0.14, 0.14, 0.8, 6);
+  mast.position.set(0, 1.75, 0.2); g.add(mast);
+  const hub = new THREE.Group(); hub.position.set(0, 2.2, 0.2);
+  for (let i = 0; i < 4; i++) {
+    const holder = new THREE.Group(); holder.rotation.y = i * Math.PI / 2 + 0.4;
+    const b = box(7.6, 0.06, 0.42, 0x22262b); b.position.x = 3.9;
+    const tip = box(0.5, 0.065, 0.44, 0xd8c840); tip.position.x = 7.45;
+    holder.add(b); holder.add(tip); hub.add(holder);
+  }
+  g.add(hub);
+  // full-speed rotor blur disc, swapped in by the Helicopter driver
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(8.1, 24),
+    new THREE.MeshBasicMaterial({ color: 0x30363c, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2; disc.position.set(0, 2.22, 0.2); disc.visible = false; g.add(disc);
+  // gear: two mains + tailwheel
+  const gear = new THREE.Group();
+  for (const s of [1, -1]) {
+    const strut = box(0.14, 0.7, 0.14, CD); strut.position.set(s * 1.15, -1.0, 0.8); gear.add(strut);
+    const wh = cyl(0.3, 0.3, 0.2, 0x14171a, 8); wh.rotation.z = Math.PI / 2; wh.position.set(s * 1.15, -1.4, 0.8); gear.add(wh);
+  }
+  const tw = cyl(0.22, 0.22, 0.18, 0x14171a, 8); tw.rotation.z = Math.PI / 2; tw.position.set(0, -0.5, -6.0); gear.add(tw);
+  g.add(gear);
+  // NAVY titles on the boom
+  const tex = _nameTex('NAVY', 0x1c222a);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.3),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.66, 0.55, -3.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, rotor: hub, tailRotor: tr, rotorDisc: disc, type: 'seahawk' };
+  addNavLights(g, 1.4, -7.6, 1.2);
+  return g;
+}
+
+// ---------------- E-2C Hawkeye ----------------
+export function buildE2C() {
+  const g = new THREE.Group();
+  const W = 0xd6dce2, GY = 0xaeb6be, DK = 0x232e38;
+  const fus = cyl(1.65, 1.45, 15.5, W, 12); g.add(fus);
+  const nose = cone(1.65, 3.4, W, 10); nose.position.set(0, 0, 9.3); g.add(nose);
+  const ck = cyl(1.68, 1.68, 1.5, DK, 10); ck.scale.set(1, 0.55, 1); ck.position.set(0, 0.55, 7.6); g.add(ck);
+  // high wing + two turboprops, four blades each
+  const wG = wingGeo([[1.9, 2.6], [1.9, -2.4], [12.3, -3.0], [12.3, -1.6]], 0.35);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(W)); w.scale.x = s; w.position.y = 1.35; g.add(w); }
+  const props = [];
+  for (const s of [1, -1]) {
+    const nac = cyl(0.72, 0.6, 4.4, W, 8); nac.position.set(s * 5.4, 0.75, 0.5); g.add(nac);
+    const spin = new THREE.Group(); spin.position.set(s * 5.4, 0.75, 2.85);
+    for (let i = 0; i < 4; i++) { const b = box(0.13, 3.7, 0.09, 0x1a1e22); b.rotation.z = i * Math.PI / 4; spin.add(b); }
+    const dome = cone(0.22, 0.45, DK, 8); dome.position.z = 0.1; spin.add(dome);
+    g.add(spin); props.push(spin);
+  }
+  // the rotodome on its struts — the long-range radar, and it spins
+  const rd = new THREE.Group(); rd.position.set(0, 3.15, -2.2);
+  const stA = box(0.28, 2.2, 0.5, GY); stA.position.set(0, -1.6, 0.8); stA.rotation.x = 0.35; rd.add(stA);
+  const stB = box(0.28, 2.2, 0.5, GY); stB.position.set(0, -1.6, -0.8); stB.rotation.x = -0.35; rd.add(stB);
+  const disc = cyl(3.6, 3.6, 0.55, 0xcfd6dc, 20); rd.add(disc);
+  const rim = cyl(3.62, 3.62, 0.3, GY, 20); rim.position.y = -0.1; rd.add(rim);
+  g.add(rd);
+  // quad tail: tall centre fin, two outboard fins, ventral fin
+  const sG = wingGeo([[0.9, 1.1], [0.9, -1.7], [5.4, -2.4], [5.4, -1.4]], 0.28);
+  for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(W)); st.scale.x = s; st.position.set(0, 0.6, -12.2); g.add(st); }
+  const fin = new THREE.Mesh(wingGeo([[0, 2.4], [0, -2.6], [3.8, -3.4], [3.8, -2.6]], 0.3), M(W));
+  fin.rotation.z = Math.PI / 2; fin.position.set(0, 1.0, -12.4); g.add(fin);
+  for (const s of [1, -1]) {
+    const of = new THREE.Mesh(wingGeo([[0, 1.2], [0, -1.6], [2.4, -2.2], [2.4, -1.5]], 0.22), M(W));
+    of.rotation.z = Math.PI / 2; of.position.set(s * 5.2, 0.9, -12.8); g.add(of);
+  }
+  const vf = new THREE.Mesh(wingGeo([[0, 0.9], [0, -1.4], [1.8, -1.9], [1.8, -1.3]], 0.2), M(W));
+  vf.rotation.z = -Math.PI / 2; vf.position.set(0, -0.9, -12.6); g.add(vf);
+  // titles + tail code
+  const tex = _nameTex('U.S. NAVY', 0x2a3540);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.6),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.72, 0.5, 2.0); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const ac = _nameTex('AC 601', 0x2a3540);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.5),
+      new THREE.MeshBasicMaterial({ map: ac, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.36, 3.1, -14.2); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, props, rotodome: rd, type: 'e2c' };
+  addNavLights(g, 12.3, -14.0, 1.6);
+  return g;
+}
+
+// ---------------- P-3 Orion ----------------
+export function buildP3() {
+  const g = new THREE.Group();
+  const W = 0xe4e8ec, GY = 0x9aa4ac, DK = 0x2a3540;   // white-top over gull grey
+  const fus = cyl(1.75, 1.6, 30, GY, 12); g.add(fus);
+  const crown = cyl(1.78, 1.63, 26, W, 12); crown.scale.set(1, 0.55, 1); crown.position.set(0, 0.65, 1); g.add(crown);
+  const nose = cone(1.75, 4.2, W, 10); nose.position.set(0, 0, 17); g.add(nose);
+  // cockpit band
+  const ck = cyl(1.79, 1.79, 1.6, DK, 10); ck.scale.set(1, 0.5, 1); ck.position.set(0, 0.6, 14.6); g.add(ck);
+  // MAD stinger tail
+  const st = cyl(0.5, 0.12, 6.5, GY, 8); st.position.set(0, 0.3, -18.2); g.add(st);
+  // wing + 4 turboprops with spinning props
+  const wG = wingGeo([[2, 3.2], [2, -3.2], [15.2, -4.6], [15.2, -2.2]], 0.4);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(GY)); w.scale.x = s; w.position.y = -0.4; g.add(w); }
+  const props = [];
+  for (const s of [1, -1]) for (const ex of [5.6, 10.6]) {
+    const nac = cyl(0.75, 0.62, 4.6, GY, 8); nac.position.set(s * ex, -1.15, 0.4); g.add(nac);
+    const spin = new THREE.Group(); spin.position.set(s * ex, -1.15, 2.85);
+    for (let i = 0; i < 2; i++) {
+      const b = box(0.14, 3.9, 0.1, 0x1a1e22); b.rotation.z = i * Math.PI / 2; spin.add(b);
+    }
+    const dome = cone(0.24, 0.5, DK, 8); dome.position.z = 0.1; spin.add(dome);
+    g.add(spin); props.push(spin);
+  }
+  // tail: fin + high stabilators
+  const tG = wingGeo([[0, 2.2], [0, -3.2], [5.6, -4.6], [5.6, -3.2]], 0.4);
+  const fin = new THREE.Mesh(tG, M(GY)); fin.rotation.z = Math.PI / 2; fin.position.set(0, 1.2, -14.2); g.add(fin);
+  const sG = wingGeo([[0.8, 0.9], [0.8, -1.6], [6.6, -2.2], [6.6, -1.2]], 0.3);
+  for (const s of [1, -1]) { const st2 = new THREE.Mesh(sG, M(GY)); st2.scale.x = s; st2.position.set(0, 0.8, -13.6); g.add(st2); }
+  // U.S. NAVY titles aft
+  const tex = _nameTex('U.S. NAVY', 0x2a3540);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 0.65),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.82, 0.55, -8.5); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, props, type: 'p3' };
+  addNavLights(g, 15.2, -14.5, 1.5);
+  return g;
+}
+
 export function buildModel(type, livery = 0) {
   switch (type) {
     case 'f18': return buildFA18();
     case 'f16': return buildF16();
     case 'f14': return buildF14();
     case 'mig29': return buildMiG29();
+    case 'seahawk': return buildSeahawk();
+    case 'p3': return buildP3();
+    case 'e2c': return buildE2C();
     case 'b747': return build747();
     case 'b707': return build707();
     case 'b744': return build744(livery);

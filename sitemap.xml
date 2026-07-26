@@ -6,6 +6,7 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/eyes-of-the-fleet</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/f14-tomcat</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/carrier-angle-deck</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/spectate-keypad-controls</loc><priority>0.7</priority></url>
@@ -83,6 +84,7 @@
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/aircraft</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/ai</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/merch</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/graphics</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/controls</loc><priority>0.6</priority></url>
