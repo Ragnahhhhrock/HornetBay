@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { clamp, lerp, rand, randSpread } from './util.js';
 import { makeGlowTexture, makeSmokeTexture } from './models.js';
 import { groundHeight } from './world.js';
+import { stats } from './stats.js';
 
 const _v = new THREE.Vector3(), _d = new THREE.Vector3();
 
@@ -221,7 +222,10 @@ export class Missile {
       if (dist < cfg.prox) {
         G.explode(this.pos, 0.8);
         if (t.isPlayer) G.onPlayerHit(cfg.dmg, this.owner);
-        else t.hit(cfg.dmg, G, this.owner === G.player);
+        else {
+          t.hit(cfg.dmg, G, this.owner === G.player);
+          if (this.owner === G.player) stats.missileHit(this.type);
+        }
         this._die();
         return;
       }
@@ -233,6 +237,7 @@ export class Missile {
         if (this.pos.distanceTo(b.pos) < cfg.prox) {
           G.explode(this.pos, 0.8);
           b.hit(cfg.dmg, G, this.owner === G.player);
+          if (this.owner === G.player) stats.missileHit(this.type);
           this._die();
           return;
         }
@@ -276,6 +281,7 @@ export class GunSystem {
     while (this.cooldown <= 0 && player.stores.gun > 0) {
       this.cooldown += 1 / ROF;
       player.stores.gun--;
+      if (player.isPlayer) stats.cannonRound();
       G.audio.gun();
       // tracer visual
       const tr = new THREE.Mesh(GunSystem.geo, GunSystem.mat);
@@ -303,6 +309,7 @@ export class GunSystem {
           G.fx.flash(t.pos, 6, 0xffe0a0, 0.1);
           G.audio.gunHit();
           G.gunHits++;
+          stats.gunHit();
         }
       }
       if (player.stores.gun <= 0) { G.msg('GUN EMPTY', 'warn'); break; }

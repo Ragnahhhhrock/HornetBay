@@ -15,6 +15,7 @@ import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
 import { buildModel } from './models.js';
 import { Traffic } from './traffic.js';
+import { stats } from './stats.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -219,7 +220,6 @@ function buildMenu(mode = 'main') {
   }
   $('menu-title').textContent = '';   // main mode: the logo block above says it
   if (G._menuResume) addBtn('Q', 'RESUME FLIGHT', 'BACK IN THE COCKPIT', () => resumeFlight());
-  addBtn('1', 'DEMO', '', () => startDemo(true));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
   addBtn('6', 'MISSIONS', '', () => buildMenu('missions'));
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
@@ -230,6 +230,7 @@ function buildMenu(mode = 'main') {
   });
   addBtn('B', 'BLOG', '↗', () => window.open('/blog', '_blank'));
   addBtn('S', 'HORNET BAY STORE', '↗', () => window.open('/store', '_blank'));
+  addBtn('A', 'ANALYTICS DASHBOARD', '↗', () => window.open('/analytics', '_blank'));
   addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ mission: 'MISSION DEFAULT', day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
   addBtn('R', 'TOGGLE CLEAR or RAIN WEATHER', `NOW: ${{ mission: 'MISSION DEFAULT', clear: 'CLEAR', rain: 'RAIN' }[G.weatherSel]}`, () => cycleMenuWeather());
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
@@ -240,10 +241,13 @@ function buildMenu(mode = 'main') {
 window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : null;
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : null;
   if (!d) return;
   const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
-  if (btn && btn.onclick) { G.audio.ensure(); btn.onclick(); }
+  // swallow the keypress whole: the button click may change G.state (menu ->
+  // mapselect), and the intro router further down the listener list would
+  // otherwise see the SAME event as a start-point pick
+  if (btn && btn.onclick) { e.stopImmediatePropagation(); G.audio.ensure(); btn.onclick(); }
 });
 
 // T on the main menu: cycle MISSION/DAY/NIGHT — the change is applied to the
@@ -323,16 +327,16 @@ window.addEventListener('keydown', (e) => {
       save.weather = G.weatherSel; persist();
       G.audio.radioClick();
     }
-    else if (e.code === 'Digit1') { G.player.type = 'f18'; launchWithZoom(pendingMission); }
+    else if (e.code === 'Digit1') { G.player.type = 'f18'; stats.planeSelect('f18'); launchWithZoom(pendingMission); }
     else if (e.code === 'Digit2') {
       // the F-16 has no tailhook and can't take off from or land on the carrier
       const carrierStart = pendingMission.id === 'free' ? G.freeFlightStart === 'carrier' : pendingMission.id !== 'm1';
       if (carrierStart) { G.intro.blockMsg = 'F-16 CANNOT OPERATE FROM THE CARRIER'; G.intro.blockT = G.time; G.audio.radioClick(); }
-      else { G.player.type = 'f16'; launchWithZoom(pendingMission); }
+      else { G.player.type = 'f16'; stats.planeSelect('f16'); launchWithZoom(pendingMission); }
     }
   } else if (G.state === 'mapselect') {
     const spot = FF_SPOTS.find(s => s.key === (e.code.startsWith('Digit') ? e.code.slice(5) : ''));
-    if (spot) { G.freeFlightStart = spot.id; enterPlaneSelect(MISSIONS.find(m => m.id === 'free')); }
+    if (spot) { G.freeFlightStart = spot.id; stats.startPoint(spot.id); enterPlaneSelect(MISSIONS.find(m => m.id === 'free')); }
   } else if (G.state === 'briefing') {
     if (e.code === 'Enter' || e.code === 'Space') { G.intro.afterBrief && G.intro.afterBrief(); }
     if (e.code === 'Escape') showMenu();
@@ -376,6 +380,8 @@ $('pause-quit').onclick = () => { $('pause').classList.add('hidden'); showMenu()
 // ---------------- mission lifecycle ----------------
 function launchMission(def, opts = {}) {
   G.missionDef = def;
+  stats.flushGA();   // report anything left pending from the previous sortie
+  if (def.id !== 'free') stats.missionFlown(def.id);
   G._menuResume = false;   // a fresh sortie replaces the one the menu remembered
   wakeLockTry();   // keep the screen awake for the sortie
   // safety net: the F-16 never goes to the boat, whatever path got us here
@@ -486,6 +492,7 @@ G.onAircraftDown = (unit, byPlayer) => {
       G.addScore(1000);
       G.msg(`SPLASH! ${unit.label} DOWN  +1000`, 'good');
       G.audio.kill();
+      if (unit.type === 'mig29') stats.migKill();
     } else {
       G.msg(`${unit.label} DESTROYED`, 'info');
     }
@@ -561,6 +568,7 @@ G.onMachCross = (supersonic) => {
 G.completeMission = (title, text) => {
   if (G.over) return;
   G.over = true;
+  stats.flushGA();
   const id = G.missionDef.id;
   if (id === 'qual') { save.qualified = true; }
   else if (id !== 'free') { save.done[id] = true; }
@@ -580,6 +588,7 @@ G.completeMission = (title, text) => {
 G.failMission = (title, text) => {
   if (G.over) return;
   G.over = true;
+  stats.flushGA();
   save.best = Math.max(save.best, G.score); persist();
   setTimeout(() => {
     if (G.state === 'menu') return;   // player bailed to the menu first
@@ -665,6 +674,7 @@ function togglePause() {
 }
 // Q — bail straight back to the main menu from flying / paused / dead
 function quitToMenu() {
+  stats.flushGA();   // sortie's over (or suspended) — report pending batched metrics
   // Q from the cockpit: the sortie survives the menu — Q again takes you back
   G._menuResume = (G.state === 'flying' || G.state === 'paused');
   if (G._menuResume) {
@@ -868,6 +878,7 @@ function updateTargeting(dt) {
         G.missiles.push(new Missile(G, P, wpn, tgt));
         G.audio.missileFire();
         G.shotsFired++;
+        stats.missileFired(wpn);
         G.msg(wpn === 'aim9' ? 'FOX 2!' : 'FOX 3!', 'good');
         P._syncVisual(0, {});
       }
@@ -1021,6 +1032,7 @@ function handleDiscreteInput(dt) {
   // deck too — the seat catapult still throws the pilot clear of the jet
   if (I.pressed('KeyE') && (I.down('ShiftLeft') || I.down('ShiftRight')) && !P.ejected && G.state === 'flying') {
     P.ejected = true; P.dead = false;
+    stats.ejection();
     P.stores.gun = 0;
     const cv = P.vel.clone();
     let deckY;
@@ -1455,6 +1467,7 @@ function stepGame(dt) {
   } else if (G.state === 'flying' || G.state === 'dead') {
     // time acceleration: the flying world steps G.timeScale times per frame
     // (discrete input already ran once at the top of stepGame)
+    if (G.state === 'flying') stats.addFlight(dt);   // wall-clock seconds, once per frame — never scaled
     for (let _sub = 0, _subs = (G.timeScale > 1 ? G.timeScale : 1); _sub < _subs; _sub++) {
     G.time += dt;
     G.shakeT = Math.max(0, G.shakeT - dt * 1.3);
