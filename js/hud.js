@@ -69,7 +69,7 @@ export class HUD {
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
       c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105);
       c.fillStyle = DIM;
-      c.fillText('SHIFT+ARROWS / RIGHT-DRAG — PAN · WHEEL / [ ] — ZOOM · 0 — REFRAME', this.cxw, this.h * 0.135);
+      c.fillText('SHIFT+ARROWS / RIGHT-DRAG / NUMPAD — PAN · WHEEL / [ ] / KP +- — ZOOM · 0 / KP0 — REFRAME', this.cxw, this.h * 0.135);
       c.textAlign = 'left';
     } else if (G.view === 'cockpit') {
       this._hudGlass(c, st);

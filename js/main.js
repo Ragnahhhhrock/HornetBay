@@ -772,10 +772,15 @@ function updateCamera(dt) {
       o.pitch = clamp(o.pitch + ((I.down('ArrowDown') ? 1 : 0) - (I.down('ArrowUp') ? 1 : 0)) * cdt * 1.1, -0.85, 1.25);
     }
     if (I.rdx || I.rdy) { o.yaw += I.rdx * 0.006; o.pitch = clamp(o.pitch + I.rdy * 0.004, -0.85, 1.25); }
+    // numeric keypad mirrors the arrows: 4/6 pan, 8/2 tilt, +/- (or 9/3) zoom, 0 reframes
+    if (I.down('Numpad4')) o.yaw -= cdt * 1.7;
+    if (I.down('Numpad6')) o.yaw += cdt * 1.7;
+    if (I.down('Numpad8')) o.pitch = clamp(o.pitch + cdt * 1.1, -0.85, 1.25);
+    if (I.down('Numpad2')) o.pitch = clamp(o.pitch - cdt * 1.1, -0.85, 1.25);
     if (I.wheel) o.dist = clamp(o.dist + I.wheel * 0.9, 0.35, 5);
-    if (I.down('BracketRight')) o.dist = clamp(o.dist * (1 - cdt * 1.4), 0.35, 5);   // ] : close in
-    if (I.down('BracketLeft')) o.dist = clamp(o.dist * (1 + cdt * 1.4), 0.35, 5);    // [ : back off
-    if (I.pressed('Digit0')) { o.yaw = 0; o.pitch = 0.1; o.dist = 1; }
+    if (I.down('BracketRight') || I.down('NumpadAdd') || I.down('Numpad9')) o.dist = clamp(o.dist * (1 - cdt * 1.4), 0.35, 5);   // ] / KP+ : close in
+    if (I.down('BracketLeft') || I.down('NumpadSubtract') || I.down('Numpad3')) o.dist = clamp(o.dist * (1 + cdt * 1.4), 0.35, 5);    // [ / KP- : back off
+    if (I.pressed('Digit0') || I.pressed('Numpad0')) { o.yaw = 0; o.pitch = 0.1; o.dist = 1; }
     const sf = spec.fwd(_v2);
     const big = spec.len ? Math.max(2, spec.len / 45) : /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
     const base = (24 + (spec.speed || 120) * 0.03) * big * o.dist;
@@ -1069,7 +1074,8 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyD')) { G.smokeTrail = !G.smokeTrail; G.msg(G.smokeTrail ? 'SMOKE TRAIL ON' : 'SMOKE TRAIL OFF', 'info'); }
   // original: keypad changes point of view / distance
   const povKeys = ['Numpad0', 'Numpad1', 'Numpad2', 'Numpad3', 'Numpad4', 'Numpad6', 'Numpad7', 'Numpad8', 'Numpad9', 'NumpadAdd', 'NumpadSubtract'];
-  if (povKeys.some(k => I.pressed(k))) G.view = 'orbit';
+  // while spectating the keypad talks to the spectate camera instead (updateCamera)
+  if (!G.specTarget && povKeys.some(k => I.pressed(k))) G.view = 'orbit';
   // eject is Shift+E — plain E is safe to fat-finger; works parked on the
   // deck too — the seat catapult still throws the pilot clear of the jet
   if (I.pressed('KeyE') && (I.down('ShiftLeft') || I.down('ShiftRight')) && !P.ejected && G.state === 'flying') {
