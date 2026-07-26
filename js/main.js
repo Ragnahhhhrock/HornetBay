@@ -221,17 +221,15 @@ function buildMenu(mode = 'main') {
   if (G._menuResume) addBtn('Q', 'RESUME FLIGHT', 'BACK IN THE COCKPIT', () => resumeFlight());
   addBtn('1', 'DEMO', '', () => startDemo(true));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
-  addBtn('6', 'SELECTABLE MISSIONS', '', () => buildMenu('missions'));
-  addBtn('7', 'NEXT ACTIVE ADVANCED MISSION', '', () => {
-    const next = MISSION_ORDER.find(id => !save.done[id]) || MISSION_ORDER[0];
-    startBriefing(next);
-  });
+  addBtn('6', 'MISSIONS', '', () => buildMenu('missions'));
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
-  addBtn('9', 'AIRCRAFT GALLERY', '', () => {
+  addBtn('9', 'GALLERY', '', () => {
     $('menu').classList.add('hidden');
     stopDemo();
     G.gallery.enter();
   });
+  addBtn('B', 'BLOG', '↗', () => window.open('/blog', '_blank'));
+  addBtn('S', 'HORNET BAY STORE', '↗', () => window.open('/store', '_blank'));
   addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ mission: 'MISSION DEFAULT', day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
   addBtn('R', 'TOGGLE CLEAR or RAIN WEATHER', `NOW: ${{ mission: 'MISSION DEFAULT', clear: 'CLEAR', rain: 'RAIN' }[G.weatherSel]}`, () => cycleMenuWeather());
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
@@ -242,7 +240,7 @@ function buildMenu(mode = 'main') {
 window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : null;
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : null;
   if (!d) return;
   const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
   if (btn && btn.onclick) { G.audio.ensure(); btn.onclick(); }

@@ -17,7 +17,7 @@
 <meta name="twitter:title" content="Rotation-lock detective: when ROTATE YOUR DEVICE never ends — HORNET BAY">
 <meta name="twitter:description" content="Second field report from the iPhone: &quot;I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to…">
 <meta name="twitter:image" content="https://hornetbay.com/shots/rotation-lock-hint.png">
-<link rel="alternate" type="application/rss+xml" title="Hornet Bay — New Features &amp; Bug Fixes" href="https://hornetbay.com/rss.xml">
+<link rel="alternate" type="application/rss+xml" title="Hornet Bay — Blog" href="https://hornetbay.com/rss.xml">
 <style>
   :root {
     --amber: #ffb437;
@@ -79,6 +79,10 @@
     font-size: 10px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 0 5px; border-radius: 2px;
   }
+  a.tag { text-decoration: none; }
+  a.tag:hover { color: #ffd76a; border-color: #ffd76a; }
+  .taghead { color: var(--amber); font-size: 14px; letter-spacing: 2px; margin: 0 0 22px; }
+  #tagmenu { margin: 0 0 22px; font-size: 12px; letter-spacing: 1px; color: var(--ink-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   h2 a.title-link { color: inherit; text-decoration: none; }
   h2 a.title-link:hover { color: var(--amber); }
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
@@ -106,7 +110,7 @@
   "image": "https://hornetbay.com/shots/rotation-lock-hint.png",
   "isPartOf": {
     "@type": "Blog",
-    "name": "Hornet Bay \u2014 New Features & Bug Fixes",
+    "name": "Hornet Bay \u2014 Blog",
     "url": "https://hornetbay.com/blog"
   }
 }
@@ -115,12 +119,12 @@
 <body>
 <header>
   <div class="brand">HORNET <span>BAY</span></div>
-  <div class="kicker">NEW FEATURES &amp; BUG FIXES</div>
+  <div class="kicker">BLOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
 </header>
 <main>
 <article id="rotation-lock-detective">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">iOS</span><span class="tag">BUG FIX</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/ios">iOS</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
     <h2><a class="title-link" href="/blog/rotation-lock-detective">Rotation-lock detective: when ROTATE YOUR DEVICE never ends</a> <span class="hash">f4d11ff</span></h2>
     <a class="shot" href="/shots/rotation-lock-hint.png"><img src="/shots/rotation-lock-hint.png" alt="The rotate overlay now shows rotation-lock guidance when a pilot is stuck" loading="lazy"></a>
     <p>Second field report from the iPhone: <i>"I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to animate."</i> Two bugs in one sentence. <b>Bug one:</b> the pilot was able to select FREE FLIGHT <i>while the blocking overlay was up</i> — it turned out the overlay lived inside #touch-ui (z-index 12), which stacked it below the menu (z-index 20), so in menu state the "blocking" overlay ghosted underneath and taps fell straight through to the buttons. It's now a direct child of the body where its z-60 genuinely tops every gameplay layer, in every state — and the suite gained a regression check that pokes a menu button through the overlay to prove it. <b>Bug two is sneakier:</b> with iOS <b>Portrait Orientation Lock</b> on, rotating the phone never changes the browser viewport at all — the page stays portrait, the overlay keeps spinning, and the pilot is stuck with no idea why. The page can't see the lock switch, so the overlay now says it out loud: sit on the overlay for six seconds and a hint fades in — <i>"STUCK ON THIS SCREEN? YOUR ROTATION LOCK IS PROBABLY ON — Control Center → tap the lock icon"</i> — plus a TAP HERE affordance that requests motion-sensor permission; once the gyro is readable, physically rotating to landscape while the viewport stays portrait lights the hint up in pulsing amber. No sensors, no problem: the static hint still points at Control Center. Full gate: 43/43.</p>

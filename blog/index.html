@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HORNET BAY — New Features &amp; Bug Fixes</title>
+<title>HORNET BAY — Blog</title>
 <meta name="description" content="Hornet Bay development journal: every new feature, logged with a screenshot.">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
@@ -79,6 +79,10 @@
     font-size: 10px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 0 5px; border-radius: 2px;
   }
+  a.tag { text-decoration: none; }
+  a.tag:hover { color: #ffd76a; border-color: #ffd76a; }
+  .taghead { color: var(--amber); font-size: 14px; letter-spacing: 2px; margin: 0 0 22px; }
+  #tagmenu { margin: 0 0 22px; font-size: 12px; letter-spacing: 1px; color: var(--ink-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   h2 a.title-link { color: inherit; text-decoration: none; }
   h2 a.title-link:hover { color: var(--amber); }
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
@@ -98,6 +102,19 @@
   "url": "https://hornetbay.com/blog",
   "description": "Every new feature in the Hornet Bay rebuild, logged with a screenshot.",
   "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "The gallery gains a navy, the menu gains a blog PENDING",
+      "datePublished": "2026-07-26",
+      "url": "https://hornetbay.com/blog/gallery-of-ships",
+      "wordCount": 17,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/gallery-ships.jpg"
+    },
     {
       "@type": "BlogPosting",
       "headline": "Time acceleration: 2x, 4x, 8x 885dc92",
@@ -921,14 +938,30 @@
 <body>
 <header>
   <div class="brand">HORNET <span>BAY</span></div>
-  <div class="kicker">NEW FEATURES &amp; BUG FIXES &middot; CHANGELOG</div>
+  <div class="kicker">BLOG</div>
   <p class="blurb">Every new feature, logged as it ships &mdash; with a screenshot straight out of the game. Newest first.</p>
   <a class="rss-link" href="rss.xml" title="Subscribe to the dev journal">&#9673; RSS</a>
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="gallery-of-ships">
+    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/content">CONTENT</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <h2><a class="title-link" href="/blog/gallery-of-ships">The gallery gains a navy, the menu gains a blog</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/gallery-ships.jpg"><img src="/shots/gallery-ships.jpg" alt="The Big E herself, first exhibit of the new SHIPS gallery" loading="lazy"></a>
+    <p>A big batch of small doors and corridors this time &mdash; plus one very big grey hull:</p>
+    <ol>
+      <li><b>The gallery now covers every aircraft and every ship in the game.</b> Eight airframes and ten hulls: the Big E, her cruiser, destroyer and frigate escorts, MT PETRO PACIFIC, MS BAY MONARCH, MV BAY TRADER, and the fishing boat, sailboat and motor cruiser that clutter the weekend lanes.</li>
+      <li><b>It is split into two categories &mdash; AIRCRAFT and SHIPS.</b> TAB jumps between them; [ ] or 1&ndash;9 still step through the exhibits, and every model remembers its own sensible viewing distance.</li>
+      <li><b>SELECTABLE MISSIONS is now simply MISSIONS</b>, and NEXT ACTIVE ADVANCED MISSION has left the menu &mdash; the missions speak for themselves.</li>
+      <li><b>BLOG is a main-menu item</b> (key B, opens in a new tab), and the homepage link is retitled to match.</li>
+      <li><b>HORNET BAY STORE is a main-menu item</b> (key S, new tab) &mdash; the old Exchange link is retitled too.</li>
+      <li><b>Every blog tag is now a page.</b> Each tag chip links to its own stub &mdash; <a href="/blog/tag/ships">/blog/tag/ships</a> and friends &mdash; and the blog carries a tag sub-menu up top, so you can read by topic: FEATURE, CONTENT, SHIPS, SITE and the rest.</li>
+    </ol>
+    <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
+  </article>
+<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-32">FEATURE&nbsp;&middot;&nbsp;32</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-7">SITE&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-6">BUG FIX&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-5">CONTROLS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-4">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-2">AUDIO&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-2">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-2">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-1">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
   <article id="time-acceleration">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/time-acceleration">Time acceleration: 2x, 4x, 8x</a> <span class="hash">885dc92</span></h2>
     <a class="shot" href="/shots/time-acceleration.jpg"><img src="/shots/time-acceleration.jpg" alt="Chase view over the Marin headlands with TIME ACCEL 4X engaged, TIME 4X on the HUD" loading="lazy"></a>
     <p>Long transits just got shorter &mdash; time acceleration is in:</p>
@@ -939,7 +972,7 @@
     </ol>
   </article>
   <article id="giants-of-the-lane">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><span class="tag">CONTENT</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/content">CONTENT</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/giants-of-the-lane">Meet the giants of the lane</a> <span class="hash">e881dce</span></h2>
     <a class="shot" href="/shots/giants-petro-pacific.jpg"><img src="/shots/giants-petro-pacific.jpg" alt="MT Petro Pacific, the 360-metre supertanker, broadside on as the Hornet passes low abeam" loading="lazy"></a>
     <p>The shipping lanes between the Bay and the Pacific have gone heavy. Four new hulls now work the lane in both directions &mdash; three deep-laden supertankers and a cruise liner &mdash; each one named and typed in the traffic system, each trailing a wake scaled to its length. Meet the new traffic, largest first:</p>
@@ -956,7 +989,7 @@
     <a class="shot" href="/shots/giants-bay-monarch.jpg"><img src="/shots/giants-bay-monarch.jpg" alt="MS Bay Monarch, the white cruise liner, passing beneath the Hornet" loading="lazy"></a>
   </article>
   <article id="menu-spring-clean">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">BRAND</span></span></div>
+    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
     <h2><a class="title-link" href="/blog/menu-spring-clean">Menu spring clean &amp; a laurel refit</a> <span class="hash">e881dce</span></h2>
     <a class="shot" href="/shots/menu-spring-clean.jpg"><img src="/shots/menu-spring-clean.jpg" alt="The cleaned-up main menu — row numbers gone, training and qualification rows struck" loading="lazy"></a>
     <p>Three small jobs off the board today:</p>
@@ -967,7 +1000,7 @@
     </ol>
   </article>
   <article id="cockpit-off-supertankers">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">CONTENT</span></span></div>
+    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/content">CONTENT</a></span></div>
     <h2><a class="title-link" href="/blog/cockpit-off-supertankers">Cockpit-off, spectate tweaks &amp; the giants of the lane</a> <span class="hash">1a0d222</span></h2>
     <a class="shot" href="/shots/cockpit-off-supertankers.jpg"><img src="/shots/cockpit-off-supertankers.jpg" alt="Chase view of a supertanker plying the Golden Gate shipping lane at dusk" loading="lazy"></a>
     <p>View system overhaul: <b>V</b> now cycles cockpit &rarr; <b>cockpit-off</b> &rarr; chase &rarr; orbit &rarr; tower. Cockpit-off is the pilot&rsquo;s-eye view with full symbology and no glass or panel in the way. Spectate (<b>J</b>) no longer shows your own jet or the cockpit furniture while you ride along &mdash; just a clean SPECTATE banner, and <b>X</b> drops you straight back into the cockpit. The F1&ndash;F10 throttle row has been retired from the flight manual (the bindings themselves are untouched), and the title screen now reads <i>Carrier Ops Flight Simulator</i>.</p>
@@ -975,61 +1008,61 @@
     <p>Brand desk: the Squadron Laurel roundel has been re-shot &mdash; the complete Hornet now appears from the original emblem&rsquo;s camera angle, whole airframe inside the ring. Files on the <a href="/assets">assets page</a>.</p>
   </article>
   <article id="whole-hornet-merch">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">BRAND</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
     <h2><a class="title-link" href="/blog/whole-hornet-merch">The whole Hornet joins The Exchange</a> <span class="hash">0580704</span></h2>
     <a class="shot" href="/shots/whole-hornet-laurel.png"><img src="/shots/whole-hornet-laurel.png" alt="The Squadron Laurel roundel with the complete Hornet, as printed on the Exchange collection" loading="lazy"></a>
     <p>Hot on the heels of the emblem rebuild: the whole-Hornet laurel is now flying on all four Squadron Laurel products at <a href="/store">The Exchange</a> &mdash; mug, kiss-cut sticker, left-chest tee, and left-chest hoodie. The clipped-nose editions have been retired to the archives; same prices, same placements, complete airframe.</p>
     <p>The lookbook got a fresh sitting too &mdash; new concept photography for the tee and the hoodie, roundel on the left chest where a patch belongs.</p>
   </article>
   <article id="whole-hornet-laurel">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">BRAND</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
     <h2><a class="title-link" href="/blog/whole-hornet-laurel">The whole Hornet</a> <span class="hash">4c83f87</span></h2>
     <a class="shot" href="/shots/whole-hornet-laurel.png"><img src="/shots/whole-hornet-laurel.png" alt="The rebuilt Squadron Laurel emblem — the complete F/A-18, nose to tail, flying inside the laurel ring over flat navy" loading="lazy"></a>
     <p>Sharp eyes on the flight line noticed the squadron laurel had its Hornet flying out of the frame &mdash; the radome was clipped where the source screenshot ended. No longer. The emblem has been rebuilt with the <b>whole Hornet</b>: full pointed nose, canopy, twin tails, wings and rails, all of it inside the laurel ring, over the new flat navy that lets the airframe stand out.</p>
     <p>The jet is no illustration &mdash; it is the game&rsquo;s own F/A-18 model, posed for the portrait. Two new capture hooks in the aircraft gallery made the sitting possible: the model can now be <b>rolled</b> into a bank for hero angles (?gr=), and a <b>chroma-key backdrop</b> (?chroma=) lifts it clean off the sky for cutout work. Same trick as the fleet orbits, one degree finer.</p>
   </article>
   <article id="laurel-collection">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">BRAND</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
     <h2><a class="title-link" href="/blog/laurel-collection">The Squadron Laurel joins The Exchange</a> <span class="hash">8ffef40</span></h2>
     <a class="shot" href="/shots/laurel-collection.png"><img src="/shots/laurel-collection.png" alt="The Exchange lookbook — models wearing the Squadron Laurel Tee and Hoodie with the laurel emblem on the left chest" loading="lazy"></a>
     <p>New insignia, four new ways to wear it. The <b>Squadron Laurel</b> &mdash; the Hornet over the starlit bay, wrapped in gold &mdash; now flies on a <b>mug</b> (printed front and back), a <b>kiss-cut sticker</b>, a <b>tee</b>, and a <b>hoodie</b>. On the clothing the laurel rides on the <b>left chest</b>, where a patch belongs &mdash; not splashed across the front like a billboard.</p>
     <p>And because flat product renders only tell half the story, <a href="/store">The Exchange</a> now opens with a lookbook: the tee on the tarmac at golden hour, the hoodie on the dusk watch. Concept photography generated for the squadron &mdash; the exact print is always in the product renders below. That makes ten products on the shelf; coffee included.</p>
   </article>
   <article id="spectate-mode">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">CONTROLS</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span></div>
     <h2><a class="title-link" href="/blog/spectate-mode">Ride along: spectate every aircraft in the sky</a> <span class="hash">15cd3e7</span></h2>
     <a class="shot" href="/shots/spectate-mode.png"><img src="/shots/spectate-mode.png" alt="Spectate mode riding along behind ALLIED 412, a Pacifica 747 climbing over the bay, with the SPECTATING message on the HUD" loading="lazy"></a>
     <p>Ever wondered what the sky looks like from a cable&rsquo;s length behind a 747? Press <b>J</b> in flight and find out: you hop out of your own cockpit and ride along with the next aircraft in the area &mdash; airliners on their routes, MiGs on patrol, tankers, wingmen, the whole cast. Keep tapping <b>J</b> to cycle through everyone airborne; after the last contact you&rsquo;re handed back to your own cockpit, and <b>V</b> or <b>X</b> brings you home instantly at any point. If your ride gets splashed or leaves the area, the camera lets go and you&rsquo;re back in your own seat &mdash; no falling out of the sky required.</p>
     <p>Press <b>U</b> to make the HUD vanish entirely &mdash; clean screenshots, clean footage, just you and the view &mdash; and again to bring every gauge back. And the fuel trucks have been generous one more time: burn is halved again, with the Hornet sipping <b>20</b> at military power and <b>47.5</b> in burner (the Falcon 18.75/43.75), so the long haul out to the fleet no longer ends as a glider lesson. Both keys are written up in the in-game manual (<b>?</b>), as regulation requires.</p>
   </article>
   <article id="social-channels-live">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">SITE</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
     <h2><a class="title-link" href="/blog/social-channels-live">The squadron is on Facebook and Instagram</a> <span class="hash">3b587ec</span></h2>
     <a class="shot" href="/shots/social-channels.png"><img src="/shots/social-channels.png" alt="The Hornet Bay home menu footer with the new Facebook and Instagram links alongside X and YouTube" loading="lazy"></a>
     <p>Two more channels report for duty: <b><a href="https://www.facebook.com/people/Hornet-Bay/61592078535997/">Hornet Bay on Facebook</a></b> and <b><a href="https://www.instagram.com/hornet_bay/">@hornet_bay on Instagram</a></b> are live, wearing the squadron badge and flying the launch post. They join <a href="https://x.com/hornetbay">X</a> and <a href="https://youtube.com/@hornetbay">YouTube</a> in the home-menu footer and at the bottom of every journal page &mdash; one look, one squadron, everywhere. Follow along for fleet videos, tutorial lessons, and the occasional court martial.</p>
   </article>
   <article id="social-kit">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">SITE</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
     <h2><a class="title-link" href="/blog/social-kit">The social kit: Hornet Bay is coming to Facebook and Instagram</a> <span class="hash">d941772</span></h2>
     <a class="shot" href="/shots/social-kit.png"><img src="/shots/social-kit.png" alt="The Hornet Bay square launch post — wordmark, head-on Hornet over the water, free in your browser" loading="lazy"></a>
     <p>The squadron is standing up its Facebook page and Instagram account, and <a href="/assets">the quartermaster</a> now issues the full kit: the <b>profile badge at a crisp 1000&times;1000</b> (the head-on Hornet roundel, safe in any circular crop), the <b>Facebook cover</b> with the URL tag, the existing X cover and YouTube banner, and a new <b>square launch post</b> (1080&times;1080) sized for the FB and IG feed &mdash; &ldquo;FREE IN YOUR BROWSER &mdash; HORNETBAY.COM.&rdquo; Same sky, same water, same Hornet: one look across every channel.</p>
   </article>
   <article id="the-exchange-live">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">STORE</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/store">STORE</a></span></div>
     <h2><a class="title-link" href="/blog/the-exchange-live">The Exchange is live: real gear in the squadron store</a> <span class="hash">4c9717b</span></h2>
     <a class="shot" href="/shots/the-exchange-live.png"><img src="/shots/the-exchange-live.png" alt="The Hornet Bay Exchange store page with the live catalog — patch hoodie, CHECK YOUR FIRE tee and wordmark tee with prices and Add to Cart buttons" loading="lazy"></a>
     <p>The Exchange has restocked. The preview shelf is gone &mdash; <b><a href="/store">hornetbay.com/store</a></b> now draws its catalog straight from the new Hornet Bay squadron store: the <b>wordmark tee</b> and the <b>CHECK YOUR FIRE tee</b> ($24), the <b>Interceptor Squadron patch hoodie</b> ($44.99), the <b>Meet the Fleet mug</b> ($15.99) with all four SFO airlines on the wrap, the kiss-cut <b>squadron patch sticker</b> ($5.99), and the <b>Meet the Fleet poster</b> ($17.99) with ALLIED&rsquo;s 747-400 over the Bay. Category filters up top, a cart that follows you around the site, and secure checkout through Fourthwall &mdash; everything printed on demand and shipped worldwide.</p>
     <p>The catalog, prices and mockups are managed live, so new gear lands on the page the moment it&rsquo;s designed. One formality remains before the doors swing all the way open: the squadron store itself is finishing setup at Fourthwall (payouts and the final launch switch) &mdash; until then you can browse, fill a cart, and window-shop the full lineup. Digital downloads stay free, as always, at <a href="/assets">the quartermaster</a>.</p>
   </article>
   <article id="meet-the-fleet-video">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FLEET</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-video">Meet the Fleet, in motion: 360&deg; orbits and the Hornet Bay anthem</a> <span class="hash">040292e</span></h2>
     <a class="shot" href="/shots/meet-the-fleet-video.png"><img src="/shots/meet-the-fleet-video.png" alt="An ALLIED Airlines 747-400 at the hero angle of its 360-degree orbit, caption fading in, from the Meet the Fleet video" loading="lazy"></a>
     <p>The fleet profiles deserved more than stills. The new <b>MEET THE FLEET</b> video puts the camera in a slow 360&deg; orbit around every airliner in the Bay &mdash; all sides of the ALLIED 747-400, the LIBERTY AIR 737-400, the PACIFIC EMPRESS DC-10 and the CASCADE AIR MD-90, wheels up over open water. Each orbit opens with a hold on the hero angle while the airline&rsquo;s name and aircraft type fade in, then swings all the way around the airframe.</p>
     <p>The whole thing flies to the <b>Hornet Bay anthem</b>, opening with a genuine in-game flyby whoosh. It ships in two cuts: a 47-second widescreen cut for the <a href="https://youtube.com/@hornetbay">Hornet Bay YouTube channel</a>, and a vertical Shorts cut with the specs riding under every aircraft. The four fleet profiles &mdash; <a href="/blog/meet-the-fleet-allied-747-400">ALLIED</a>, <a href="/blog/meet-the-fleet-liberty-737-400">LIBERTY</a>, <a href="/blog/meet-the-fleet-pacific-empress-dc-10">PACIFIC EMPRESS</a>, <a href="/blog/meet-the-fleet-cascade-md-90">CASCADE</a> &mdash; have the full specifications.</p>
   </article>
   <article id="meet-the-fleet-allied-747-400">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FLEET</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-allied-747-400">Meet the fleet: ALLIED AIRLINES 747-400</a> <span class="hash">6ef1315</span></h2>
     <a class="shot" href="/shots/allied-747-400.png"><img src="/shots/allied-747-400.png" alt="An ALLIED Airlines Boeing 747-400 in flight over the Bay in Hornet Bay — white fuselage, blue cheatline, navy tail with an amber wedge" loading="lazy"></a>
     <p>The flag carrier of the Bay. ALLIED&rsquo;s 747-400s run the trans-Pacific trunk &mdash; Tokyo, Hong Kong, Sydney &mdash; every departure threading the Golden Gate on climb-out, every arrival letting down over the East Bay for SFO&rsquo;s 28s. <b>388 souls aboard</b>, four big fans at a rumble you can feel from your own cockpit. Navy pilots know her as the big friendly on the scope: ALLIED 412 HEAVY and her sisters, squawking their way in at all hours, in all weather.</p>
@@ -1037,7 +1070,7 @@
     <p><b>Where to meet her:</b> heavy departures off SFO climbing through 4,000 over the ocean, or arrivals on long finals to the 28s. Intercept her, formate on the wing, count the windows &mdash; then check your fire, because the court martial is quick and the debrief is unforgiving.</p>
   </article>
   <article id="meet-the-fleet-liberty-737-400">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FLEET</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-liberty-737-400">Meet the fleet: LIBERTY AIR 737-400</a> <span class="hash">6ef1315</span></h2>
     <a class="shot" href="/shots/liberty-737.png"><img src="/shots/liberty-737.png" alt="A LIBERTY AIR Boeing 737-400 in flight over the Bay — polished silver fuselage with a red cheatline" loading="lazy"></a>
     <p>The shuttle. LIBERTY AIR&rsquo;s polished-silver 737-400s with the red cheatline run the coast milk route &mdash; Los Angeles, San Diego, Seattle and back &mdash; a rotation every hour, <b>146 souls</b> a hop. If ALLIED is the flag carrier, LIBERTY is the bus service: always in the pattern, always on time, and always exactly in your way when you&rsquo;re boresighting a bogey over the Bay.</p>
@@ -1045,7 +1078,7 @@
     <p><b>Where to meet her:</b> low and slow over the Peninsula, gear down and flaps out on a long straight-in. The easiest intercept in the Bay &mdash; and the most expensive mistake if you get trigger-happy.</p>
   </article>
   <article id="meet-the-fleet-pacific-empress-dc-10">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FLEET</span><span class="tag">MISSIONS</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-pacific-empress-dc-10">Meet the fleet: PACIFIC EMPRESS DC-10</a> <span class="hash">6ef1315</span></h2>
     <a class="shot" href="/shots/pacific-empress-dc-10.png"><img src="/shots/pacific-empress-dc-10.png" alt="A PACIFIC EMPRESS DC-10 in flight over the Bay — white fuselage with a gold cheatline and dark navy tail" loading="lazy"></a>
     <p>The old glamour line. Pacific Empress still flies the DC-10 the way it was meant to be flown &mdash; white gloves, gold cheatline, and three CF6s trailing that unmistakable trijet howl across the Pacific. <b>268 souls</b> in the back. And one of them, one night not so long ago, was a man half the intelligence services of the Pacific Rim were looking for.</p>
@@ -1053,7 +1086,7 @@
     <p><b>Where to meet her:</b> Mission 7. When the call comes that an Empress heavy is inbound with a defector aboard, every bandit in the Bay will try to keep him from talking. Get there first, run the escort, and put the old trijet on the ground in one piece. The rest of the week she flies the line like any other transport &mdash; treat her accordingly.</p>
   </article>
   <article id="meet-the-fleet-cascade-md-90">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FLEET</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-cascade-md-90">Meet the fleet: CASCADE AIR MD-90</a> <span class="hash">6ef1315</span></h2>
     <a class="shot" href="/shots/cascade-md-90.png"><img src="/shots/cascade-md-90.png" alt="A CASCADE AIR MD-90 in flight over the Bay — T-tail and rear-mounted engines, dark tail over a dark cheatline" loading="lazy"></a>
     <p>Down from the Northwest. CASCADE AIR feeds SFO from Seattle, Portland and points north, and it does it with the quietest Mad Dog ever built: the MD-90, with its T-tail and rear-mounted V2500s whispering in over the hills where the older jets roar. <b>158 souls</b> aboard. Spot her by the long fuselage, the high tail, and engines exactly where the tail ought to be.</p>
@@ -1061,7 +1094,7 @@
     <p><b>Where to meet her:</b> descending out of the north on the arrival flow, all day, every day. Formate, wave at the cockpit, remember the souls aboard &mdash; and let her land.</p>
   </article>
   <article id="sfo-airliner-traffic">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">MISSIONS</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span></div>
     <h2><a class="title-link" href="/blog/sfo-airliner-traffic">Heavy metal in the pattern: SFO goes live, and one of them is worth dying for</a> <span class="hash">275a571</span></h2>
     <a class="shot" href="/shots/sfo-airliner-traffic.png"><img src="/shots/sfo-airliner-traffic.png" alt="Chase view of an F/A-18 in close formation behind an ALLIED Airlines 747-400 over the bay, the airliner boxed in a target diamond with range, speed and altitude readout" loading="lazy"></a>
     <p>San Francisco International is open for business. Around the clock and in every weather, the heavies now work the bay: <b>ALLIED 747-400s</b>, <b>LIBERTY 737s</b>, <b>CASCADE MD-90s</b> and <b>PACIFIC EMPRESS DC-10s</b>, climbing out and letting down on the corridors real traffic flies into SFO. They squawk on the radar with airline callsigns, they hold their routes like professionals, and they will absolutely ruin your merge if you cut across final at the wrong moment.</p>
@@ -1069,7 +1102,7 @@
     <p>Which brings us to <b>MISSION 7</b>: one of those Pacific Empress DC-10s is carrying a defector the other side very much wants back, and bandits will vector in to make sure he never talks. Get to him, see off the welcoming committee, and put him safely on the ground. And because a sky this busy shouldn&rsquo;t keep moving while you&rsquo;re reading the menu, the whole bay now freezes when you hit <b>Q</b> &mdash; traffic, bandits, carrier and all &mdash; and picks up exactly where you left it.</p>
   </article>
   <article id="x-cockpit-key">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><span class="tag">FEATURE</span><span class="tag">CONTROLS</span></span></div>
+    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span></div>
     <h2><a class="title-link" href="/blog/x-cockpit-key">X marks the cockpit, and a fistful of quality-of-life</a> <span class="hash">275a571</span></h2>
     <a class="shot" href="/shots/x-cockpit-key.png"><img src="/shots/x-cockpit-key.png" alt="The Hornet Bay flight manual controls list showing the new V / X row — X jumps straight back to the cockpit from any view — and radar range now stepping 40, 10, 2 NM" loading="lazy"></a>
     <p>A pilot request, granted on the spot: <b>X</b> snaps you straight back to the cockpit from any camera &mdash; chase, orbit, tower &mdash; without cycling the whole carousel with <b>V</b>. The two keys sit side by side for a reason: V wanders out, X comes home. The flight manual says so, in writing.</p>
@@ -1077,35 +1110,35 @@
     <p>Also aboard: a console chirp when you pause or call up the menu, so the bay answers when you ask it to hold &mdash; and the aircraft gallery swells to eight, with all four airliners in their house liveries, so you can get a proper look at the traffic before you try very hard not to shoot it.</p>
   </article>
   <article id="q-resume-flight">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">BUGFIX</span><span class="tag">CONTROLS</span></span></div>
+    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/bugfix">BUGFIX</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span></div>
     <h2><a class="title-link" href="/blog/q-resume-flight">Q toggles the menu now: quit out, Q back in</a> <span class="hash">a083612</span></h2>
     <a class="shot" href="/shots/q-resume-flight.png"><img src="/shots/q-resume-flight.png" alt="The Hornet Bay main menu showing Q RESUME FLIGHT at the top, with the frozen cockpit HUD behind it" loading="lazy"></a>
     <p>A pilot reported the trap: mid-mission you hit <b>Q</b> to call up the main menu &mdash; and there was no way back. The menu slammed down over the cockpit and the only way out was to abandon the sortie and relaunch. The sortie itself was never the problem &mdash; your jet waits exactly where you left it while the attract demo borrows the camera &mdash; the menu just never offered the way back.</p>
     <p>Now it does, two ways. Quit to the menu with Q and you&rsquo;ll find a new top entry: <b>Q &mdash; RESUME FLIGHT</b>, tagged BACK IN THE COCKPIT. Hit Q again (or click it) and the menu folds away mid-frame, mission intact, hands back on the stick. The flag clears the moment you launch a fresh sortie, so there&rsquo;s no ghost resume waiting after you&rsquo;ve moved on. The subtle part of the fix: the resume key is polled in the frame loop rather than fired from the key event itself &mdash; otherwise the same keypress gets seen by both states and bounces you straight back out to the menu. Fifty-one checks green, and the Bay forgives an accidental Q.</p>
   </article>
   <article id="the-exchange">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">SITE</span><span class="tag">BRAND</span></span></div>
+    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
     <h2><a class="title-link" href="/blog/the-exchange">The Exchange: a print-on-demand squadron store, built API-first</a> <span class="hash">7fb9f03</span></h2>
     <a class="shot" href="/shots/the-exchange.png"><img src="/shots/the-exchange.png" alt="The Hornet Bay Exchange store page in preview mode, showing the planned catalog with target prices" loading="lazy"></a>
     <p>Squadron stores are coming: <b><a href="/store">hornetbay.com/store</a></b> &mdash; The Exchange &mdash; is live today in preview mode with the planned catalog and target prices. The launch lineup: a navy <b>dad cap with the embroidered insignia</b>, all seven <b>embroidered iron-on patches</b> (Carrier Ops Certified plus the six reward badges &mdash; collect them all), an 11oz <b>insignia mug</b>, a <b>sticker sheet</b> with every badge, and a navy <b>wordmark tee</b>. Everything is printed on demand when ordered and shipped worldwide &mdash; nothing sits in a hangar; checkout, payment and sales taxes run through Fourthwall as merchant of record, so there&rsquo;s no Shopify and no stockroom.</p>
     <p>The whole store is built API-first. A new embroidery-safe variant of the insignia (five thread colors, flat grays) leads a production artwork pack; a product spec defines all eleven SKUs; and a setup script drives Fourthwall&rsquo;s Platform API &mdash; artwork upload, product-template matching, mockup rendering, pricing as base cost plus margin &mdash; so the catalog is created by code, not an afternoon of clicking. The storefront page itself is custom headless: it will pull the live catalog from the Storefront API and hand buyers to hosted checkout, all without leaving hornetbay.com. The only missing piece is the shop account itself &mdash; once it&rsquo;s connected, The Exchange flips from preview to open for business. Digital badges and wallpapers, as always, stay free at the <a href="/assets">quartermaster</a>.</p>
   </article>
   <article id="reward-badges">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">SITE</span><span class="tag">BRAND</span></span></div>
+    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
     <h2><a class="title-link" href="/blog/reward-badges">Reward badges: six squadron patches to earn and post</a> <span class="hash">1e42e34</span></h2>
     <a class="shot" href="/shots/reward-badges.png"><img src="/shots/reward-badges.png" alt="The six Hornet Bay reward badges: Cat Launch Qualified, First Carrier Landing, First Bogie Splashed, Moffett Defender, Night Owl and Five Kill Ace" loading="lazy"></a>
     <p>The Carrier Ops Certified insignia has company: a family of <b>six reward badges</b> has landed on the <b><a href="/assets">assets page</a></b>, one for each milestone that matters in a naval aviator&rsquo;s logbook. <b>CAT LAUNCH QUALIFIED</b> for your first ride on the cat. <b>FIRST CARRIER LANDING</b> for your first trap back aboard. <b>FIRST BOGIE SPLASHED</b> for your first confirmed kill &mdash; starring the enemy MiG-29 Fulcrum from the aircraft gallery, red stars and all. <b>MOFFETT DEFENDER</b> for splashing the cruise missile before it reaches the airfield, with a reticle on the roundel for good measure. <b>NIGHT OWL</b> for launching and recovering after dark, flown under a star-dotted cap. And <b>FIVE KILL ACE</b>, five amber stars under the Hornet, for the Bay&rsquo;s finest.</p>
     <p>Every patch follows the same design law as the insignia &mdash; amber ring, dusk-over-ocean roundel, arc text, and imagery captured from the game&rsquo;s own models (the Fulcrum posed in the aircraft gallery for its close-up). Each comes as a 1200&times;1200 transparent master plus a 400&times;400 avatar cut, free at <b><a href="/assets">hornetbay.com/assets</a></b>. Fly the sortie, earn the patch, post it.</p>
   </article>
   <article id="assets-quartermaster">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">SITE</span><span class="tag">BRAND</span></span></div>
+    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
     <h2><a class="title-link" href="/blog/assets-quartermaster">The quartermaster opens: free brand assets and the Carrier Ops Certified insignia</a> <span class="hash">f7b9db6</span></h2>
     <a class="shot" href="/shots/assets-quartermaster.png"><img src="/shots/assets-quartermaster.png" alt="The new Hornet Bay assets page, with the Carrier Ops Certified insignia feature card and the wallpaper section" loading="lazy"></a>
     <p>There&rsquo;s a new public page on the site: <b><a href="/assets">hornetbay.com/assets</a></b> &mdash; the quartermaster, where every official brand asset is a free download for your devices and social profiles. On the shelves at opening: the <b>desktop wallpaper</b> (4K, the head-on Hornet coming at you over the horizon) and the <b>iPhone wallpaper</b> (1206&times;2622, native for iPhone 17 with a clean top fifth for the lock-screen clock), the universal <b>profile badge</b> in 400 and 800, and the <b>X cover and YouTube banner</b> for your own pages. Every piece follows the style guide &mdash; flat dusk sky over ocean navy, and the Hornet always captured from the game itself.</p>
     <p>The headline item is brand new: the <b>CARRIER OPS CERTIFIED &mdash; HORNET BAY insignia</b>. A proper squadron patch &mdash; amber ring, dusk-cap-and-ocean roundel, the top-down Hornet with its fins in the cap, arc text up top and the wordmark split below. It comes as a transparent 1200&times;1200 master, a 400&times;400 avatar cut, and a navy-square version for platforms that insist on one. It&rsquo;s for celebrating a milestone: trap your first landing on the Big E, then post the patch. Earned, not given &mdash; but the download is free.</p>
   </article>
   <article id="roads-resume-waterline">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">BUGFIX</span><span class="tag">WORLD</span></span></div>
+    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/bugfix">BUGFIX</a><a class="tag" href="/blog/tag/world">WORLD</a></span></div>
     <h2><a class="title-link" href="/blog/roads-resume-waterline">The pilot&rsquo;s fix list: dark asphalt, RESUME FLIGHT, blue water only</a> <span class="hash">244b55f</span></h2>
     <a class="shot" href="/shots/roads-resume-waterline.png"><img src="/shots/roads-resume-waterline.png" alt="The mission-success debrief now offering RESUME FLIGHT beside MAIN MENU, and daylight roads in muted dark gray over the Bay hills" loading="lazy"></a>
     <p>A five-line punch list from the cockpit, worked line by line. First, the roads: by day they were rendering in a loud yellow &mdash; fine for a centreline at midnight, wrong for asphalt under the California sun. Road ribbons are now dark asphalt gray with muted gray edge lines and centre dashes, still dimming with the sun at dusk, and from altitude they read as proper highways again instead of glowing spaghetti. The menu footer grew too: the <b>HornetBay YouTube channel</b> and a contact address (<b>maverick@hornetbay.com</b>) now sit alongside the journal and X links.</p>
@@ -1113,268 +1146,268 @@
     <p>And maritime law is now enforced: every ship, boat and pleasure craft stays in the blue water, never on the green. The traffic routes had been plotted against the wrong chart datum &mdash; the sea surface sits a touch below the terrain&rsquo;s zero mark, so two legs that looked wet on paper actually clipped a drying shoreline and parked sailboats on the Sausalito shallows. Every route was re-plotted against the game&rsquo;s own ground truth with the corrected waterline and a wide safety margin, then swept waypoint by waypoint. Twelve hulls, all wet, all day and night.</p>
   </article>
   <article id="battle-group-traffic">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><span class="tag">WORLD</span><span class="tag">SHIPS</span></span></div>
+    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/world">WORLD</a><a class="tag" href="/blog/tag/ships">SHIPS</a></span></div>
     <h2><a class="title-link" href="/blog/battle-group-traffic">The Big E never sails alone: battle-group escorts and bay traffic</a> <span class="hash">67a2c7f</span></h2>
     <a class="shot" href="/shots/battle-group.png"><img src="/shots/battle-group.png" alt="A container ship steaming under the Golden Gate, a cruiser on the bow picket, and the escort ring at night" loading="lazy"></a>
     <p>The Enterprise is the flagship of a carrier battle group, and now she sails like one. Four escorts hold a picket ring around her at all times: a guided-missile cruiser 2.4 km ahead, two destroyers 1.5 km out on each beam, and a frigate 2.8 km astern (far enough back to keep your final approach clean). Each escort is a proper station-keeper with its own helm — when the Big E reaches the end of her patrol leg and puts the rudder over, the ring swings with her, the outside ships sprinting to their new stations before settling back to formation speed. All five ships are procedural low-poly builds in the game's flat-shaded style, with wakes that trail astern and running lights that come on at night.</p>
     <p>The bay is alive now too. Two container ships loop a shipping lane between the Pacific and the central bay, passing under the Golden Gate twice per circuit (inbound lane north, outbound lane south, like real traffic keeping right). Fishing boats work the grounds off the Marin coast, the waterfront and Richardson Bay, while sailboats and a little motor cruiser crisscross the bay between the city front, Alcatraz and Angel Island. Every route was validated against the game's own ground-truth terrain — the first draft beached two sailboats on Telegraph Hill, which is how the bay pilots learned their charts. Twelve ships total, all steaming day and night.</p>
   </article>
   <article id="brand-unified">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">BRAND</span><span class="tag">ART</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/brand">BRAND</a><a class="tag" href="/blog/tag/art">ART</a></span></div>
     <h2><a class="title-link" href="/blog/brand-unified">One brand everywhere: the X look becomes the style guide</a> <span class="hash">9086ad3</span></h2>
     <a class="shot" href="/shots/brand-unified.png"><img src="/shots/brand-unified.png" alt="The unified brand family: profile badge, app icons, YouTube thumbnail and banner, all in the X design" loading="lazy"></a>
     <p>With a YouTube channel (@HornetBay) joining X (@hornetbay), the brand got unified behind the X artwork — the pilot verdict on that look was <i>"perfect, don't deviate."</i> So it's now the written law: a proper <b>style guide</b> codifies the palette (flat dusk sky #444477 over ocean navy #003366, hornet amber #ffb737), the typography (bold italic serif wordmark — HORNET in white, BAY in amber, with the amber rule under HORNET — plus tracked sans caps), and the imagery rule that matters most: <b>the Hornet is always the game's own 3D model</b>, captured from the retro renderer with its chunky pixels intact, never illustrated or AI-generated. The YouTube collateral was rebuilt to match exactly: profile badge (the in-game Hornet top-down on navy, amber ring), the 2560×1440 banner with every word inside YouTube's safe area, the 1280×720 thumbnail, and the Shorts cut re-rendered with brand-true title bands. The retired patch art is fully replaced — including here on the site: the <b>PWA home-screen icons and a new favicon</b> now carry the badge (service worker cache bumped to v2 so the refresh reaches installed copies). Any future channel or touchpoint gets built from the same page — literally: hornetbay.com is the reference implementation.</p>
   </article>
   <article id="deck-markings-cvn65">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">CARRIER</span><span class="tag">ART</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a><a class="tag" href="/blog/tag/art">ART</a></span></div>
     <h2><a class="title-link" href="/blog/deck-markings-cvn65">Painting the Big E by the book: authentic CVN-65 deck markings</a> <span class="hash">e06f05d</span></h2>
     <a class="shot" href="/shots/deck-markings-cvn65.png"><img src="/shots/deck-markings-cvn65.png" alt="Two panels of the regenerated deck texture: waist with JBD stripes and foul line, bow with the 65 and cat tracks" loading="lazy"></a>
     <p>A reference diagram of USS Enterprise flight-deck markings arrived — the full numbered callout sheet, JBD warning stripes to stern nameplate — so the deck texture got repainted by the book. New on the deck: <b>yellow/black jet-blast-deflector warning stripes</b> behind all four catapults, <b>elevator warning fences</b> (the dashed offsets) and <b>diagonal warning stripes</b> around every elevator opening, the iconic <b>red/white foul line</b> segmenting the island side of the angle deck, runway boundary dashes, catapult <b>shooters' pits</b>, armament elevators and barrier covers, a scatter of <b>electrical hook-up panels</b>, and <b>ENTERPRISE lettered across the stern</b>. The bow "65" was re-centred between the catapult tracks where it belongs (it had drifted onto a track). Everything is placed in deck metres from the diagram, painted into the same 3px-per-metre canvas. The panels above are the raw texture — the box top face mirrors it in-world, which is why the "65" reads backwards here and correctly on the ship. Verified in the dive view on the harness: foul line, hatches and fences all read from the cockpit at retro scale.</p>
   </article>
   <article id="enter-select-space-fire">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">INPUT</span><span class="tag">BUG FIX</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/input">INPUT</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
     <h2><a class="title-link" href="/blog/enter-select-space-fire">ENTER selects, SPACE fires — and where the weapon voices went</a> <span class="hash">aa9e6a5</span></h2>
     <a class="shot" href="/shots/enter-select-space-fire.png"><img src="/shots/enter-select-space-fire.png" alt="The flight manual's controls page with the corrected ENTER and SPACE rows" loading="lazy"></a>
     <p>A sharp-eared pilot report: <i>"Both ENTER and SPACE fire the weapons. Also, what happened to the audio when weapons selected?"</i> One regression, two symptoms. At some point ENTER had been wired up as a second fire key and weapon selection was shuffled off to TAB — which meant that anyone reaching for ENTER, the Amiga original's weapon key, got a missile in the face instead of a menu. And the selection voice callout ("GUNS" / "SIDEWINDER" / "AMRAAM")? Never broken — the samples are all there and the path works — but the select code only runs when you <i>select</i>, and ENTER users were busy accidentally firing instead. Restored to spec: <b>ENTER cycles weapons</b> (with the voice callout confirming what's live), <b>SPACE fires</b>, TAB kept as an alias and 1/2/3 still jump straight to a weapon. Menu hint line and flight manual updated to match, verified on the harness — ENTER cycles aim120 → aim9 → gun with zero missiles leaving the rails — and the full touch gate re-run at 51/51.</p>
   </article>
   <article id="sideways-by-default">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">UX</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/mobile">MOBILE</a><a class="tag" href="/blog/tag/ux">UX</a></span></div>
     <h2><a class="title-link" href="/blog/sideways-by-default">Sideways by default: no overlay, no waiting — just the game</a> <span class="hash">e77e000</span></h2>
     <a class="shot" href="/shots/sideways-menu.png"><img src="/shots/sideways-menu.png" alt="The title menu as served to a portrait phone: full landscape layout, spun 90 degrees" loading="lazy"></a>
     <p>Product call from the boss: <i>"Instead of waiting for the phone to rotate, just serve the game and fix for landscape. The user will figure it out."</i> Correct. So the ROTATE YOUR DEVICE overlay is gone. A phone held upright now gets the game immediately — the whole thing laid out for landscape and spun 90 degrees, menu included (above). It looks sideways on an upright phone; the pilot turns the phone; done. The gyro, once permitted (one tap, asked on the first touch), simply flips which way the game spins if they turned the "wrong" way, and a viewport that genuinely rotates to landscape always wins natively. Rotation lock is now fully irrelevant either way.</p>
     <p>Serving the menu inside a portrait viewport surfaced two fun bugs. <b>One:</b> engaging the spin at startup called the resize path before the HUD module existed — a TDZ crash that only fired in portrait, leaving the menu unbuilt (thank you, errbox). The re-layout is now deferred a frame. <b>Two:</b> the compact phone menu is gated on <code>@media (max-height: 480px)</code> — and a portrait viewport is 844 tall, so the full-size desktop menu rendered into a 390-tall game screen and the flex column crushed the button list to 33 pixels. The compact rules are now replicated under sideways mode, along with swapped vw/vh units throughout, and the suite checks the menu is genuinely tappable through the rotation: 51/51.</p>
   </article>
   <article id="sideways-mode-pwa">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/mobile">MOBILE</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/sideways-mode-pwa">Sideways mode &amp; the home-screen app: rotation lock can no longer stop you</a> <span class="hash">29ed27a</span></h2>
     <a class="shot" href="/shots/sideways-mode.png"><img src="/shots/sideways-mode.png" alt="The game running sideways: full landscape layout inside a portrait-locked viewport" loading="lazy"></a>
     <p>Third report from the iPhone pilot: motion permission granted, still stuck on ROTATE YOUR DEVICE. Verdict: iOS Portrait Orientation Lock was holding the WebView portrait, and no web page — ours, or a from-scratch rewrite — can override that switch. Even a home-screen PWA can't: Apple ignores the manifest's orientation member. So instead of fighting the lock, the game now <b>ignores it</b>. Once the gyro (permission-gated on iOS, one tap) reports the phone is physically landscape while the viewport is stuck portrait, <b>sideways mode</b> engages: the entire game — canvas, HUD, menus, touch controls — is laid out as landscape and spun 90 degrees inside the portrait viewport with CSS. Touch input is mapped through the same rotation, so the throttle lever and stick read true. Hold the phone sideways, rotation lock on or off, and you fly. Turn it upright and the rotate overlay returns. Hysteresis plus a 300ms settle keep it from flip-flopping in your hands.</p>
     <p>And the "separate mobile app" question got its proper answer: Hornet Bay is now <b>installable</b>. There's a real manifest, home-screen icons, standalone display (no browser chrome), and a service worker — network-first for code so deploys land instantly, cached art for offline. On Android the manifest's landscape orientation gives a true OS-level lock; on iOS, sideways mode covers the gap Apple left. Bonus while the hood was open: a <b>screen wake lock</b> keeps the display from dozing off on final approach. The emulated gate now streams synthetic gyro data and verifies the whole sideways flow — engage, suppress the overlay, swap the canvas to landscape dims, rotated throttle drag, release — 51/51.</p>
   </article>
   <article id="rotation-lock-detective">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">iOS</span><span class="tag">BUG FIX</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/ios">iOS</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
     <h2><a class="title-link" href="/blog/rotation-lock-detective">Rotation-lock detective: when ROTATE YOUR DEVICE never ends</a> <span class="hash">f4d11ff</span></h2>
     <a class="shot" href="/shots/rotation-lock-hint.png"><img src="/shots/rotation-lock-hint.png" alt="The rotate overlay now shows rotation-lock guidance when a pilot is stuck" loading="lazy"></a>
     <p>Second field report from the iPhone: <i>"I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to animate."</i> Two bugs in one sentence. <b>Bug one:</b> the pilot was able to select FREE FLIGHT <i>while the blocking overlay was up</i> — it turned out the overlay lived inside #touch-ui (z-index 12), which stacked it below the menu (z-index 20), so in menu state the "blocking" overlay ghosted underneath and taps fell straight through to the buttons. It's now a direct child of the body where its z-60 genuinely tops every gameplay layer, in every state — and the suite gained a regression check that pokes a menu button through the overlay to prove it. <b>Bug two is sneakier:</b> with iOS <b>Portrait Orientation Lock</b> on, rotating the phone never changes the browser viewport at all — the page stays portrait, the overlay keeps spinning, and the pilot is stuck with no idea why. The page can't see the lock switch, so the overlay now says it out loud: sit on the overlay for six seconds and a hint fades in — <i>"STUCK ON THIS SCREEN? YOUR ROTATION LOCK IS PROBABLY ON — Control Center → tap the lock icon"</i> — plus a TAP HERE affordance that requests motion-sensor permission; once the gyro is readable, physically rotating to landscape while the viewport stays portrait lights the hint up in pulsing amber. No sensors, no problem: the static hint still points at Control Center. Full gate: 43/43.</p>
   </article>
   <article id="ios-rotation-crash">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">iOS</span><span class="tag">BUG FIX</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/ios">iOS</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
     <h2><a class="title-link" href="/blog/ios-rotation-crash">The iPhone rotation crash: taming WebKit's GPU</a> <span class="hash">41506d3</span></h2>
     <a class="shot" href="/shots/gl-recovery.png"><img src="/shots/gl-recovery.png" alt="The GRAPHICS RESET — RECOVERING banner shown while the GL context is lost" loading="lazy"></a>
     <p>A field report from an iPhone: load the site, rotate as instructed, game crashed. We can't reproduce WebKit in the lab, but the failure shape is a known iOS classic — <b>rotating the device kills or starves the WebGL context</b>, and every iOS generation has its own flavor of it (the canvas-resize memory leak of iOS 14, the context-loss waves of 16.7/17/18). Our code made it worse in two ways: it resized the GL canvas on <i>every</i> resize event — and iOS fires a storm of them mid-rotation with stale geometry — and it had no handler for the context actually dying, so the canvas just went black and stayed dead. From the pilot's seat: crashed.</p>
     <p>Two fixes, both verified on the virtual device by forcibly killing the context with the WEBGL_lose_context extension. <b>One:</b> resizing is now debounced and rotation-safe — the geometry storm settles for 180ms (450ms after an orientation change, iOS lands its final dimensions late) before a single canvas re-allocation, degenerate zero-size frames are skipped, and the camera aspect is clamped so a NaN can never poison the projection matrix. <b>Two:</b> a proper context-loss handler — the browser is asked to restore, a GRAPHICS RESET — RECOVERING banner (above) keeps the pilot informed, and if the GPU doesn't come back within four seconds the page reloads itself cleanly instead of sitting dead. Full touch gate re-run after the surgery: 41/41. If you were the pilot who hit this — thanks for the report, and wheels up.</p>
   </article>
   <article id="landscape-lock">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/mobile">MOBILE</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/landscape-lock">Landscape-only mobile &amp; the gear interlock</a> <span class="hash">c568f3d</span></h2>
     <a class="shot" href="/shots/landscape-lock.png"><img src="/shots/landscape-lock.png" alt="Portrait phone showing the full-screen ROTATE YOUR DEVICE overlay" loading="lazy"></a>
     <p>Portrait mode on a phone was never going to work for a two-thumb flight sim — stick, throttle slider and fire cluster simply don't fit a tall narrow viewport. So mobile is now officially <b>landscape-only</b>: rotate to portrait and a full-screen overlay steps in front of everything, menus included, with an animated phone and a clear ROTATE YOUR DEVICE message. Every tap lands on the overlay (verified with elementFromPoint in the suite), so nothing behind it fires by accident; rotate back and the flight deck returns instantly. On Android the game goes further — after the fullscreen handshake it requests a real <b>orientation lock</b>, so the OS itself holds the phone sideways. iOS Safari doesn't allow that, so the overlay does the job there.</p>
     <p>The same build ships a safety fix the virtual phone uncovered mid-suite: tapping GEAR while parked on the deck used to retract the gear and drop the jet onto its belly — a crash. The lever now has a <b>weight-on-wheels interlock</b>, exactly like the real jet: on the ground the gear stays down, with a WEIGHT ON WHEELS — GEAR STAYS DOWN warning if you try. Airborne, it works as before. The automated touch gate is now <b>41 checks</b> — detection, menus, attract mode, map/plane select, quick-start, the interlock, throttle slider, brakes, stick axes, weapons, gun burst, airborne gear, views, pause, the portrait overlay and quit-to-menu — all green against a virtual iPhone driving the real game over CDP.</p>
   </article>
   <article id="touch-shakedown">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">BUG FIX</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/mobile">MOBILE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
     <h2><a class="title-link" href="/blog/touch-shakedown">The mobile shakedown: a virtual phone, 35 checks, zero failures</a> <span class="hash">227a009</span></h2>
     <a class="shot" href="/shots/touch-shakedown.png"><img src="/shots/touch-shakedown.png" alt="The reworked touch flight deck on an emulated phone: throttle lever, thumb stick, action cluster" loading="lazy"></a>
     <p>Verdict on the first touch build: needs work — so it got a proper shakedown on an emulated phone (CDP touch emulation + real touch events, not just screenshots). The hunt found three real bugs and one ergonomic crime. <b>THR+/&minus; never worked:</b> the stick's grab zone painted over the throttle buttons and ate every touch — and even fixed, hold-buttons were the wrong idea anyway, so the throttle is now a proper <b>drag-to-set lever</b>: drag it to full, it stays, both thumbs free for the takeoff roll. <b>The DEMO attract ate your next tap:</b> the exit tap's leaked compatibility click landed on whatever menu button sat beneath it; the menu now re-shows a beat later so the stray click dies on the canvas. And the action cluster is tucked tight into the corner so it covers less of the radar display. The full loop — menu, attract, map, plane select, skip, quick-start, throttle, brakes, stick, weapons, gun burst, gear, views, pause, portrait nag, quit — now passes <b>35/35 scripted touch checks</b> before every deploy.</p>
   </article>
   <article id="quickstart-attract-trackpad">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">CONTROLS</span><span class="tag">UX</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/controls">CONTROLS</a><a class="tag" href="/blog/tag/ux">UX</a></span></div>
     <h2><a class="title-link" href="/blog/quickstart-attract-trackpad">First solo: a quick-start card, a DEMO that demos, and a trackpad stick</a> <span class="hash">9a4a5df</span></h2>
     <a class="shot" href="/shots/quickstart-card.png"><img src="/shots/quickstart-card.png" alt="The quick-start card over the cockpit: throttle, brakes, rotate, gear, mouse stick, manual" loading="lazy"></a>
     <p>First feedback from a new pilot on a MacBook: "can't get off the ground." Fair — the sim never told you how. Three fixes. Every launch now opens a <b>quick-start card</b> with the handful of keys that get you airborne (W to firewall the throttles, B brakes off, pull back at 150 knots, G gear up, ? for the full manual) — it fades by itself, closes on a click, and has a don't-show-again tick for veterans. The <b>DEMO</b> menu item actually demos now: it hides the menu and plays the attract loop full-screen until any key brings you back (previously it did exactly nothing, since the demo jet was already flying behind the menu). And the mouse stick grows up: press Y, then <b>click the screen to capture the cursor</b> — pointer lock turns relative movement into stick deflection, which is how the Amiga original flew and, crucially, the only way a trackpad can.</p>
   </article>
   <article id="enterprise-island-blog">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">CARRIER</span><span class="tag">BUG FIX</span><span class="tag">SITE</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
     <h2><a class="title-link" href="/blog/enterprise-island-blog">The angle deck angles left, the island is a box, and the journal is /blog</a> <span class="hash">e737d54</span></h2>
     <a class="shot" href="/shots/carrier-enterprise.png"><img src="/shots/carrier-enterprise.png" alt="The Enterprise from astern: angle deck striping to port of the new box island, parked Hornet on the cat" loading="lazy"></a>
     <p>Three carrier truths restored. The painted angle deck ran to starboard — the deck texture was mirrored, so the strip drifted toward the island instead of away from it; it now angles to port, agreeing with the sponson, the wires and the meatball. The island itself is rebuilt as CVN-65's signature flat-roofed box with billboard radar panels and just a small mast, and it's moved aft of midships where the Enterprise carries it — from the catapult shuttle the bridge now sits 80 metres behind you, out of sight, instead of looming ahead-right. And the journal has a real home: <b>hornetbay.com/blog</b>, with every entry living at its own permalink (this one is <a href="/blog/enterprise-island-blog">/blog/enterprise-island-blog</a>). Old changelog.html links redirect; RSS and the search engines get a sitemap.xml and robots.txt for the asking.</p>
   </article>
   <article id="touch-flight-deck">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><span class="tag">MOBILE</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/mobile">MOBILE</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/touch-flight-deck">Touchdown: the full sim now fits in your pocket</a> <span class="hash">c4f60fd</span></h2>
     <a class="shot" href="/shots/touch-flight-deck.png"><img src="/shots/touch-flight-deck.png" alt="Phone-sized cockpit with the touch flight deck: thumb stick, FIRE, AB, WPN, TGT, throttle and system buttons" loading="lazy"></a>
     <p>Open hornetbay.com on a phone or tablet and the deck crew rolls out a touch cockpit: a left-thumb stick for pitch and roll (drag down = pull back, like the mouse stick), a big FIRE button under the right thumb that holds a gun burst or pickle one missile per tap, hold-to-burn AB, WPN and TGT for weapons and radar targets, THR +/&minus; on the left edge, and GEAR / HOOK / BRK / VIEW / MAP / pause along the top — everything a carrier trap needs. The canvas-rendered intro states get their own tappable bars: SCRAMBLE on the briefing, airplane and day/night/weather picks on plane select, and the five free-flight start spots on the map. The title screen compacts itself on short landscape windows, every menu button gets a bigger tap target, the gallery rotates with a finger drag, audio unlocks on the first touch, and portrait pilots get a gentle rotate-to-landscape nag. Detection is automatic (coarse pointer); desktop pilots can preview the deck with ?touch=1.</p>
   </article>
   <article id="gun-space-enter-tracers">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">BUG FIX</span><span class="tag">CONTROLS</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span></div>
     <h2><a class="title-link" href="/blog/gun-space-enter-tracers">The gun answers SPACE and ENTER — with tracers you can see</a> <span class="hash">d0ee2a7</span></h2>
     <a class="shot" href="/shots/space-gun-tracers.jpg"><img src="/shots/space-gun-tracers.jpg" alt="Night gun burst from the cockpit, tracers streaking ahead" loading="lazy"></a>
     <p>Three fixes in one pass. The gun simply ignored SPACE — only the mouse trigger worked, because the fire code never looked at the keyboard for the Vulcan. Now SPACE and ENTER both fire the selected weapon (hold either for a burst), so weapon select moves to TAB, with 1 / 2 / 3 jumping straight to AMRAAM, Sidewinder or gun. And the tracers themselves are rebuilt: the old bolts were pencil-thin and effectively invisible from the cockpit, so each round now flies as a fat glowing bolt that reads day or night.</p>
   </article>
   <article id="angle-deck-meatball">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">CARRIER</span><span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/angle-deck-meatball">Angle deck, a working meatball, and a burner tell</a> <span class="hash">d0ee2a7</span></h2>
     <a class="shot" href="/shots/carrier-meatball.jpg"><img src="/shots/carrier-meatball.jpg" alt="On final: the meatball ball centered on the datum lights, angle deck to the left" loading="lazy"></a>
     <p>The carrier finally looks like a carrier. The landing strip now runs onto a proper port-side sponson — every full-deck carrier angles its landing deck to the left — with edge stripes and lights to match, and the deck footprint for traps extends over it. Bolted to the port edge abeam the wires is a functional IFLOLS: an amber ball rides five cells against the green datum row to show where you sit on the 3.5&deg; glideslope, and red wave-off lamps flash if you come aboard dirty (gear or hook up) or badly off slope. Two smaller tells: at 100% thrust with the burner lit, the cockpit thrust readout gets the original's bright yellow underline, and the aircraft position lights, strobes and beacons are shrunk to realistic size. (This journal itself is now titled NEW FEATURES &amp; BUG FIXES.)</p>
   </article>
 
   <article id="vulcan-sound">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">AUDIO</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/audio">AUDIO</a></span></div>
     <h2><a class="title-link" href="/blog/vulcan-sound">The Vulcan gets its true voice</a> <span class="hash">e55e9d1</span></h2>
     <a class="shot" href="/shots/vulcan-waveform.jpg"><img src="/shots/vulcan-waveform.jpg" alt="Waveform of the synthesized M61 burst" loading="lazy"></a>
     <p>The gatling sample is rebuilt to match the real M61: a 100-rounds-per-second burst synthesized from scratch &mdash; powder-crack impulse train, mechanical roar, and the fire-rate ripple that gives the Vulcan its buzzsaw shriek. YouTube was unreachable from the build sandbox, so the sound is synthesized to the reference rather than lifted from the video.</p>
   </article>
 
   <article id="title-permalinks">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">META</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/meta">META</a></span></div>
     <h2><a class="title-link" href="/blog/title-permalinks">Post titles are the permalinks now</a> <span class="hash">bc7900d</span></h2>
     <p>Small ergonomic tweak: the title of every journal entry is itself the permalink &mdash; click to jump, right-click to copy the link. The separate link icon has retired.</p>
   </article>
 
   <article id="journal-permalinks">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">META</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/meta">META</a></span></div>
     <h2><a class="title-link" href="/blog/journal-permalinks">The journal gets permalinks, tags and an RSS feed</a> <span class="hash">786c616</span></h2>
     <a class="shot" href="/shots/journal-permalinks.jpg"><img src="/shots/journal-permalinks.jpg" alt="Journal entries with metadata rows and permalink icons" loading="lazy"></a>
     <p>Every post on this page now has its own permalink &mdash; hit the &#128279; icon to copy a direct link to any entry (handy for tweeting a specific feature). Posts carry a metadata row with ISO date, topic tags and the commit hash, the page ships JSON-LD structured data for search engines, and there&rsquo;s an <a href="rss.xml">RSS feed</a> if you want every new entry as it lands.</p>
   </article>
 
   <article id="gatling-voice">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">AUDIO</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/audio">AUDIO</a></span></div>
     <h2><a class="title-link" href="/blog/gatling-voice">BRRRT — the Vulcan finds its voice</a> <span class="hash">f0fe4a4</span></h2>
     <a class="shot" href="/shots/weapon-audio.jpg"><img src="/shots/weapon-audio.jpg" alt="Cockpit view with the weapon display" loading="lazy"></a>
     <p>Hold the trigger on the gun and she sings: a proper A-10-style <b>BBBBRRRRR</b> gatling roar loops for as long as the burst lasts, then cuts when you let off. And cycling weapons with ENTER now gets you a spoken callout — <b>GUNS</b>, <b>SIDEWINDER</b>, <b>AMRAAM</b> — so you always know what's live without looking down.</p>
   </article>
 
   <article id="briefing-map-rain-fix">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">FIX</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/fix">FIX</a></span></div>
     <h2><a class="title-link" href="/blog/briefing-map-rain-fix">Rain no longer blots out the map</a> <span class="hash">f0fe4a4</span></h2>
     <a class="shot" href="/shots/brief-rain.jpg"><img src="/shots/brief-rain.jpg" alt="Mission briefing map, clear even with rain selected" loading="lazy"></a>
     <p>Bug fix: with rain selected, the briefing and plane-select maps were being swallowed by the weather — rain streaks and storm murk over the planning view. The satellite map now stays crisp and readable whatever the forecast; the weather only starts when you do.</p>
   </article>
 
   <article id="rain-weather-toggle">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">WEATHER</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/weather">WEATHER</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/rain-weather-toggle">Rain weather, with a menu toggle</a> <span class="hash">31f1adc</span></h2>
     <a class="shot" href="/shots/rain.jpg"><img src="/shots/rain.jpg" alt="Flying through rain over the city" loading="lazy"></a>
     <p>A new <b>R — TOGGLE CLEAR or RAIN WEATHER</b> row on the main menu (and on the plane-select map). Rain streaks slant past the canopy with your speed, the sky closes over in overcast gray, and visibility drops. Missions are still authored clear unless you ask for weather.</p>
   </article>
 
   <article id="runway-flashers">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">NIGHT</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/night">NIGHT</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/runway-flashers">Runways flash at night: the rabbit + threshold strobes</a> <span class="hash">31f1adc</span></h2>
     <a class="shot" href="/shots/night-flashers.jpg"><img src="/shots/night-flashers.jpg" alt="Sequenced approach flashers chasing toward the threshold" loading="lazy"></a>
     <p>Every runway end now has the real approach-lighting choreography: a sequenced flasher chain — <i>the rabbit</i> — chasing in toward the threshold twice a second over the last 750&nbsp;m, a 300&nbsp;m crossbar, and REIL strobes flashing at the threshold corners. Edge lights stay steady, per the real books.</p>
   </article>
 
   <article id="night-strobes-beacons">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">NIGHT</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/night">NIGHT</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/night-strobes-beacons">Strobes and tower beacons light up the night</a> <span class="hash">31f1adc</span></h2>
     <a class="shot" href="/shots/beacons.jpg"><img src="/shots/beacons.jpg" alt="Red obstruction beacons flashing over downtown" loading="lazy"></a>
     <p>Aircraft now run proper night lighting: steady red/green position lights, the white tail strobe double-flashing, and a red anti-collision beacon. The tall stuff fights back too &mdash; red obstruction beacons blink on the downtown towers, the Transamerica tip, and the top of Sutro, warning you how close the skyline really is.</p>
   </article>
 
   <article id="fuel-burn-f16-carrier">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">SIM</span> <span class="tag">FIX</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/sim">SIM</a> <a class="tag" href="/blog/tag/fix">FIX</a></span></div>
     <h2><a class="title-link" href="/blog/fuel-burn-f16-carrier">Fuel goes twice as far; F-16 carrier bug fixed</a> <span class="hash">31f1adc</span></h2>
     <a class="shot" href="/shots/planesel-carrier.jpg"><img src="/shots/planesel-carrier.jpg" alt="Plane select on the carrier offering only the F/A-18" loading="lazy"></a>
     <p>Fuel burn was punishingly high &mdash; it's now halved for both jets, roughly doubling your time in the air. And the carrier plane-select no longer offers the F-16: with no tailhook it can't work the boat, so the option is gone (and the dormant hook mesh removed from the model) instead of biting you on launch.</p>
   </article>
 
   <article id="social-cards">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">SOCIAL</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/social">SOCIAL</a></span></div>
     <h2><a class="title-link" href="/blog/social-cards">Social cards: OG image &amp; Twitter card</a> <span class="hash">cb689f1</span></h2>
     <a class="shot" href="og-image.jpg"><img src="og-image.jpg" alt="The Hornet Bay Open Graph card" loading="lazy"></a>
     <p>Links to hornetbay.com now unfurl into a proper card everywhere &mdash; Open Graph for Facebook/Discord/Slack, <b>summary_large_image</b> for X. The artwork is pure in-game: the Hornet cut out of a live capture and composited over the Bay, in the style of the 1988 title screen.</p>
   </article>
 
   <article id="hero-menu">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">UI</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/ui">UI</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/hero-menu">The hero Hornet greets you on the home menu</a> <span class="hash">4899294</span></h2>
     <a class="shot" href="/shots/hero-menu.jpg"><img src="/shots/hero-menu.jpg" alt="Home menu with the rotating F/A-18 hero model" loading="lazy"></a>
     <p>The menu never said &ldquo;flight simulator&rdquo; loudly enough &mdash; so now the star of the show greets you the moment hornetbay.com loads: an F/A-18 slowly turning on the right of the screen (spotlit after dark), while the menu slides over to the left. No doubt what this game is about, or who the star is.</p>
   </article>
 
   <article id="on-x">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">SOCIAL</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/social">SOCIAL</a></span></div>
     <h2><a class="title-link" href="/blog/on-x">Follow the Hornet on X</a> <span class="hash">c316f10</span></h2>
     <p>The game has a home on X now: <a href="https://x.com/hornetbay" target="_blank" rel="noopener">@hornetbay</a> &middot; <a href="https://www.facebook.com/people/Hornet-Bay/61592078535997/" target="_blank" rel="noopener">FACEBOOK</a> &middot; <a href="https://www.instagram.com/hornet_bay/" target="_blank" rel="noopener">INSTAGRAM</a> &mdash; profile and cover art rendered from in-game captures, recreating the 1988 original&rsquo;s title screen. Link lives in the home-menu footer.</p>
   </article>
 
   <article id="mig29-refined">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">MODEL</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/model">MODEL</a></span></div>
     <h2><a class="title-link" href="/blog/mig29-refined">MiG-29 Fulcrum refined from schematics</a> <span class="hash">53c4c5a</span></h2>
     <a class="shot" href="/shots/gallery-mig.jpg"><img src="/shots/gallery-mig.jpg" alt="MiG-29 Fulcrum in the aircraft gallery" loading="lazy"></a>
     <p>The enemy bogie got the full reference treatment: light Soviet gray scheme, leading-edge root extensions, dorsal louvers, nose pitot, ventral strakes, underwing AAMs &mdash; and red stars on the wings and fins, so there&rsquo;s no mistaking the opposition when one flashes past the canopy.</p>
   </article>
 
   <article id="air-force-one-vc25a">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">MODEL</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/model">MODEL</a></span></div>
     <h2><a class="title-link" href="/blog/air-force-one-vc25a">Air Force One: now the 1994-correct VC-25A</a> <span class="hash">4666e35</span></h2>
     <a class="shot" href="/shots/gallery-af1.jpg"><img src="/shots/gallery-af1.jpg" alt="VC-25A Air Force One in the aircraft gallery" loading="lazy"></a>
     <p>The game was <em>designed</em> in 1988, when the President flew a Boeing 707 &mdash; but it&rsquo;s <em>set</em> in September 1994, when the VC-25A (a Boeing 747-200B) had the job. Air Force One is now the right airplane, wearing the full Loewy livery: white over light blue, midnight-blue cheatline, gold pinstripe, and the flag on the tail. Mind the paint.</p>
   </article>
 
   <article id="f16-refined">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">MODEL</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/model">MODEL</a></span></div>
     <h2><a class="title-link" href="/blog/f16-refined">F-16 refined from photos</a> <span class="hash">5acc940</span></h2>
     <a class="shot" href="/shots/gallery-f16.jpg"><img src="/shots/gallery-f16.jpg" alt="F-16 in the aircraft gallery" loading="lazy"></a>
     <p>The Viper got its photo pass too: dark radome, bubble canopy, a chin intake with a real mouth you can see down, the M61 gun port, ventral fins, and low slab stabilators.</p>
   </article>
 
   <article id="fa18-refined">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">MODEL</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/model">MODEL</a></span></div>
     <h2><a class="title-link" href="/blog/fa18-refined">F/A-18 refined from photos</a> <span class="hash">ce5db23</span></h2>
     <a class="shot" href="/shots/gallery-f18.jpg"><img src="/shots/gallery-f18.jpg" alt="F/A-18 head-on in the aircraft gallery" loading="lazy"></a>
     <p>Six reference photos later, the Hornet wears a proper nose and tinted canopy, leading-edge extensions, a truer wing taper, twin canted fins in the right place, intake mouths, tailpipes, the beaver tail, dorsal antenna, and the arrestor hook. The cockpit DDIs grew their twenty real pushbuttons as well.</p>
   </article>
 
   <article id="day-night-menu-toggle">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">UI</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/ui">UI</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/day-night-menu-toggle">Day/night toggle on the main menu</a> <span class="hash">cc5ba39</span> <span class="hash">70fd029</span></h2>
     <a class="shot" href="/shots/night-city.jpg"><img src="/shots/night-city.jpg" alt="Night flight over the city" loading="lazy"></a>
     <p>Time of day is now a first-class citizen: <b>TOGGLE DAY or NIGHT FLIGHT</b> sits right on the main menu, and flipping it re-lights the scenery behind the menu live. Night ops over the glittering city are worth the trip on their own.</p>
   </article>
 
   <article id="night-ops-lighting">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">NIGHT</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/night">NIGHT</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/night-ops-lighting">Night ops lighting</a> <span class="hash">b5c1618</span></h2>
     <a class="shot" href="/shots/night-traffic.jpg"><img src="/shots/night-traffic.jpg" alt="Headlights on the highway at night" loading="lazy"></a>
     <p>After dark the Bay wakes up: warm city windows, runway edge lights, carrier deck lights, and headlight/taillight strings crawling the highways below.</p>
   </article>
 
   <article id="aircraft-gallery">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">UI</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/ui">UI</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/aircraft-gallery">Aircraft gallery</a> <span class="hash">b5c1618</span></h2>
     <a class="shot" href="/shots/gallery-ui.jpg"><img src="/shots/gallery-ui.jpg" alt="The aircraft gallery" loading="lazy"></a>
     <p>Every machine in the game gets its pedestal: arrow keys rotate, +/&minus; zooms, number keys switch airframes, and each gets its name plate and a line of flavor text.</p>
   </article>
 
   <article id="attitude-indicator">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">SIM</span> <span class="tag">COCKPIT</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/sim">SIM</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT</a></span></div>
     <h2><a class="title-link" href="/blog/attitude-indicator">Realistic attitude indicator</a> <span class="hash">b5c1618</span></h2>
     <a class="shot" href="/shots/attitude.jpg"><img src="/shots/attitude.jpg" alt="Attitude indicator in a banked turn at night" loading="lazy"></a>
     <p>The panel ADI now behaves like the real gyro instrument &mdash; put the jet in a bank and the little airplane and horizon bar tell the truth about it.</p>
   </article>
 
   <article id="road-traffic-markings">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">WORLD</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/world">WORLD</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/road-traffic-markings">Road traffic &amp; proper markings</a> <span class="hash">b5c1618</span> <span class="hash">8644229</span></h2>
     <a class="shot" href="/shots/day-traffic.jpg"><img src="/shots/day-traffic.jpg" alt="Traffic on a marked two-way highway" loading="lazy"></a>
     <p>The Bay Area highways carry live traffic now &mdash; cars glued to the asphalt in their lanes (no more driving on the grass), over roads painted with center dividing lines and lane dashes, draped over the terrain including the bridge decks.</p>
   </article>
 
   <article id="c13-catapult">
-    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><span class="tag">CARRIER</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/c13-catapult">C-13 steam catapult launches</a> <span class="hash">2a90ebb</span></h2>
     <a class="shot" href="/shots/catapult.jpg"><img src="/shots/catapult.jpg" alt="On the catapult, ready to launch" loading="lazy"></a>
     <p>Carrier departures run off the C-13 catapult now: taxi to the shuttle, tension, holdback release, and the stroke flings you off the bow. The deck crew parks the other jets clear of the catapult track.</p>
   </article>
 
   <article id="crash-shatter">
-    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><span class="tag">FX</span> <span class="tag">FEATURE</span></span></div>
+    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><a class="tag" href="/blog/tag/fx">FX</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/crash-shatter">The Hornet shatters on impact</a> <span class="hash">230cb8a</span></h2>
     <a class="shot" href="/shots/crash.jpg"><img src="/shots/crash.jpg" alt="Aircraft breaking apart in a crash" loading="lazy"></a>
     <p>Prang the jet and she comes apart properly &mdash; fireball, smoke, and debris scattering across the terrain instead of a polite fade to black.</p>
   </article>
 
   <article id="hornet-bay-name">
-    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><span class="tag">MILESTONE</span></span></div>
+    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><a class="tag" href="/blog/tag/milestone">MILESTONE</a></span></div>
     <h2><a class="title-link" href="/blog/hornet-bay-name">Renamed: HORNET BAY</a> <span class="hash">f5c2e39</span> <span class="hash">e4dd37f</span></h2>
     <p>The tribute got its own name and its own home: <b>HORNET BAY</b>, flying out of <a href="https://hornetbay.com">hornetbay.com</a>.</p>
   </article>
 
   <article id="flight-dynamics-ejection">
-    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><span class="tag">SIM</span> <span class="tag">MILESTONE</span></span></div>
+    <div class="meta"><time datetime="2026-07-21">2026-07-21</time><span class="tags"><a class="tag" href="/blog/tag/sim">SIM</a> <a class="tag" href="/blog/tag/milestone">MILESTONE</a></span></div>
     <h2><a class="title-link" href="/blog/flight-dynamics-ejection">Banked-lift flight dynamics, free-fire weapons, ejection</a> <span class="hash">4e1e68a</span></h2>
     <a class="shot" href="/shots/bank.jpg"><img src="/shots/bank.jpg" alt="Hornet in a banked turn, external view" loading="lazy"></a>
     <p>The flight model grew up: bank the wings and lift pulls you around the turn, guns and missiles are free to fire outside missions, and there&rsquo;s a working ejection seat for when the math stops working.</p>

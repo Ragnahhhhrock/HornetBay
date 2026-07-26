@@ -364,3 +364,6 @@ export class Ships {
     if (night !== this._night) { this._night = night; for (const v of this.all) v.setNight(night); }
   }
 }
+
+// gallery exports — every hull type in the game, for the model showroom
+export { buildWarship, buildCargo, buildTanker, buildCruise, buildFishing, buildSailboat };

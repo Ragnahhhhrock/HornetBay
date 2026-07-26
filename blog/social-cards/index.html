@@ -17,7 +17,7 @@
 <meta name="twitter:title" content="Social cards: OG image &amp; Twitter card — HORNET BAY">
 <meta name="twitter:description" content="Links to hornetbay.com now unfurl into a proper card everywhere — Open Graph for Facebook/Discord/Slack, summary_large_image for X. The artwork is…">
 <meta name="twitter:image" content="https://hornetbay.com/og-image.jpg">
-<link rel="alternate" type="application/rss+xml" title="Hornet Bay — New Features &amp; Bug Fixes" href="https://hornetbay.com/rss.xml">
+<link rel="alternate" type="application/rss+xml" title="Hornet Bay — Blog" href="https://hornetbay.com/rss.xml">
 <style>
   :root {
     --amber: #ffb437;
@@ -79,6 +79,10 @@
     font-size: 10px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 0 5px; border-radius: 2px;
   }
+  a.tag { text-decoration: none; }
+  a.tag:hover { color: #ffd76a; border-color: #ffd76a; }
+  .taghead { color: var(--amber); font-size: 14px; letter-spacing: 2px; margin: 0 0 22px; }
+  #tagmenu { margin: 0 0 22px; font-size: 12px; letter-spacing: 1px; color: var(--ink-dim); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
   h2 a.title-link { color: inherit; text-decoration: none; }
   h2 a.title-link:hover { color: var(--amber); }
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
@@ -106,7 +110,7 @@
   "image": "https://hornetbay.com/og-image.jpg",
   "isPartOf": {
     "@type": "Blog",
-    "name": "Hornet Bay \u2014 New Features & Bug Fixes",
+    "name": "Hornet Bay \u2014 Blog",
     "url": "https://hornetbay.com/blog"
   }
 }
@@ -115,12 +119,12 @@
 <body>
 <header>
   <div class="brand">HORNET <span>BAY</span></div>
-  <div class="kicker">NEW FEATURES &amp; BUG FIXES</div>
+  <div class="kicker">BLOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
 </header>
 <main>
 <article id="social-cards">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><span class="tag">SOCIAL</span></span></div>
+    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/social">SOCIAL</a></span></div>
     <h2><a class="title-link" href="/blog/social-cards">Social cards: OG image &amp; Twitter card</a> <span class="hash">cb689f1</span></h2>
     <a class="shot" href="og-image.jpg"><img src="og-image.jpg" alt="The Hornet Bay Open Graph card" loading="lazy"></a>
     <p>Links to hornetbay.com now unfurl into a proper card everywhere &mdash; Open Graph for Facebook/Discord/Slack, <b>summary_large_image</b> for X. The artwork is pure in-game: the Hornet cut out of a live capture and composited over the Bay, in the style of the 1988 title screen.</p>
