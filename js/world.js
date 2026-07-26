@@ -1371,10 +1371,8 @@ export class Carrier {
     const cX = (x) => (38 - x) / 76 * 256, cY = (z) => (z + 168) / 336 * 1024;
     g.fillStyle = '#23262b'; g.fillRect(0, 0, 256, 1024);   // near-black deck, like the original
     g.strokeStyle = '#c9cdd2'; g.lineWidth = 3; g.strokeRect(5, 5, 246, 1014);
-    // axial-deck dashed centreline (stern to bow)
-    g.fillStyle = '#dfe3e6';
-    for (let z = -150; z < 160; z += 20) g.fillRect(cX(0) - 1.5, cY(z), 3, 12);
-    // angled landing deck: stern-starboard (x -14) to port bow (x +27), ~9 deg
+    // no straight centreline: like every real carrier, THE runway is the
+    // angled deck — offset to port so pilots land left of the island
     const a0 = { x: -14, z: -160 }, a1 = { x: 27, z: 112 };
     this.angleDeck = { a0, a1 };
     const ang = Math.atan2(a1.x - a0.x, a1.z - a0.z), aLen = Math.hypot(a1.x - a0.x, a1.z - a0.z);
@@ -1382,8 +1380,9 @@ export class Carrier {
     g.save();
     g.translate(cX(a0.x), cY(a0.z)); g.rotate(ang);
     g.fillStyle = '#e8ecef';
-    g.fillRect(-30, 0, 3, aLen * YM); g.fillRect(27, 0, 3, aLen * YM);   // edge stripes
-    for (let d = 14; d < aLen * 0.94; d += 22) g.fillRect(-2, d * YM, 4, 12);  // centreline dashes
+    g.fillRect(-32, 0, 4, aLen * YM); g.fillRect(28, 0, 4, aLen * YM);   // edge stripes
+    g.fillRect(-32, -3 * YM, 64, 3);                                     // threshold bar across the stern end
+    for (let d = 16; d < aLen * 0.94; d += 24) g.fillRect(-2.5, d * YM, 5, 15);  // centreline dashes
     for (const wz of [-50, -38, -26, -14]) g.fillRect(-27, (wz - a0.z) * YM, 54, 4);  // 4 arrestor wires
     g.restore();
     // catapult tracks (dark slots): two bow cats + two waist cats
