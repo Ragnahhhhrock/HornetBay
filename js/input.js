@@ -24,8 +24,8 @@ export class Input {
     window.addEventListener('keyup', (e) => this.keys.delete(e.code));
     window.addEventListener('blur', () => { this.keys.clear(); this.mb0 = false; });
     // the original's fire button was the mouse button
-    window.addEventListener('mousedown', (e) => { if (e.button === 0) this.mb0 = true; });
-    window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mb0 = false; });
+    window.addEventListener('mousedown', (e) => { if (e.button === 0) this.mb0 = true; if (e.button === 2) this.rb0 = true; });
+    window.addEventListener('mouseup', (e) => { if (e.button === 0) this.mb0 = false; if (e.button === 2) this.rb0 = false; });
     window.addEventListener('mousemove', (e) => {
       this.mx = clamp((e.clientX / window.innerWidth) * 2 - 1, -1, 1);
       this.my = clamp((e.clientY / window.innerHeight) * 2 - 1, -1, 1);
@@ -34,14 +34,19 @@ export class Input {
         this.plx = clamp(this.plx + e.movementX * 0.006, -1, 1);
         this.ply = clamp(this.ply + e.movementY * 0.006, -1, 1);
       }
+      // right-drag orbit deltas (spectate pan) — movementX/Y works both raw
+      // and under pointer lock
+      if (this.rb0) { this.rdx = (this.rdx || 0) + e.movementX; this.rdy = (this.rdy || 0) + e.movementY; }
     });
+    // no context menu over the sim — right button is the spectate pan drag
+    window.addEventListener('contextmenu', (e) => { if (e.target.tagName === 'CANVAS') e.preventDefault(); });
     this.wheel = 0;
     window.addEventListener('wheel', (e) => { this.wheel += Math.sign(e.deltaY); }, { passive: true });
   }
   pressed(code) { return this.justPressed.has(code); }
   down(code) { return this.keys.has(code); }
   // call once per frame after game logic reads justPressed
-  postUpdate() { this.justPressed.clear(); this.wheel = 0; }
+  postUpdate() { this.justPressed.clear(); this.wheel = 0; this.rdx = 0; this.rdy = 0; }
   poll() {
     // discrete
     if (this.pressed('KeyY')) this.mouseStick = !this.mouseStick;

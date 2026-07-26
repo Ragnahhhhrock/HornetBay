@@ -4,7 +4,7 @@
 // a model, Q or ESC to leave. New game models: register them in ITEMS below —
 // the gallery is the canonical source of model screenshots.
 import * as THREE from 'three';
-import { buildModel } from './models.js';
+import { buildModel, buildSub, buildRaft } from './models.js';
 import { buildWarship, buildCargo, buildTanker, buildCruise, buildFishing, buildSailboat } from './ships.js';
 import { Carrier } from './world.js';
 import { clamp } from './util.js';
@@ -21,6 +21,8 @@ const ITEMS = [
   { cat: 'air', type: 'b737',  name: 'LIBERTY AIR 737-400',        info: 'SHORT-HAUL SHUTTLE — 146 SOULS ABOARD — POLISHED SILVER: CHECK YOUR FIRE', livery: 1 },
   { cat: 'air', type: 'dc10',  name: 'PACIFIC EMPRESS DC-10',      info: 'TRIJET HEAVY — 268 SOULS ABOARD — THE DEFECTOR FLEW ONE OF THESE', livery: 3 },
   { cat: 'air', type: 'md90',  name: 'CASCADE AIR MD-90',          info: 'T-TAIL MAD DOG — 158 SOULS ABOARD — REAR TWINS: CHECK YOUR FIRE', livery: 2 },
+  { cat: 'air', type: 'b707',  name: 'BOEING 707 INTERCONTINENTAL', info: 'THE CLASSIC LONG-HAULER — STILL WORKING THE IDENT RUNS OUT OF SFO' },
+  { cat: 'air', type: 'cruise', name: 'CRUISE MISSILE',             info: 'THE MOFFETT BANDIT — LOW, FAST, AND NOT HERE TO SIGHTSEE' },
   // ---- ships ----
   { cat: 'ship', name: 'USS ENTERPRISE (CVN-65)', info: 'THE BIG E — NUCLEAR SUPERCARRIER — YOUR HOME PLATE',
     dist: 620, zmin: 150, zmax: 1500,
@@ -46,6 +48,10 @@ const ITEMS = [
     dist: 28, zmin: 7, zmax: 120, make: () => buildSailboat(true) },
   { cat: 'ship', name: 'MOTOR CRUISER', info: '11M CABIN CRUISER — WEEKEND TRAFFIC, MIND YOUR WAKE',
     dist: 28, zmin: 7, zmax: 120, make: () => buildSailboat(false) },
+  { cat: 'ship', name: 'SHADOW SUB', info: 'THE SHADOW — SURFACED, AND UP TO NO GOOD IN THE LANE',
+    dist: 220, zmin: 50, zmax: 600, make: () => buildSub() },
+  { cat: 'ship', name: 'RESCUE RAFT', info: 'MISSION 4’S CUSTOMER — HOLDS ONE DOWNED PILOT, SNACKS NOT INCLUDED',
+    dist: 12, zmin: 3, zmax: 60, make: () => buildRaft() },
 ];
 
 export class Gallery {
@@ -120,7 +126,9 @@ export class Gallery {
     if (this.model) this.G.scene.remove(this.model);
     this.model = it.make ? it.make(this.G.scene) : buildModel(it.type, it.livery || 0);
     this.model.position.copy(this.anchor);
-    if (this.G.cleanShot && this.model.userData.gear) this.model.userData.gear.visible = false;   // marketing poses: wheels up
+    // aircraft default to wheels up in the showroom (G toggles them down);
+    // clean captures always hide the gear
+    if (this.model.userData.gear) this.model.userData.gear.visible = false;
     for (const l of this.model.userData.lights || []) l.visible = false;   // showroom: nav lights off
     this.G.scene.add(this.model);
     this.dist = it.dist || 40;
@@ -137,6 +145,7 @@ export class Gallery {
     if (I.down('Minus') || I.down('NumpadSubtract')) this.dist = Math.min(this._zmax, this.dist + this._zmax * 0.5 * dt);   // - : zoom out
     if (I.down('Equal') || I.down('NumpadAdd')) this.dist = Math.max(this._zmin, this.dist - this._zmax * 0.5 * dt);         // + : zoom in
     if (I.wheel) this.dist = clamp(this.dist + I.wheel * 7, this._zmin, this._zmax);
+    if (I.pressed('KeyG') && this.model && this.model.userData.gear) this.model.userData.gear.visible = !this.model.userData.gear.visible;
     if (I.pressed('Tab')) this._toggleCat();
     if (I.pressed('BracketRight')) this._step(1);
     if (I.pressed('BracketLeft')) this._step(-1);
@@ -168,7 +177,7 @@ export class Gallery {
     c.font = `${11 * s}px "Courier New", monospace`;
     c.fillText(it.info, w / 2, h * 0.90);
     c.fillStyle = '#6a9a6a';
-    c.fillText('ARROWS / DRAG — ROTATE     + / - / WHEEL — ZOOM     [ ] / 1-9 — MODEL     TAB — CATEGORY     Q — MENU', w / 2, h * 0.94);
+    c.fillText('ARROWS / DRAG — ROTATE     + / - / WHEEL — ZOOM     [ ] / 1-9 — MODEL     TAB — CATEGORY     G — GEAR     Q — MENU', w / 2, h * 0.94);
     c.textAlign = 'left';
   }
 }

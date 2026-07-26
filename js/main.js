@@ -182,8 +182,9 @@ function buildMenu(mode = 'main') {
   const addBtn = (num, label, tag, cb) => {
     const b = document.createElement('button');
     b.className = 'mbtn';
-    // main menu: digit keys stay bound but no number badge is shown on the row
-    const showKey = num && !(mode === 'main' && /^\d+$/.test(num));
+    // no key badges on the rows: digits on the main menu, and F1-F7 / ESC in
+    // the sub-menus — the keys stay bound, the titles stay clean
+    const showKey = num && !(mode === 'main' && /^\d+$/.test(num)) && !/^F\d+$/.test(num) && num !== 'ESC';
     b.innerHTML = `${showKey ? `<span class="mnum">${num}</span>` : ''}${label}${tag ? `<span class="tag">${tag}</span>` : ''}`;
     b.dataset.key = num || '';
     if (cb) b.onclick = () => { G.audio.ensure(); cb(); };
@@ -758,16 +759,38 @@ function updateCamera(dt) {
   const spec = G.specTarget && !G.specTarget.dead && !G.specTarget.removeMe ? G.specTarget : null;
   if (spec) {
     if (P.model) P.model.visible = false;   // no own jet / cockpit while spectating
+    const I = G.input;
+    // pan & zoom around the spectated aircraft: SHIFT+arrows or right-drag to
+    // orbit, wheel or [ ] for distance, 0 to reframe. Plain arrows still fly
+    // your own jet — the modifier is what talks to the camera.
+    const o = G.specOrbit || (G.specOrbit = { yaw: 0, pitch: 0.1, dist: 1 });
+    const cdt = dt / (G.timeScale || 1);   // camera controls run at hand speed, not sim speed
+    if (I.down('ShiftLeft') || I.down('ShiftRight')) {
+      o.yaw += ((I.down('ArrowRight') ? 1 : 0) - (I.down('ArrowLeft') ? 1 : 0)) * cdt * 1.7;
+      o.pitch = clamp(o.pitch + ((I.down('ArrowDown') ? 1 : 0) - (I.down('ArrowUp') ? 1 : 0)) * cdt * 1.1, -0.85, 1.25);
+    }
+    if (I.rdx || I.rdy) { o.yaw += I.rdx * 0.006; o.pitch = clamp(o.pitch + I.rdy * 0.004, -0.85, 1.25); }
+    if (I.wheel) o.dist = clamp(o.dist + I.wheel * 0.9, 0.35, 5);
+    if (I.down('BracketRight')) o.dist = clamp(o.dist * (1 - cdt * 1.4), 0.35, 5);   // ] : close in
+    if (I.down('BracketLeft')) o.dist = clamp(o.dist * (1 + cdt * 1.4), 0.35, 5);    // [ : back off
+    if (I.pressed('Digit0')) { o.yaw = 0; o.pitch = 0.1; o.dist = 1; }
     const sf = spec.fwd(_v2);
-    const big = /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
-    const sdist = (24 + (spec.speed || 120) * 0.03) * big;
-    _v.copy(spec.pos).addScaledVector(sf, -sdist); _v.y += 7 * big;
+    const big = spec.len ? Math.max(2, spec.len / 45) : /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
+    const base = (24 + (spec.speed || 120) * 0.03) * big * o.dist;
+    // orbit offset in the target's frame: start behind it, swing by yaw, lift by pitch
+    const bx = -sf.x, bz = -sf.z;
+    const cy = Math.cos(o.yaw), sy = Math.sin(o.yaw);
+    const rx = bx * cy + bz * sy, rz = bz * cy - bx * sy;
+    const horiz = Math.cos(o.pitch) * base;
+    _v.set(spec.pos.x + rx * horiz,
+           Math.max(spec.pos.y + 7 * big * o.dist + Math.sin(o.pitch) * base, 2.5),
+           spec.pos.z + rz * horiz);
     camPos.x = damp(camPos.x, _v.x, 4.5, dt);
-    camPos.y = damp(camPos.y, Math.max(_v.y, 2.5), 4.5, dt);
+    camPos.y = damp(camPos.y, _v.y, 4.5, dt);
     camPos.z = damp(camPos.z, _v.z, 4.5, dt);
     camera.position.copy(camPos);
     camera.up.set(0, 1, 0);
-    camera.lookAt(_v.copy(spec.pos).addScaledVector(sf, 50 * big));
+    camera.lookAt(spec.pos.x, spec.pos.y + 4 * big, spec.pos.z);
     camera.fov = damp(camera.fov, 55 / G.xmag, 3, dt); camera.updateProjectionMatrix();
     return;
   }
@@ -979,7 +1002,7 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyV')) {
     const order = ['cockpit', 'cockpitoff', 'chase', 'orbit', 'tower'];
     G.view = order[(order.indexOf(G.view) + 1) % order.length];
-    G.specTarget = null;   // leaving spectate
+    G.specTarget = null; G.specOrbit = null;   // leaving spectate
   }
   // X — straight back to the cockpit from any view, no cycling
   if (I.pressed('KeyX') && (G.view !== 'cockpit' || G.specTarget)) { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
@@ -992,12 +1015,29 @@ function handleDiscreteInput(dt) {
   // J — spectate: ride along with every other aircraft in the area, in turn.
   // airliners, MiGs, the defector, the wingman — everything on the scope.
   if (I.pressed('KeyJ')) {
-    const others = G.bandits.filter(b => !b.dead && !b.removeMe);
-    if (!others.length) { G.specTarget = null; G.msg('NO OTHER AIRCRAFT IN THE AREA', 'info'); }
+    // every rideable contact: bandits, traffic, and every hull in the bay —
+    // nearest first, your own cockpit at the end of the cycle
+    if (G.world && G.world.carrier && !G._carrierSpec) {
+      const wc = G.world.carrier;
+      G._carrierSpec = {
+        get pos() { return wc.group.position; },
+        fwd(out) { return out.set(Math.sin(wc.heading || 0), 0, -Math.cos(wc.heading || 0)); },
+        get speed() { return wc.speed || 0; },
+        name: 'USS ENTERPRISE', len: 342,
+        get dead() { return false; }, get removeMe() { return false; },
+      };
+    }
+    const others = [
+      ...G.bandits.filter(b => !b.dead && !b.removeMe),
+      ...(G.world && G.world.ships ? G.world.ships.all : []),
+      ...(G._carrierSpec ? [G._carrierSpec] : []),
+    ].sort((a, b) => a.pos.distanceTo(P.pos) - b.pos.distanceTo(P.pos));
+    if (!others.length) { G.specTarget = null; G.msg('NO CONTACTS IN THE AREA', 'info'); }
     else {
       const n = (others.indexOf(G.specTarget) + 1) % (others.length + 1);
       G.specTarget = n === others.length ? null : others[n];
-      G.msg(G.specTarget ? 'SPECTATING \u2014 ' + (G.specTarget.name || G.specTarget.type) + '  (J FOR NEXT)' : 'BACK IN YOUR OWN COCKPIT', 'info');
+      if (!G.specTarget) G.specOrbit = null;   // back in your own cockpit — orbit resets
+      G.msg(G.specTarget ? 'SPECTATING \u2014 ' + (G.specTarget.name || G.specTarget.vtype || G.specTarget.type || 'CONTACT').toUpperCase() + '  (J FOR NEXT)' : 'BACK IN YOUR OWN COCKPIT', 'info');
     }
   }
   // U — HUD on/off, for clean screens and footage
@@ -1008,7 +1048,7 @@ function handleDiscreteInput(dt) {
   }
   // spectated contact went down or left the area — back to your own jet
   if (G.specTarget && (G.specTarget.dead || G.specTarget.removeMe)) {
-    G.specTarget = null; G.msg('CONTACT LOST — BACK IN YOUR COCKPIT', 'info');
+    G.specTarget = null; G.specOrbit = null; G.msg('CONTACT LOST — BACK IN YOUR COCKPIT', 'info');
   }
   // view magnification (the original's XMAG) — works in every view
   const XSTEPS = [1, 1.5, 2, 3, 4, 6, 8];

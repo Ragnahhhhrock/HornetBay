@@ -69,12 +69,37 @@
   .life-grid figcaption b { color: var(--ink); letter-spacing: .1em; }
   .life-note { margin-top: 8px; font-size: 11px; color: var(--ink-dim); }
 </style>
+<!-- Google Analytics (GA4) — property: Hornet Bay.
+     Tag-gateway ready: tries the first-party path /gtg first (once Tag
+     Gateway is activated in GA4 admin), falls back to googletagmanager.com.
+     Only runs on the live domains, so local/dev copies never pollute stats. -->
+<script>
+  (function () {
+    var GA_ID = 'G-8MPYL6WTM4';
+    if (!/(^|\.)(hornetbay\.com|ragnahhhhrock\.github\.io)$/.test(location.hostname)) return;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+    var s = document.createElement('script');
+    s.async = true;
+    s.onerror = function () {
+      var f = document.createElement('script');
+      f.async = true;
+      f.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+      document.head.appendChild(f);
+    };
+    s.src = '/gtg/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+  })();
+</script>
 </head>
 <body>
 <header>
   <div class="brand">HORNET <span>BAY</span></div>
   <a class="back" href="/">&larr; COCKPIT</a>
   <a class="back" href="/assets">FREE ASSETS</a>
+  <a class="back" href="/print">3D PRINT BAY</a>
   <a class="back" href="/blog">DEV JOURNAL</a>
   <button id="cart-btn">CART <span id="cart-n">0</span></button>
   <div class="kicker">THE EXCHANGE &middot; SQUADRON STORES</div>

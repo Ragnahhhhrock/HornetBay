@@ -4,7 +4,10 @@
   <url><loc>https://hornetbay.com/blog</loc><priority>0.9</priority></url>
   <url><loc>https://hornetbay.com/assets</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
+  <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/the-3d-print-bay</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/wheels-up-squadron-polish</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/analytics-dashboard</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/gallery-of-ships</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/time-acceleration</loc><priority>0.7</priority></url>
@@ -72,6 +75,7 @@
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/merch</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/bug-fix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/content</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/brand</loc><priority>0.6</priority></url>

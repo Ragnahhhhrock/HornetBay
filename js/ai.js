@@ -269,6 +269,12 @@ export class AIAircraft {
     if (!this.dead) this.quat.copy(flightQuat(this.heading, this.pitch, this.bank));
     this.model.quaternion.copy(this.quat);
     const u = this.model.userData;
+    // gear: down on the ground and on final, up once airborne — the heavies
+    // were cruising the bay with their wheels hanging out
+    if (u.gear) {
+      const agl = this.pos.y - Math.max(0, groundHeight(this.pos.x, this.pos.z));
+      u.gear.visible = !this.dead && agl < 100 && this.speed < 95;
+    }
     if (u.ab) for (const f of u.ab) {
       f.visible = !this.dead && this.targetSpeed > 240;
       if (f.visible) { const s = 0.7 + Math.random() * 0.5; f.scale.set(s, s, 0.7 + Math.random() * 0.6); }

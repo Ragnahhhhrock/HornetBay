@@ -6,6 +6,27 @@
 <title>The hero Hornet greets you on the home menu — HORNET BAY</title>
 <meta name="description" content="The menu never said “flight simulator” loudly enough — so now the star of the show greets you the moment hornetbay.com loads: an F/A-18 slowly…">
 <link rel="canonical" href="https://hornetbay.com/blog/hero-menu">
+<!-- Google Analytics (GA4) — property: Hornet Bay. Live domains only. -->
+<script>
+  (function () {
+    var GA_ID = 'G-8MPYL6WTM4';
+    if (!/(^|\.)(hornetbay\.com|ragnahhhhrock\.github\.io)$/.test(location.hostname)) return;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+    var s = document.createElement('script');
+    s.async = true;
+    s.onerror = function () {
+      var f = document.createElement('script');
+      f.async = true;
+      f.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+      document.head.appendChild(f);
+    };
+    s.src = '/gtg/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+  })();
+</script>
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
 <meta property="og:url" content="https://hornetbay.com/blog/hero-menu">

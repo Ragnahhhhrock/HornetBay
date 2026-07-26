@@ -1,0 +1,354 @@
+[
+ {
+  "id": "fa18-hornet",
+  "name": "F/A-18 HORNET",
+  "real": 17.1,
+  "target": 150,
+  "price": 4,
+  "blurb": "The mount itself — carrier-capable strike fighter, gear up, ready for the cat.",
+  "file": "fa18-hornet.stl",
+  "kb": 58,
+  "scale": 118,
+  "dims": {
+   "x": 116,
+   "y": 46.4,
+   "z": 150
+  }
+ },
+ {
+  "id": "f16-falcon",
+  "name": "F-16 FIGHTING FALCON",
+  "real": 15.1,
+  "target": 150,
+  "price": 4,
+  "blurb": "The land-based hot-rod. No tailhook — the boat said no.",
+  "file": "f16-falcon.stl",
+  "kb": 50,
+  "scale": 110,
+  "dims": {
+   "x": 103,
+   "y": 56.6,
+   "z": 150
+  }
+ },
+ {
+  "id": "mig29-fulcrum",
+  "name": "MIG-29 FULCRUM",
+  "real": 17.3,
+  "target": 150,
+  "price": 4,
+  "blurb": "The bogey of choice over the Bay. Twin tails, red stars, bad intentions.",
+  "file": "mig29-fulcrum.stl",
+  "kb": 42,
+  "scale": 143,
+  "dims": {
+   "x": 86.5,
+   "y": 31.9,
+   "z": 150
+  }
+ },
+ {
+  "id": "vc25a-air-force-one",
+  "name": "AIR FORCE ONE (VC-25A)",
+  "real": 70.7,
+  "target": 200,
+  "price": 6,
+  "blurb": "The 1994 presidential 747-200B. Mind the paint. She has an escort for a reason.",
+  "file": "vc25a-air-force-one.stl",
+  "kb": 32,
+  "scale": 403,
+  "dims": {
+   "x": 149.1,
+   "y": 44.2,
+   "z": 200
+  }
+ },
+ {
+  "id": "b747-400-allied",
+  "name": "ALLIED AIRLINES 747-400",
+  "real": 70.7,
+  "target": 200,
+  "price": 6,
+  "blurb": "388 souls aboard. The Queen of the SFO heavies — check your fire.",
+  "file": "b747-400-allied.stl",
+  "kb": 29,
+  "scale": 403,
+  "dims": {
+   "x": 149.6,
+   "y": 44.2,
+   "z": 200
+  }
+ },
+ {
+  "id": "b737-400-liberty",
+  "name": "LIBERTY AIR 737-400",
+  "real": 36.4,
+  "target": 180,
+  "price": 5,
+  "blurb": "Polished-silver shuttle, 146 souls. The Bay commuter.",
+  "file": "b737-400-liberty.stl",
+  "kb": 20,
+  "scale": 224,
+  "dims": {
+   "x": 129.7,
+   "y": 47.9,
+   "z": 180
+  }
+ },
+ {
+  "id": "dc10-pacific-empress",
+  "name": "PACIFIC EMPRESS DC-10",
+  "real": 55.5,
+  "target": 200,
+  "price": 6,
+  "blurb": "Trijet heavy, 268 souls. The defector flew one of these in.",
+  "file": "dc10-pacific-empress.stl",
+  "kb": 28,
+  "scale": 330,
+  "dims": {
+   "x": 157.6,
+   "y": 46.2,
+   "z": 200
+  }
+ },
+ {
+  "id": "md90-cascade",
+  "name": "CASCADE AIR MD-90",
+  "real": 46.5,
+  "target": 180,
+  "price": 5,
+  "blurb": "T-tail Mad Dog with rear twins, 158 souls.",
+  "file": "md90-cascade.stl",
+  "kb": 22,
+  "scale": 303,
+  "dims": {
+   "x": 89.3,
+   "y": 33.7,
+   "z": 180
+  }
+ },
+ {
+  "id": "b707-intercontinental",
+  "name": "BOEING 707 INTERCONTINENTAL",
+  "real": 46.6,
+  "target": 180,
+  "price": 5,
+  "blurb": "The classic long-hauler — still working the ident runs out of SFO.",
+  "file": "b707-intercontinental.stl",
+  "kb": 15,
+  "scale": 289,
+  "dims": {
+   "x": 117.7,
+   "y": 40.5,
+   "z": 180
+  }
+ },
+ {
+  "id": "cruise-missile",
+  "name": "CRUISE MISSILE",
+  "real": 6.8,
+  "target": 120,
+  "price": 3,
+  "blurb": "The Moffett bandit — low, fast, and not here to sightsee. Prints in one piece.",
+  "file": "cruise-missile.stl",
+  "kb": 5,
+  "scale": 57,
+  "dims": {
+   "x": 56.5,
+   "y": 31.8,
+   "z": 120
+  }
+ },
+ {
+  "id": "uss-enterprise-cvn65",
+  "name": "USS ENTERPRISE (CVN-65)",
+  "real": 342,
+  "target": 250,
+  "price": 8,
+  "blurb": "The Big E — your home plate. Angled deck, island, the works.",
+  "file": "uss-enterprise-cvn65.stl",
+  "kb": 46,
+  "scale": 1384,
+  "dims": {
+   "x": 70.9,
+   "y": 48.3,
+   "z": 250
+  }
+ },
+ {
+  "id": "guided-missile-cruiser",
+  "name": "GUIDED-MISSILE CRUISER",
+  "real": 173,
+  "target": 220,
+  "price": 6,
+  "blurb": "The picket ahead of the Big E. Turrets fore, helo deck aft.",
+  "file": "guided-missile-cruiser.stl",
+  "kb": 14,
+  "scale": 786,
+  "dims": {
+   "x": 21.6,
+   "y": 40.1,
+   "z": 220
+  }
+ },
+ {
+  "id": "destroyer",
+  "name": "DESTROYER",
+  "real": 150,
+  "target": 220,
+  "price": 6,
+  "blurb": "Beam escort, port and starboard stations. Greyhound of the group.",
+  "file": "destroyer.stl",
+  "kb": 10,
+  "scale": 682,
+  "dims": {
+   "x": 23.5,
+   "y": 47.7,
+   "z": 220
+  }
+ },
+ {
+  "id": "frigate",
+  "name": "FRIGATE",
+  "real": 135,
+  "target": 200,
+  "price": 5,
+  "blurb": "The astern picket, clear of the approach. The small grey roommate.",
+  "file": "frigate.stl",
+  "kb": 9,
+  "scale": 675,
+  "dims": {
+   "x": 20.7,
+   "y": 43.7,
+   "z": 200
+  }
+ },
+ {
+  "id": "mt-petro-pacific",
+  "name": "MT PETRO PACIFIC",
+  "real": 360,
+  "target": 250,
+  "price": 7,
+  "blurb": "360 m of supertanker — the giant of the lane. Barely answers her helm.",
+  "file": "mt-petro-pacific.stl",
+  "kb": 8,
+  "scale": 1440,
+  "dims": {
+   "x": 37.5,
+   "y": 26,
+   "z": 250
+  }
+ },
+ {
+  "id": "ms-bay-monarch",
+  "name": "MS BAY MONARCH",
+  "real": 230,
+  "target": 230,
+  "price": 6,
+  "blurb": "The cruise liner — stacked white decks and the fastest hull in the lane.",
+  "file": "ms-bay-monarch.stl",
+  "kb": 12,
+  "scale": 1000,
+  "dims": {
+   "x": 30,
+   "y": 40.1,
+   "z": 230
+  }
+ },
+ {
+  "id": "mv-bay-trader",
+  "name": "MV BAY TRADER",
+  "real": 170,
+  "target": 220,
+  "price": 6,
+  "blurb": "Container freighter, lane regular, stacked high.",
+  "file": "mv-bay-trader.stl",
+  "kb": 17,
+  "scale": 773,
+  "dims": {
+   "x": 31.1,
+   "y": 44.8,
+   "z": 220
+  }
+ },
+ {
+  "id": "shadow-sub",
+  "name": "SHADOW SUB",
+  "real": 105,
+  "target": 200,
+  "price": 5,
+  "blurb": "A submersible aircraft carrier, surfaced. Up to no good in the lane.",
+  "file": "shadow-sub.stl",
+  "kb": 22,
+  "scale": 626,
+  "dims": {
+   "x": 22.8,
+   "y": 42.2,
+   "z": 200
+  }
+ },
+ {
+  "id": "fishing-boat",
+  "name": "FISHING BOAT",
+  "real": 22,
+  "target": 120,
+  "price": 3,
+  "blurb": "The 22 m crabber that works the banks outside the Gate.",
+  "file": "fishing-boat.stl",
+  "kb": 4,
+  "scale": 183,
+  "dims": {
+   "x": 38.2,
+   "y": 87.3,
+   "z": 120
+  }
+ },
+ {
+  "id": "sailboat",
+  "name": "SAILBOAT",
+  "real": 11,
+  "target": 100,
+  "price": 3,
+  "blurb": "Weekend sloop, 11 m. Mind your wake.",
+  "file": "sailboat.stl",
+  "kb": 3,
+  "scale": 176,
+  "dims": {
+   "x": 36.9,
+   "y": 100,
+   "z": 62.5
+  }
+ },
+ {
+  "id": "motor-cruiser",
+  "name": "MOTOR CRUISER",
+  "real": 11,
+  "target": 100,
+  "price": 3,
+  "blurb": "11 m cabin cruiser — the other half of the weekend traffic.",
+  "file": "motor-cruiser.stl",
+  "kb": 2,
+  "scale": 110,
+  "dims": {
+   "x": 32.7,
+   "y": 68.2,
+   "z": 100
+  }
+ },
+ {
+  "id": "rescue-raft",
+  "name": "RESCUE RAFT",
+  "real": 4,
+  "target": 80,
+  "price": 2,
+  "blurb": "Mission 4's customer. Holds one downed pilot; snacks not included.",
+  "file": "rescue-raft.stl",
+  "kb": 13,
+  "scale": 54,
+  "dims": {
+   "x": 80,
+   "y": 27.9,
+   "z": 80
+  }
+ }
+]

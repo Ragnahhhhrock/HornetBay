@@ -211,10 +211,22 @@ export class AudioEngine {
   hook() { this._tone(160, 0.25, 0.25, 'square', 80); }
   trap() { this._noiseHit(0.7, 0.6, 800, 0.8, 100); this._tone(120, 0.5, 0.4, 'sawtooth', 45); }
   radioClick() { this._noiseHit(0.04, 0.18, 3500, 3); }
-  // console-style pause chirp: falling two notes = held, rising = released
+  // console-style pause chirp: falling two notes = held, rising = released.
+  // HOLD actually silences the sim: the whole audio graph suspends once the
+  // chirp has played out, so engines, lock tones, gatling, rain — everything —
+  // stops while paused. RELEASE resumes the context before its chirp.
   pause(on = true) {
-    if (on) { this._tone(620, 0.08, 0.2, 'square'); setTimeout(() => this._tone(410, 0.14, 0.2, 'square'), 85); }
-    else { this._tone(410, 0.08, 0.2, 'square'); setTimeout(() => this._tone(620, 0.14, 0.2, 'square'), 85); }
+    if (!this.ctx) return;
+    clearTimeout(this._pauseSuspendT);   // a quick unpause beats the pending suspend
+    if (on) {
+      this._tone(620, 0.08, 0.2, 'square');
+      setTimeout(() => this._tone(410, 0.14, 0.2, 'square'), 85);
+      this._pauseSuspendT = setTimeout(() => { if (this.ctx.state === 'running') this.ctx.suspend(); }, 260);
+    } else {
+      if (this.ctx.state === 'suspended') this.ctx.resume();
+      this._tone(410, 0.08, 0.2, 'square');
+      setTimeout(() => this._tone(620, 0.14, 0.2, 'square'), 85);
+    }
   }
   // C-13 steam catapult: a rising white-steam roar for the length of the stroke
   catapult() { this._noiseHit(1.7, 0.55, 1400, 0.5, 220); }

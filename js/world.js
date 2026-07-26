@@ -1182,10 +1182,10 @@ export class World {
     mkPaved(13150, 20950, 350, 620, 10 * D, 4 + Y_APRON, apronMat);           // terminal apron
     mkPaved(13360, 20200, 18, 2300, 10 * D, 4 + Y_TAXI, taxiMat);             // taxiway along 01 pair
     mkPaved(13000, 20550, 18, 2500, 103 * D, 4 + Y_TAXI, taxiMat);            // taxiway along 10/28
-    mkBox(12950, 21100, 120, 18, 60, 10 * D, hangarDark);                     // terminal block
-    mkBox(13100, 21250, 90, 15, 50, 10 * D, hangarDark);
+    mkBox(13020, 21300, 120, 18, 60, 10 * D, hangarDark);                     // terminal block (clear of the 01 strips)
+    mkBox(13180, 21380, 90, 15, 50, 10 * D, hangarDark);                      // clear of the 01 strips
     mkBox(13350, 21100, 70, 14, 200, 10 * D, hangarMat);                      // concourse fingers
-    mkBox(13000, 20920, 60, 13, 160, 103 * D, hangarMat);
+    mkBox(13140, 20950, 60, 13, 160, 103 * D, hangarMat);                     // clear of the 01 strips
     mkTower(13150, 20750, 4, 'SFO TOWER');
     mkParked(13220, 20980, 100 * D, 0xd8dde2); mkParked(13080, 21010, 100 * D, 0xcfd6da);
     mkParked(13260, 20860, 10 * D, 0xe2e6ea);

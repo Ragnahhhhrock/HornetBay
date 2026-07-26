@@ -6,6 +6,27 @@
 <title>The mobile shakedown: a virtual phone, 35 checks, zero failures — HORNET BAY</title>
 <meta name="description" content="Verdict on the first touch build: needs work — so it got a proper shakedown on an emulated phone (CDP touch emulation + real touch events, not just…">
 <link rel="canonical" href="https://hornetbay.com/blog/touch-shakedown">
+<!-- Google Analytics (GA4) — property: Hornet Bay. Live domains only. -->
+<script>
+  (function () {
+    var GA_ID = 'G-8MPYL6WTM4';
+    if (!/(^|\.)(hornetbay\.com|ragnahhhhrock\.github\.io)$/.test(location.hostname)) return;
+    window.dataLayer = window.dataLayer || [];
+    window.gtag = function () { dataLayer.push(arguments); };
+    gtag('js', new Date());
+    gtag('config', GA_ID);
+    var s = document.createElement('script');
+    s.async = true;
+    s.onerror = function () {
+      var f = document.createElement('script');
+      f.async = true;
+      f.src = 'https://www.googletagmanager.com/gtag/js?id=' + GA_ID;
+      document.head.appendChild(f);
+    };
+    s.src = '/gtg/gtag/js?id=' + GA_ID;
+    document.head.appendChild(s);
+  })();
+</script>
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
 <meta property="og:url" content="https://hornetbay.com/blog/touch-shakedown">

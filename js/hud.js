@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { clamp, KTS, FT, NM, wrapAngle, deg } from './util.js';
 
 const WHITE = '#f2f2f2', GREEN = '#3aff72', AMBER = '#ffb437', RED = '#ff4a3a',
-      BLUE = '#8fd0ff', PANEL = '#8f8f8f', DARK = '#0a0a0a';
+      BLUE = '#8fd0ff', PANEL = '#8f8f8f', DARK = '#0a0a0a', DIM = '#9aa4b2';
 const _v = new THREE.Vector3();
 // the original separates thousands with a space: "3 075 FT"
 const fmtN = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
@@ -67,7 +67,10 @@ export class HUD {
       this._messages(c, G, s);
       const slabel = 'SPECTATE — ' + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
-      c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
+      c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105);
+      c.fillStyle = DIM;
+      c.fillText('SHIFT+ARROWS / RIGHT-DRAG — PAN · WHEEL / [ ] — ZOOM · 0 — REFRAME', this.cxw, this.h * 0.135);
+      c.textAlign = 'left';
     } else if (G.view === 'cockpit') {
       this._hudGlass(c, st);
       c.save();

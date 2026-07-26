@@ -237,6 +237,11 @@ class Vessel {
     return dist;
   }
   setNight(n) { for (const l of this.group.userData.lights || []) l.visible = n; }
+
+  // spectate contract: vessels can be ridden with J just like aircraft
+  get dead() { return false; }
+  get removeMe() { return false; }
+  fwd(out = new THREE.Vector3()) { return out.set(Math.sin(this.heading), 0, -Math.cos(this.heading)); }
 }
 
 class Escort extends Vessel {
@@ -301,13 +306,14 @@ export class Ships {
     // --- the battle group: guided-missile cruiser ahead, two destroyers on
     // the beams, frigate astern (far enough back to keep the approach clear)
     const escortDefs = [
-      { station: { x: 0, z: 2400 },     len: 173, beam: 17, model: buildWarship({ len: 173, beam: 17, sup: [{ w: 12, h: 8, d: 26, z: 18, bridge: 1 }, { w: 10, h: 6, d: 18, z: -18 }], funnels: [{ z: -6 }, { z: -30 }], masts: [{ z: 30, h: 14 }, { z: -40, h: 11 }], turret: [58, 44], helo: 1 }) },
-      { station: { x: -1500, z: 300 },  len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
-      { station: { x: 1500, z: 300 },   len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
-      { station: { x: 0, z: -2800 },    len: 135, beam: 14, model: buildWarship({ len: 135, beam: 14, sup: [{ w: 10, h: 6, d: 20, z: 6, bridge: 1 }], funnels: [{ z: -18, h: 9 }], masts: [{ z: 16, h: 12 }], turret: [42], helo: 1 }) },
+      { name: 'GUIDED-MISSILE CRUISER', station: { x: 0, z: 2400 },     len: 173, beam: 17, model: buildWarship({ len: 173, beam: 17, sup: [{ w: 12, h: 8, d: 26, z: 18, bridge: 1 }, { w: 10, h: 6, d: 18, z: -18 }], funnels: [{ z: -6 }, { z: -30 }], masts: [{ z: 30, h: 14 }, { z: -40, h: 11 }], turret: [58, 44], helo: 1 }) },
+      { name: 'DESTROYER', station: { x: -1500, z: 300 },  len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
+      { name: 'DESTROYER', station: { x: 1500, z: 300 },   len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
+      { name: 'FRIGATE', station: { x: 0, z: -2800 },    len: 135, beam: 14, model: buildWarship({ len: 135, beam: 14, sup: [{ w: 10, h: 6, d: 20, z: 6, bridge: 1 }], funnels: [{ z: -18, h: 9 }], masts: [{ z: 16, h: 12 }], turret: [42], helo: 1 }) },
     ];
     this.escorts = escortDefs.map(d => {
       const e = new Escort(world, d.model, d.station);
+      e.name = d.name; e.len = d.len;
       const wakeLen = d.len * 2.4;
       const wake = makeWake(d.beam, wakeLen, 0.16);
       wake.position.set(0, 0.65, -d.len / 2 - wakeLen / 2 + 12);
@@ -347,7 +353,7 @@ export class Ships {
     ];
     this.traffic = trafficDefs.map(d => {
       const t = new TrafficShip(world, d.model, d.route, d.speed, d.turn);
-      t.vtype = d.vtype; t.name = d.name;   // mission scripts reference these
+      t.vtype = d.vtype; t.name = d.name; t.len = d.len;   // mission scripts reference these
       const wakeLen = d.len * (1.2 + d.speed * 0.15);
       const wake = makeWake(d.beam, wakeLen, 0.15);
       wake.position.set(0, 0.65, -d.len / 2 - wakeLen / 2 + 6);
