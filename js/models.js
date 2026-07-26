@@ -507,6 +507,24 @@ function _nameTex(text, hex) {
   return t;
 }
 
+// VAW-123 Screwtops corkscrew: a black barber-pole band wrapping the rotodome rim
+let _spiralTexCache = null;
+function _spiralTex() {
+  if (_spiralTexCache) return _spiralTexCache;
+  const c = document.createElement('canvas'); c.width = 1024; c.height = 64;
+  const x = c.getContext('2d');
+  x.fillStyle = '#cfd6dc'; x.fillRect(0, 0, 1024, 64);
+  x.fillStyle = '#15191d';
+  // three turns around the circumference, 50% duty; drawn at +-64 so the wrap tiles seamlessly
+  for (let px = 0; px < 1024; px += 2) {
+    const yc = (px * 3 * 64 / 1024) % 64;
+    for (const k of [-64, 0, 64]) x.fillRect(px, yc - 16 + k, 2, 32);
+  }
+  _spiralTexCache = new THREE.CanvasTexture(c);
+  _spiralTexCache.colorSpace = THREE.SRGBColorSpace;
+  return _spiralTexCache;
+}
+
 // shared airframe dresser: belly, cheatline, window band, titles, fin accent
 function _dressAirliner(g, L, r1, r2, len, o) {
   const belly = cyl(r1 * 0.98, r2 * 0.98, len * 0.88, L.belly, 14);
@@ -764,12 +782,16 @@ export function buildE2C() {
     const dome = cone(0.22, 0.45, DK, 8); dome.position.z = 0.1; spin.add(dome);
     g.add(spin); props.push(spin);
   }
-  // the rotodome on its struts — the long-range radar, and it spins
+  // the rotodome on its struts — a horizontal pancake spinning about its vertical axis
   const rd = new THREE.Group(); rd.position.set(0, 3.15, -2.2);
   const stA = box(0.28, 2.2, 0.5, GY); stA.position.set(0, -1.6, 0.8); stA.rotation.x = 0.35; rd.add(stA);
   const stB = box(0.28, 2.2, 0.5, GY); stB.position.set(0, -1.6, -0.8); stB.rotation.x = -0.35; rd.add(stB);
-  const disc = cyl(3.6, 3.6, 0.55, 0xcfd6dc, 20); rd.add(disc);
-  const rim = cyl(3.62, 3.62, 0.3, GY, 20); rim.position.y = -0.1; rd.add(rim);
+  // VAW-123 Screwtops: the black corkscrew painted around the dome's rim
+  const domeSide = new THREE.MeshBasicMaterial({ map: _spiralTex() });
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.6, 0.8, 20), [domeSide, M(0xcfd6dc), M(0xcfd6dc)]);
+  rd.add(disc);
+  const rim = new THREE.Mesh(new THREE.CylinderGeometry(3.62, 3.62, 0.3, 20), [M(GY), M(GY), M(GY)]);
+  rim.position.y = -0.55; rd.add(rim);   // under-ring, clear of the spiral band
   g.add(rd);
   // quad tail: tall centre fin, two outboard fins, ventral fin
   const sG = wingGeo([[0.9, 1.1], [0.9, -1.7], [5.4, -2.4], [5.4, -1.4]], 0.28);
