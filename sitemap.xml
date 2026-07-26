@@ -6,6 +6,7 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/print-bay-model-pages</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/the-3d-print-bay</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/wheels-up-squadron-polish</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/analytics-dashboard</loc><priority>0.7</priority></url>
@@ -104,4 +105,26 @@
   <url><loc>https://hornetbay.com/blog/tag/cockpit</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/fx</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/milestone</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/fa18-hornet</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/f16-falcon</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/mig29-fulcrum</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/vc25a-air-force-one</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/b747-400-allied</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/b737-400-liberty</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/dc10-pacific-empress</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/md90-cascade</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/b707-intercontinental</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/cruise-missile</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/uss-enterprise-cvn65</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/guided-missile-cruiser</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/destroyer</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/frigate</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/mt-petro-pacific</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/ms-bay-monarch</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/mv-bay-trader</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/shadow-sub</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/fishing-boat</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/sailboat</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/motor-cruiser</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/rescue-raft</loc><priority>0.6</priority></url>
 </urlset>

@@ -399,8 +399,8 @@ function renderGrid(filter) {
   grid.innerHTML = '';
   CARDS.filter(p => filter === 'ALL' || p.cat === filter).forEach(p => {
     const card = document.createElement('div'); card.className = 'card';
-    card.innerHTML = `<div class="thumb"><img loading="lazy" src="${p.img}" alt="${p.name} — printable STL portrait"></div>
-      <div class="body"><div class="name"></div><div class="meta"></div><div class="desc"></div>
+    card.innerHTML = `<a class="thumb" href="/print/${p.id}"><img loading="lazy" src="${p.img}" alt="${p.name} — printable STL portrait"></a>
+      <div class="body"><a class="name" href="/print/${p.id}" style="color:#fff"></a><div class="meta"></div><div class="desc"></div>
       <div class="rowline"><span class="price">${money(p.price)}</span></div></div>`;
     card.querySelector('.name').textContent = p.name;
     card.querySelector('.meta').textContent = p.meta;
