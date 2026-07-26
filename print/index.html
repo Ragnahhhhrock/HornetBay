@@ -447,7 +447,7 @@ document.getElementById('checkout').onclick = async () => {
     const cols = await (await fetch(`${FW_API}/collections?storefront_token=${FW_TOKEN}`)).json();
     const list = cols.results || cols.collections || cols;
     const all = list.find(c => /all/i.test(c.handle || c.slug || c.title)) || list[0];
-    const prods = await (await fetch(`${FW_API}/collections/${all.handle || all.slug}/products?storefront_token=${FW_TOKEN}`)).json();
+    const prods = await (await fetch(`${FW_API}/collections/${all.handle || all.slug}/products?storefront_token=${FW_TOKEN}&size=100`)).json();
     const plist = prods.results || prods.products || prods;
     // match Fourthwall products "STL — <NAME>" onto local cards
     const byName = {};

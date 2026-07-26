@@ -152,7 +152,7 @@ for (let i = 1; i <= 6; i++) {
     const cols = await (await fetch(`${API}/collections?storefront_token=${TOK}`)).json();
     const list = cols.results || cols.collections || cols;
     const all = list.find(c => /all/i.test(c.handle || c.slug || c.title)) || list[0];
-    const prods = await (await fetch(`${API}/collections/${all.handle || all.slug}/products?storefront_token=${TOK}`)).json();
+    const prods = await (await fetch(`${API}/collections/${all.handle || all.slug}/products?storefront_token=${TOK}&size=100`)).json();
     const p = (prods.results || prods.products || prods).find(p =>
       (p.name || p.title || '').toUpperCase() === 'STL — ' + NAME);
     if (!p) return;
