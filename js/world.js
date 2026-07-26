@@ -4,6 +4,7 @@ import { clamp, lerp, fbm, noise2, rand } from './util.js';
 import { Ships } from './ships.js';
 
 const _gloomCol = new THREE.Color(0.32, 0.34, 0.38);   // overcast gray for rainy weather
+const _flashCol = new THREE.Color(0.82, 0.87, 1.0);   // lightning: cold blue-white sky flash
 
 // ---------- polygon coastline ----------
 // Traced against the original game's satellite map: the Pacific on the west,
@@ -257,6 +258,57 @@ class Rain {
       P[i * 6 + 3] = x + tx; P[i * 6 + 4] = y + ty; P[i * 6 + 5] = z + tz;
     }
     this.posAttr.needsUpdate = true;
+  }
+}
+
+// ---- lightning: a jagged channel bolt + a sky-wide flash -------------------
+// The world owns the flash (a lerp on the sky/fog/sun, decayed per frame) and
+// exposes thunderDist for main.js to route into the audio graph — light first,
+// rumble after, by 343 m/s.
+class Lightning {
+  constructor(scene) {
+    this.geo = new THREE.BufferGeometry();
+    this.attr = new THREE.Float32BufferAttribute(new Float32Array(16 * 3), 3);
+    this.attr.setUsage(THREE.DynamicDrawUsage);
+    this.geo.setAttribute('position', this.attr);
+    this.mat = new THREE.LineBasicMaterial({ color: 0xe8eeff, transparent: true, opacity: 0, fog: false });
+    this.line = new THREE.Line(this.geo, this.mat);
+    this.line.frustumCulled = false;
+    this.line.visible = false;
+    scene.add(this.line);
+    this.t = 2.5 + Math.random() * 4;   // countdown to the next strike
+    this.boltLife = 0;
+  }
+  // active => storm weather, rain settled in, not a satellite map view
+  update(dt, camPos, active) {
+    if (this.boltLife > 0) {
+      this.boltLife -= dt;
+      const a = Math.max(0, this.boltLife / 0.22);
+      this.mat.opacity = a * a;
+      this.line.visible = this.boltLife > 0;
+    }
+    if (!active) { this.t = Math.max(this.t, 1.5); return 0; }
+    this.t -= dt;
+    if (this.t > 0) return 0;
+    this.t = 3 + Math.random() * 6;
+    return this._strike(camPos);
+  }
+  _strike(camPos) {
+    const az = Math.random() * Math.PI * 2, dist = 1800 + Math.random() * 4200;
+    const x = camPos.x + Math.cos(az) * dist, z = camPos.z + Math.sin(az) * dist;
+    const top = 1200 + Math.random() * 600, N = this.attr.count;
+    let px = x, pz = z;
+    for (let i = 0; i < N; i++) {
+      const f = i / (N - 1), y = top * (1 - f);
+      px += (Math.random() - 0.5) * 170; pz += (Math.random() - 0.5) * 170;
+      px = px * 0.7 + x * 0.3; pz = pz * 0.7 + z * 0.3;   // hug the trunk: one jagged channel
+      this.attr.setXYZ(i, px, y, pz);
+    }
+    this.attr.needsUpdate = true;
+    this.boltLife = 0.22;
+    this.line.visible = true;
+    this.mat.opacity = 1;
+    return dist;
   }
 }
 
@@ -1241,8 +1293,27 @@ export class World {
     // or murk over the planning map.
     const wT = this.weatherTarget || 0;
     this.weather01 = (this.weather01 || 0) + clamp(wT - (this.weather01 || 0), -dt * 0.5, dt * 0.5);
-    if (this.weather01 > 0.001) this._applyGloom(weatherSuppressed ? 0 : this.weather01);
+    this.cloud01 = (this.cloud01 || 0) + clamp((this.cloudTarget || 0) - (this.cloud01 || 0), -dt * 0.4, dt * 0.4);
+    if (this.clouds) {
+      this.clouds.visible = this.cloud01 > 0.02;
+      this.cloudMat.opacity = 0.7 * this.cloud01;
+    }
+    const wGloom = Math.max(this.weather01, (this.cloud01 || 0) * 0.35);
+    if (wGloom > 0.001) this._applyGloom(weatherSuppressed ? 0 : wGloom);
     if (this.rain) this.rain.update(dt, camPos, camVel, weatherSuppressed ? 0 : this.weather01);
+    if (this.lightning) {
+      const strikeDist = this.lightning.update(dt, camPos, this.stormMode && this.weather01 > 0.4 && !weatherSuppressed);
+      if (strikeDist) { this.flash01 = 1; this.thunderDist = strikeDist; }
+    }
+    // the flash rides on top of whatever palette the gloom just painted
+    this.flash01 = Math.max(0, (this.flash01 || 0) - dt * 3.2);
+    if (this.flash01 > 0.001) {
+      const f = this.flash01;
+      this.skyU.top.value.lerp(_flashCol, f * 0.55);
+      this.skyU.horizon.value.lerp(_flashCol, f * 0.8);
+      this.scene.fog.color.copy(this.skyU.horizon.value);
+      this.sun.intensity += f * 2.2;
+    }
   }
 
   // rain dims the sky, drags the murk in close and knocks the light down —
@@ -1262,8 +1333,13 @@ export class World {
   }
 
   setWeather(mode) {
-    this.weatherTarget = mode === 'rain' ? 1 : 0;
+    mode = mode || 'clear';
+    this.weatherMode = mode;
+    this.weatherTarget = (mode === 'rain' || mode === 'storm') ? 1 : 0;
+    this.cloudTarget = mode === 'clear' ? 0 : 1;
+    this.stormMode = mode === 'storm';
     if (!this.rain) this.rain = new Rain(this.scene);
+    if (mode === 'storm' && !this.lightning) this.lightning = new Lightning(this.scene);
   }
 }
 

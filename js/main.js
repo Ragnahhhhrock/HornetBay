@@ -234,7 +234,7 @@ function buildMenu(mode = 'main') {
   addBtn('A', 'ANALYTICS DASHBOARD', '↗', () => window.open('/analytics', '_blank'));
   addBtn('P', '3D PRINT BAY', '↗', () => window.open('/print', '_blank'));
   addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ mission: 'MISSION DEFAULT', day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
-  addBtn('R', 'TOGGLE CLEAR or RAIN WEATHER', `NOW: ${{ mission: 'MISSION DEFAULT', clear: 'CLEAR', rain: 'RAIN' }[G.weatherSel]}`, () => cycleMenuWeather());
+  addBtn('R', 'TOGGLE WEATHER', `NOW: ${{ mission: 'MISSION DEFAULT', clear: 'CLEAR', clouds: 'CLOUDS', rain: 'RAIN', storm: 'STORM' }[G.weatherSel]}`, () => cycleMenuWeather());
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
   $('pilot-record').textContent =
     `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
@@ -265,10 +265,11 @@ function cycleMenuDayNight() {
 function applyMenuTimeOfDay() {
   G.world.setTimeOfDay(G.dayNightSel === 'mission' ? 'day' : G.dayNightSel);
 }
-// R on the main menu: cycle MISSION/CLEAR/RAIN — the menu backdrop gets the
-// weather immediately and the choice is saved for the next mission
+// R on the main menu: cycle MISSION/CLEAR/CLOUDS/RAIN/STORM — the menu
+// backdrop gets the weather immediately and the choice is saved
+const WX_CYCLE = { mission: 'clear', clear: 'clouds', clouds: 'rain', rain: 'storm', storm: 'mission' };
 function cycleMenuWeather() {
-  G.weatherSel = { mission: 'clear', clear: 'rain', rain: 'mission' }[G.weatherSel] || 'mission';
+  G.weatherSel = WX_CYCLE[G.weatherSel] || 'mission';
   save.weather = G.weatherSel;
   persist();
   G.audio.radioClick();
@@ -325,7 +326,7 @@ window.addEventListener('keydown', (e) => {
       G.audio.radioClick();
     }
     else if (e.code === 'KeyR') {
-      G.weatherSel = G.weatherSel === 'mission' ? 'clear' : G.weatherSel === 'clear' ? 'rain' : 'mission';
+      G.weatherSel = WX_CYCLE[G.weatherSel] || 'mission';
       save.weather = G.weatherSel; persist();
       G.audio.radioClick();
     }
@@ -682,7 +683,7 @@ function quitToMenu() {
   if (G._menuResume) {
     // remember the sortie's sky: the menu restyles the world to its own
     // backdrop, so resumeFlight() has to put the mission's time/weather back
-    G._resumeEnv = { tod: G.world.mode || 'day', wx: G.world.weatherTarget ? 'rain' : 'clear' };
+    G._resumeEnv = { tod: G.world.mode || 'day', wx: G.world.weatherMode || (G.world.weatherTarget ? 'rain' : 'clear') };
     G.audio.updateFlight(0, false, 0);   // engines fall to idle while the menu is up
   }
   G.audio.pause(true);   // the pause chirp, whether or not the sortie survives
@@ -1383,6 +1384,8 @@ function frame() {
     // headless warp handled at boot; nothing here
   }
   stepGame(dt);
+  // lightning struck this frame: flash already painted — now the thunder
+  if (G.world.thunderDist) { G.audio.thunder(G.world.thunderDist); G.world.thunderDist = 0; }
   updateCamera(dt * ((G.state === 'flying' || G.state === 'dead') ? G.timeScale : 1));
   renderer.render(scene, camera);
   G.input.postUpdate();
@@ -1611,6 +1614,8 @@ SCRIPT = params.get('script');
 if (params.get('wlog')) window.__wlog = [];   // warp instrumentation hook
 if (params.get('night')) G.dayNightSel = 'night';   // test hook: force night
 if (params.get('rain')) G.weatherSel = 'rain';      // test hook: force rain
+if (params.get('storm')) G.weatherSel = 'storm';    // test hook: force storm
+if (params.get('clouds')) G.weatherSel = 'clouds';  // test hook: force clouds
 if (params.get('clean')) G.cleanShot = true;        // test hook: HUD-free captures
 if (params.get('day')) G.dayNightSel = 'day';
 showMenu();

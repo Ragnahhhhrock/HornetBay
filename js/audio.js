@@ -160,6 +160,16 @@ export class AudioEngine {
     const g = c.createGain(); g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
     s.connect(f); f.connect(g); g.connect(this.sfx); s.start(t); s.stop(t + dur + 0.05);
   }
+  // storm thunder: a crack that decays into a low rumble, delayed by distance
+  // (343 m/s) — the lightning strike reports how far away it landed
+  thunder(dist = 1500) {
+    if (!this.ctx) return;
+    const vol = Math.min(0.85, Math.max(0.12, 1400 / (dist + 400)));
+    setTimeout(() => {
+      this._noiseHit(0.16, vol * 0.8, 1600, 0.5, 260);          // crack
+      this._noiseHit(2.4, vol, 210, 0.8, 55);                   // rumble
+    }, (dist / 343) * 1000);
+  }
   gun() {
     // when the gatling loop is running the burst sample does all the talking
     if (this._gatling && this._gatling !== 'synth') return;
