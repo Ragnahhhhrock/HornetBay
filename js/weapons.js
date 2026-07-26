@@ -150,6 +150,9 @@ export class FXPool {
 const MISSILE_TYPES = {
   aim120: { vmax: 1050, accel: 260, turn: 1.9, life: 40, prox: 30, dmg: 110, ir: false },
   aim9:   { vmax: 850,  accel: 320, turn: 3.2, life: 22, prox: 26, dmg: 110, ir: true  },
+  // AIM-54 Phoenix: the big radar-guided stick — three AIM-120s of legs,
+  // a truck of a warhead, but it wants a radar lock from much further out
+  aim54:  { vmax: 1300, accel: 250, turn: 1.7, life: 90, prox: 40, dmg: 160, ir: false, len: 4.0, dia: 0.38 },
   r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false },
   r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true  },
 };
@@ -166,6 +169,7 @@ export class Missile {
       missileMat = new THREE.MeshBasicMaterial({ color: 0xe8e8e8 });
     }
     this.mesh = new THREE.Mesh(missileGeo, missileMat);
+    if (cfg.len) this.mesh.scale.set(cfg.dia / 0.32, cfg.dia / 0.32, cfg.len / 3.4);   // Phoenix is a fat, long round
     this.pos = this.mesh.position;
     this.pos.copy(owner.pos);
     // Player exposes fwd as a getter, AIAircraft as a method — handle both

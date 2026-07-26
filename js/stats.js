@@ -57,7 +57,7 @@ class Stats {
   planeSelect(type) {   // 'f18' | 'f16'
     if (!this.data.plane_selects[type]) this.data.plane_selects[type] = 0;
     this.data.plane_selects[type]++; this.persist();
-    this.ga('plane_select', { plane_type: type === 'f18' ? 'hornet' : 'falcon' });
+    this.ga('plane_select', { plane_type: type === 'f18' ? 'hornet' : type === 'f14' ? 'tomcat' : 'falcon' });
   }
   startPoint(id) {
     this.data.start_points[id] = (this.data.start_points[id] || 0) + 1; this.persist();

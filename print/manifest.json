@@ -16,6 +16,25 @@
   }
  },
  {
+  "id": "f14-tomcat",
+  "name": "F-14 TOMCAT",
+  "real": 19.1,
+  "target": 150,
+  "price": 5,
+  "keepStores": [
+   "aim54"
+  ],
+  "blurb": "VF-84 Jolly Rogers, 1978. Swing-wing fleet defender with four Phoenix in the tunnel — printed wings spread, skull and crossbones on both tails.",
+  "file": "f14-tomcat.stl",
+  "kb": 46,
+  "scale": 131,
+  "dims": {
+   "x": 144.7,
+   "y": 38.1,
+   "z": 150
+  }
+ },
+ {
   "id": "f16-falcon",
   "name": "F-16 FIGHTING FALCON",
   "real": 15.1,

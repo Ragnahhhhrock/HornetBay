@@ -167,8 +167,16 @@ export class HUD {
     // G + missiles remaining, low on the glass like the original
     c.textAlign = 'center'; c.font = `${12.5 * s}px "Courier New", monospace`;
     c.fillText(`${P.gForce.toFixed(1)} G`, w * 0.305, h * 0.70);
-    const msl = P.weapon === 'aim120' ? P.stores.aim120 : P.weapon === 'aim9' ? P.stores.aim9 : P.stores.gun;
+    const msl = P.weapon === 'gun' ? P.stores.gun : P.stores[P.weapon];
     c.fillText(`${P.weapon === 'gun' ? 'GU' : 'AM'} ${msl}`, w * 0.695, h * 0.70);
+    if (P.type === 'f14') {
+      // swing-wing readout: amber while travelling, green when settled
+      const deg = Math.round(20 + (P.sweep01 || 0) * 48);
+      const travelling = Math.abs((P.sweepTarget || 0) - (P.sweep01 || 0)) > 0.02;
+      c.fillStyle = travelling ? AMBER : GREEN;
+      c.fillText(`SWP ${deg}°`, w * 0.695, h * 0.73);
+      c.fillStyle = GREEN;
+    }
     c.textAlign = 'left';
   }
 
@@ -644,17 +652,27 @@ export class HUD {
       c.fillStyle = !loaded ? '#0a3016' : (sel && Math.sin(time * 8) > -0.4 ? '#9aff9a' : GREEN);
       c.fillRect(cx + sx * u - 2.5 * s, cy + sy * u - 4 * s, 5 * s, 8 * s);
     };
-    store(-0.46, 0.14, P.stores.aim9 >= 1, P.weapon === 'aim9');
-    store( 0.46, 0.14, P.stores.aim9 >= 2, P.weapon === 'aim9');
-    store(-0.30, 0.10, P.stores.aim120 >= 1, P.weapon === 'aim120');
-    store(-0.16, 0.05, P.stores.aim120 >= 2, P.weapon === 'aim120');
-    store( 0.16, 0.05, P.stores.aim120 >= 3, P.weapon === 'aim120');
-    store( 0.30, 0.10, P.stores.aim120 >= 4, P.weapon === 'aim120');
+    if (P.type === 'f14') {
+      // Tomcat: Phoenix x4 in the tunnel, Sidewinder x2 on the glove pylons
+      store(-0.46, 0.14, P.stores.aim9 >= 1, P.weapon === 'aim9');
+      store( 0.46, 0.14, P.stores.aim9 >= 2, P.weapon === 'aim9');
+      store(-0.30, 0.02, P.stores.aim54 >= 1, P.weapon === 'aim54');
+      store(-0.12, 0.06, P.stores.aim54 >= 2, P.weapon === 'aim54');
+      store( 0.12, 0.06, P.stores.aim54 >= 3, P.weapon === 'aim54');
+      store( 0.30, 0.02, P.stores.aim54 >= 4, P.weapon === 'aim54');
+    } else {
+      store(-0.46, 0.14, P.stores.aim9 >= 1, P.weapon === 'aim9');
+      store( 0.46, 0.14, P.stores.aim9 >= 2, P.weapon === 'aim9');
+      store(-0.30, 0.10, P.stores.aim120 >= 1, P.weapon === 'aim120');
+      store(-0.16, 0.05, P.stores.aim120 >= 2, P.weapon === 'aim120');
+      store( 0.16, 0.05, P.stores.aim120 >= 3, P.weapon === 'aim120');
+      store( 0.30, 0.10, P.stores.aim120 >= 4, P.weapon === 'aim120');
+    }
     // selection label like the original's 'ARH AM' / 'IRH AM'
     c.fillStyle = P.weapon !== 'gun' ? GREEN : AMBER;
     c.font = `bold ${9.5 * s}px "Courier New", monospace`;
     c.textAlign = 'center';
-    c.fillText(P.weapon === 'aim120' ? `ARH AM x${P.stores.aim120}` : P.weapon === 'aim9' ? `IRH AM x${P.stores.aim9}` : `GUN ${P.stores.gun}`, cx, y + hL - 4 * s);
+    c.fillText(P.weapon === 'aim120' ? `ARH AM x${P.stores.aim120}` : P.weapon === 'aim54' ? `PHX ARH x${P.stores.aim54}` : P.weapon === 'aim9' ? `IRH AM x${P.stores.aim9}` : `GUN ${P.stores.gun}`, cx, y + hL - 4 * s);
     c.textAlign = 'left';
   }
 

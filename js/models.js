@@ -201,6 +201,134 @@ export function buildF16() {
   return g;
 }
 
+// ---------------- F-14 Tomcat (VF-84 Jolly Rogers, 1978) ----------------
+let _jollyTex = null;
+function jollyRogersDecal(w = 3.6, h = 3.0) {
+  if (!_jollyTex) {
+    const c = document.createElement('canvas'); c.width = 192; c.height = 256;
+    const x = c.getContext('2d');
+    // black fin with the yellow tip band
+    x.fillStyle = '#101114'; x.fillRect(0, 0, 192, 256);
+    x.fillStyle = '#f0b41c'; x.fillRect(0, 0, 192, 26);
+    x.fillStyle = '#101114'; x.fillRect(0, 26, 192, 5);
+    // crossbones — two white rounded bars in an X, behind the skull
+    x.strokeStyle = '#f2f2f2'; x.lineCap = 'round'; x.lineWidth = 13;
+    x.beginPath(); x.moveTo(46, 118); x.lineTo(148, 198); x.stroke();
+    x.beginPath(); x.moveTo(148, 118); x.lineTo(46, 198); x.stroke();
+    // skull
+    x.fillStyle = '#f2f2f2';
+    x.beginPath(); x.arc(96, 108, 40, 0, Math.PI * 2); x.fill();        // cranium
+    x.fillRect(66, 108, 60, 38);                                        // jaw
+    x.fillStyle = '#101114';
+    x.beginPath(); x.ellipse(81, 103, 10, 13, 0.25, 0, Math.PI * 2); x.fill();  // eyes
+    x.beginPath(); x.ellipse(111, 103, 10, 13, -0.25, 0, Math.PI * 2); x.fill();
+    x.beginPath(); x.moveTo(96, 116); x.lineTo(89, 130); x.lineTo(103, 130); x.closePath(); x.fill();  // nose
+    x.lineWidth = 3; x.lineCap = 'butt'; x.strokeStyle = '#101114';
+    for (let i = 0; i < 4; i++) { x.beginPath(); x.moveTo(74 + i * 12, 134); x.lineTo(74 + i * 12, 146); x.stroke(); }  // teeth
+    // AJ / 200 below
+    x.fillStyle = '#f2f2f2'; x.font = 'bold 30px "Courier New", monospace'; x.textAlign = 'center';
+    x.fillText('AJ', 96, 226);
+    x.font = 'bold 22px "Courier New", monospace';
+    x.fillText('200', 96, 250);
+    _jollyTex = new THREE.CanvasTexture(c);
+  }
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+    new THREE.MeshBasicMaterial({ map: _jollyTex, transparent: true, side: THREE.DoubleSide,
+      polygonOffset: true, polygonOffsetFactor: -1 }));
+}
+
+export function buildF14() {
+  const g = new THREE.Group();
+  const C = 0xb8bfc4, CD = 0x96a0a6;          // light gull gray over white, 1978 scheme
+  // flat "pancake" body between the widely spaced engines — the Tomcat signature
+  const pan = box(4.6, 0.95, 10.5, C); pan.position.set(0, -0.05, -1.6); g.add(pan);
+  const fwd = box(2.1, 1.5, 6.8, C); fwd.position.set(0, 0.25, 3.4); g.add(fwd);
+  // black anti-glare band from radome back over the canopy (the top-view mark)
+  const ag = box(1.9, 0.1, 4.2, 0x111417); ag.position.set(0, 1.02, 4.0); g.add(ag);
+  // long pointed radome, a hint of droop
+  const nose = cone(0.74, 4.4, C); nose.scale.set(1.05, 0.9, 1); nose.position.z = 8.4; g.add(nose);
+  // two-seat bubble under the black band
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.85, 10, 8), M(0x4a5c66));
+  canopy.scale.set(0.85, 0.55, 2.4); canopy.position.set(0, 1.0, 4.1); g.add(canopy);
+  const spine = box(1.7, 0.5, 5.5, CD); spine.position.set(0, 0.8, -1.2); g.add(spine);
+  // M61 Vulcan port in the left cheek
+  const gun = box(0.06, 0.2, 0.55, 0x14161a); gun.position.set(1.08, 0.3, 3.4); g.add(gun);
+  // fixed gloves — highly swept root sections the swing wings pivot out of
+  const glG = wingGeo([[0.9, 3.4], [0.9, -2.8], [3.3, -2.1], [3.3, 0.6]], 0.18);
+  for (const s of [1, -1]) {
+    const gl = new THREE.Mesh(glG, M(C)); gl.scale.x = s; gl.position.y = 0.2; g.add(gl);
+  }
+  // variable-sweep wings on their pivots (20 deg spread -> 68 deg swept)
+  const wG = wingGeo([[0, 0.7], [0, -2.5], [6.4, -2.2], [6.4, -0.5]], 0.2);
+  const wings = {};
+  for (const s of [1, -1]) {
+    const pivot = new THREE.Group();
+    pivot.position.set(s * 3.1, 0.25, 0.4);
+    const w = new THREE.Mesh(wG, M(C)); w.scale.x = s;
+    pivot.add(w);
+    // pivot-cap fairing + wingtip rail
+    const rail = box(0.35, 0.12, 3.2, CD); rail.position.set(s * 5.6, 0.14, -1.4); pivot.add(rail);
+    g.add(pivot);
+    wings[s === 1 ? 'l' : 'r'] = pivot;
+  }
+  // twin verticals on the nacelle tops — Jolly Rogers on both outer faces
+  const tG = wingGeo([[0, 0.6], [0, -2.9], [3.5, -3.7], [3.5, -3.0]], 0.15);
+  for (const s of [1, -1]) {
+    const t = new THREE.Mesh(tG, M(0x1a1c20));
+    t.rotation.z = Math.PI / 2;
+    t.position.set(s * 2.3, 0.4, -3.6); g.add(t);
+    const decal = jollyRogersDecal(3.3, 2.8);
+    decal.rotation.y = s * Math.PI / 2;
+    decal.scale.x = s;                          // un-mirror the skull on the port face
+    decal.position.set(s * (2.3 + 0.09), 2.15, -5.0);
+    g.add(decal);
+  }
+  // engines, nozzles, the beavertail between them
+  const ab = [];
+  for (const s of [1, -1]) {
+    const e = cyl(0.62, 0.55, 4.8, CD); e.position.set(s * 2.2, -0.4, -5.6); g.add(e);
+    const nz = cyl(0.5, 0.4, 1.1, 0x33383e); nz.position.set(s * 2.2, -0.4, -8.3); g.add(nz);
+    const ni = cyl(0.36, 0.36, 0.18, 0x0a0a0c); ni.position.set(s * 2.2, -0.4, -8.75); g.add(ni);
+    const f = abFlame(3.8, 0.55); f.position.set(s * 2.2, -0.4, -9.7); g.add(f); ab.push(f);
+    // boxy chin intake ahead of each nacelle
+    const it = box(1.05, 0.9, 2.6, CD); it.position.set(s * 2.2, -0.45, 0.6); g.add(it);
+    const mouth = box(0.85, 0.68, 0.12, 0x0c0e10); mouth.position.set(s * 2.2, -0.45, 1.95); g.add(mouth);
+  }
+  const bt = box(0.5, 0.35, 2.6, CD); bt.position.set(0, -0.2, -7.8); g.add(bt);
+  // huge all-moving stabilators
+  const sG = wingGeo([[0.4, 0.4], [0.4, -1.7], [3.7, -1.4], [3.7, -0.2]], 0.15);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.5, -0.25, -6.7); g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.5, -0.25, -6.7); g.add(stabR);
+  // gear — twin-wheel nose gear, mains into the pancake
+  const gear = new THREE.Group();
+  const gm = M(0x2c3136);
+  const mkWheel = (x, y, z, twin = false) => {
+    const w = new THREE.Group();
+    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.5, 6), gm); strut.position.y = 0.75; w.add(strut);
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.24, 10), gm);
+    tire.rotation.z = Math.PI / 2; tire.position.y = 0.12; w.add(tire);
+    if (twin) { const t2 = tire.clone(); t2.position.x += 0.2; tire.position.x -= 0.2; w.add(t2); }
+    w.position.set(x, y, z); return w;
+  };
+  gear.add(mkWheel(0, -2.3, 4.4, true), mkWheel(1.9, -2.3, -1.2), mkWheel(-1.9, -2.3, -1.2));
+  g.add(gear);
+  // tailhook between the nozzles
+  const hook = box(0.12, 0.12, 3.0, 0xcccccc); hook.position.set(0, -0.55, -8.5);
+  hook.rotation.x = -0.5; hook.visible = false; g.add(hook);
+  // stores: 4x AIM-54 Phoenix in the tunnel, 2x AIM-9 on glove pylons
+  const stores = { aim9: [], aim54: [] };
+  for (const s of [1, -1]) {
+    const py = box(0.16, 0.5, 1.2, CD); py.position.set(s * 3.0, -0.35, -0.8); g.add(py);
+    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 3.0, -0.75, -0.8); g.add(m9); stores.aim9.push(m9);
+    for (const pz of [1.4, -2.4]) {
+      const m54 = missileMesh(0xf0f0f0, 4.0, 0.19); m54.position.set(s * 0.55, -0.85, pz); g.add(m54); stores.aim54.push(m54);
+    }
+  }
+  g.userData = { ab, gear, hook, stabL, stabR, stores, wings, tipX: 9.5, type: 'f14' };
+  addNavLights(g, 9.5, -8.8, 0.6);
+  return g;
+}
+
 // ---------------- MiG-29 Fulcrum ----------------
 let _starTex = null;
 function starDecal(size) {
@@ -558,6 +686,7 @@ export function buildModel(type, livery = 0) {
   switch (type) {
     case 'f18': return buildFA18();
     case 'f16': return buildF16();
+    case 'f14': return buildF14();
     case 'mig29': return buildMiG29();
     case 'b747': return build747();
     case 'b707': return build707();

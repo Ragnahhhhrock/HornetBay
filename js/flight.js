@@ -12,6 +12,12 @@ export const PLANES = {
          gMax: 10, stall: 95, rotate: 80, fuel: 25000, burnMil: 20, burnAB: 47.5, ceiling: 12487 },
   f16: { label: 'F-16 FALCON',   maxThrust: 11.0, abBoost: 12.0, dragK: 0.000108, maxRoll: 4.6,
          gMax: 11, stall: 90, rotate: 76, fuel: 18000, burnMil: 18.75, burnAB: 43.75, ceiling: 12487 },
+  // Tomcat: heavier, thirstier, higher. Base numbers are wings-spread; the
+  // swept column lerps in as sweep01 -> 1 (S key): slicker but hungrier for
+  // lift — swept slow flight stalls hard, so spread for the boat.
+  f14: { label: 'F-14 TOMCAT',   maxThrust: 12.0, abBoost: 14.0, dragK: 0.000132, maxRoll: 2.9,
+         gMax: 8, stall: 92, rotate: 84, fuel: 30000, burnMil: 22, burnAB: 55, ceiling: 15240,
+         swept: { dragK: 0.000104, stall: 128, maxRoll: 3.6, gMax: 9 } },
 };
 
 const _e = new THREE.Euler(), _dq = new THREE.Quaternion(), _v = new THREE.Vector3(), _v2 = new THREE.Vector3();
@@ -37,15 +43,18 @@ export class Player {
   reset(cfg) {
     if (this.model) this.scene.remove(this.model);
     this.type = cfg.plane || 'f18';
-    this.cfg = PLANES[this.type];
+    this.cfg = Object.assign({}, PLANES[this.type]);   // clone: the Tomcat's sweep rewrites fields per frame
     this.model = buildModel(this.type);
     this.scene.add(this.model);
     this.throttle = 0; this.ab = false; this.abLatch = false; this._mach = 0;
     this.pitchRate = 0; this.rollRate = 0; this.yawRate = 0;
     this.gearDown = true; this.hookDown = false; this.brakes = false; this.ecm = false;
     this.fuel = this.cfg.fuel; this.damage = 0; this.gForce = 1;
-    this.stores = { aim9: 2, aim120: 4, gun: 500, chaff: 14, flares: 14 };
-    this.weapon = 'aim120';
+    this.sweepTarget = 0; this.sweep01 = 0;            // F-14 swing wing: 0 spread, 1 swept
+    this.stores = this.type === 'f14'
+      ? { aim54: 4, aim9: 2, gun: 675, chaff: 14, flares: 14 }
+      : { aim9: 2, aim120: 4, gun: 500, chaff: 14, flares: 14 };
+    this.weapon = this.type === 'f14' ? 'aim54' : 'aim120';
     this.dead = false; this.ejected = false; this.stalled = false; this.modelDown = false;
     this._parkedEject = false; this._deckRide = null;
     this.onGround = null; this.deckLocal = null; this.smokeT = 0; this.contrailT = 0;
@@ -96,6 +105,16 @@ export class Player {
     // fuel
     const burn = this.throttle * this.cfg.burnMil * (this.onGround ? 0.6 : 1) + (this.ab ? this.cfg.burnAB : 0);
     this.fuel = Math.max(0, this.fuel - burn * dt);
+    // swing-wing easing + the aero it buys (spread: lift; swept: speed) —
+    // runs on the deck too: the Tomcat oversweeps just to park
+    if (this.type === 'f14' && this.cfg.swept) {
+      this.sweep01 += clamp(this.sweepTarget - this.sweep01, -dt * 0.5, dt * 0.5);
+      const t = this.sweep01, cfg = this.cfg;
+      cfg.dragK = lerp(PLANES.f14.dragK, cfg.swept.dragK, t);
+      cfg.stall = lerp(PLANES.f14.stall, cfg.swept.stall, t);
+      cfg.maxRoll = lerp(PLANES.f14.maxRoll, cfg.swept.maxRoll, t);
+      cfg.gMax = lerp(PLANES.f14.gMax, cfg.swept.gMax, t);
+    }
     if (this.onGround) this._updateGround(dt, inp, G);
     else this._updateAir(dt, inp, G);
     this._syncVisual(dt, inp);
@@ -110,8 +129,8 @@ export class Player {
     const thrEff = 0.07 + 0.93 * this.throttle;
     let thrustA = cfg.maxThrust * thrEff + (this.ab ? cfg.abBoost : 0);
     // ad-hoc deck roll (bolter / taxi launch): deck crew flings you off the bow —
-    // F/A-18 only; the F-16 has no catapult bridle (and no hook)
-    if (og.type === 'carrier' && !og.cat && this.type === 'f18' && this.throttle > 0.85 && !og.trapped) thrustA += 20;
+    // carrier jets only; the F-16 has no catapult bridle (and no hook)
+    if (og.type === 'carrier' && !og.cat && this.type !== 'f16' && this.throttle > 0.85 && !og.trapped) thrustA += 20;
     const brakeA = this.brakes ? (og.trapped ? 34 : 9) : 0;
     let acc = thrustA - brakeA - 0.4;
     // C-13 steam catapult: the holdback bar pins the jet until the pilot calls
@@ -199,7 +218,8 @@ export class Player {
     const thrEff = 0.07 + 0.93 * this.throttle;
     let thrustA = hasFuel ? (cfg.maxThrust * thrEff + (this.ab ? cfg.abBoost : 0)) * (0.35 + 0.65 * rho) * dmgFactor : 0;
     // the original pins out at exactly 40,960 ft — fade thrust to nothing there
-    if (this.pos.y > 11000) thrustA *= clamp(1 - (this.pos.y - 11000) / 1487, 0, 1);
+    // thrust fades toward the type's ceiling (the Tomcat's TF30s breathe higher)
+    if (this.pos.y > cfg.ceiling - 1487) thrustA *= clamp(1 - (this.pos.y - (cfg.ceiling - 1487)) / 1487, 0, 1);
     let drag = cfg.dragK * rho * speed * speed;
     if (this.gearDown) drag += cfg.dragK * rho * speed * speed * 0.9 + 0.5;
     if (this.brakes) drag += cfg.dragK * rho * speed * speed * 1.4; // speedbrake
@@ -264,8 +284,10 @@ export class Player {
     this.contrailT -= dt;
     if (this.gForce > 2.3 && this.speed > 90 && this.contrailT <= 0 && G && G.fx) {
       this.contrailT = 0.045;
+      const tipX = this.type === 'f14' ? lerp(9.2, 5.9, this.sweep01) : 4.3;
+      const tipZ = this.type === 'f14' ? lerp(-1.4, -3.2, this.sweep01) : -1.2;
       for (const s of [-1, 1]) {
-        _v.set(s * 4.3, 0.25, -1.2).applyQuaternion(this.quat).add(this.pos);
+        _v.set(s * tipX, 0.25, tipZ).applyQuaternion(this.quat).add(this.pos);
         G.fx.contrail(_v);
       }
     }
@@ -392,10 +414,15 @@ export class Player {
       if (f.visible) { const s = 0.8 + Math.random() * 0.5; f.scale.set(s, s, 0.8 + Math.random() * 0.8); }
     }
     if (u.stabL) { const a = (inp.pitch || 0) * -0.5; u.stabL.rotation.x = a; u.stabR.rotation.x = a; }
+    if (u.wings) {   // F-14 swing wings sweep aft as sweep01 -> 1 (20deg -> 68deg)
+      const a = this.sweep01 * 0.84;
+      u.wings.l.rotation.y = -a; u.wings.r.rotation.y = a;
+    }
     // store visuals
     if (u.stores) {
-      u.stores.aim9.forEach((m, i) => m.visible = i < this.stores.aim9);
-      u.stores.aim120.forEach((m, i) => m.visible = i < this.stores.aim120);
+      if (u.stores.aim9) u.stores.aim9.forEach((m, i) => m.visible = i < this.stores.aim9);
+      if (u.stores.aim120) u.stores.aim120.forEach((m, i) => m.visible = i < this.stores.aim120);
+      if (u.stores.aim54) u.stores.aim54.forEach((m, i) => m.visible = i < this.stores.aim54);
     }
   }
 }

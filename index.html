@@ -120,9 +120,10 @@
       <div><b>W / S</b></div><div>Throttle up / down &nbsp;&middot;&nbsp; <b>SHIFT</b> (hold) = afterburner</div>
       <div><b>, / .</b></div><div>Rudder left / right</div>
       <div><b>SPACE</b></div><div>Fire selected weapon (hold for the gun) &nbsp;&middot;&nbsp; <b>MOUSE BTN</b> = gun trigger</div>
-      <div><b>ENTER</b> / <b>TAB</b> / <b>1 2 3</b></div><div>Select weapon (AMRAAM / Sidewinder / Gun) — voice callout confirms; 1/2/3 jump straight to one</div>
+      <div><b>ENTER</b> / <b>TAB</b> / <b>1 2 3</b></div><div>Select weapon (AMRAAM / Sidewinder / Gun — the Tomcat carries PHOENIX / Sidewinder / Gun) — voice callout confirms; 1/2/3 jump straight to one</div>
       <div><b>T</b></div><div>Cycle radar target</div>
-      <div><b>R</b></div><div>Radar range (40 / 10 / 2 NM)</div>
+      <div><b>R</b></div><div>Radar range (Hornet/Falcon: 40 / 10 / 2 NM &nbsp;&middot;&nbsp; Tomcat AWG-9: 100 / 40 / 10 / 2 NM)</div>
+      <div><b>S</b></div><div>F-14 only: swing the wings — SPREAD 20° for lift, SWEPT 68° for speed. Watch the stall margin swept slow</div>
       <div><b>B</b></div><div>Wheel brakes / airbrake</div>
       <div><b>G</b></div><div>Landing gear</div>
       <div><b>H</b></div><div>Arrestor hook (F/A-18 only — the F-16 has none)</div>
@@ -170,6 +171,19 @@
 
 <!-- attract-mode hint (DEMO menu item) -->
 <div id="attract-hint" class="hidden">DEMO &mdash; PRESS ANY KEY / TAP TO RETURN TO THE MENU</div>
+
+<!-- F-14 Tomcat unlock: squadron purchase code entry -->
+<div id="tomcat-unlock" class="hidden">
+  <div class="tc-card">
+    <div class="tc-title">F-14 TOMCAT &mdash; SQUADRON PURCHASE</div>
+    <div class="tc-body">The Tomcat flies for pilots who've bought her in. Grab your unlock code at the
+      <a href="https://hornet-bay-squadron-store-shop.fourthwall.com" target="_blank" rel="noopener">squadron store</a>
+      (digital download: <b>F-14 TOMCAT &mdash; AIRCRAFT UNLOCK</b>), then enter it below.</div>
+    <input id="tc-input" maxlength="64" autocomplete="off" spellcheck="false" placeholder="UNLOCK CODE">
+    <div id="tc-error" class="hidden">THAT CODE DIDN'T CHECK OUT &mdash; MIND THE DASHES</div>
+    <div class="tc-hint">ENTER &mdash; SUBMIT &nbsp;&middot;&nbsp; ESC &mdash; BACK</div>
+  </div>
+</div>
 
 <!-- shown if the GPU context is taken away (iOS rotation/backgrounding) -->
 <div id="gllost" class="hidden">GRAPHICS RESET &mdash; RECOVERING&hellip;</div>

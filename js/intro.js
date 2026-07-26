@@ -119,7 +119,8 @@ export class Intro {
       })));
     } else if (this.active === 'planesel') {
       // carrier start? the F-16 isn't even offered — no tailhook, no boat ops
-      const planeOpts = this.carrierStart ? '1 ..... F/A-18 HORNET' : '1 ..... F/A-18 HORNET     2 ..... F-16 FALCON';
+      const tomcat = this.G.save && this.G.save.tomcat ? '3 ..... F-14 TOMCAT' : '3 ..... F-14 TOMCAT [DLC]';
+      const planeOpts = (this.carrierStart ? '1 ..... F/A-18 HORNET' : '1 ..... F/A-18 HORNET     2 ..... F-16 FALCON') + `     ${tomcat}`;
       c.fillText(`SELECT:  ${planeOpts}     T ..... TIME: ${(this.G.dayNightSel || 'mission').toUpperCase()}     R ..... WX: ${(this.G.weatherSel || 'mission').toUpperCase()}`, w / 2, h - 8);
       if (this.carrierStart) {
         c.font = `bold 13px "Courier New", monospace`;

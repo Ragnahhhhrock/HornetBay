@@ -169,6 +169,7 @@ const SAVE_KEY = 'hornet-bay-v1';
 let save = { qualified: false, done: {}, best: 0, kills: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+G.save = save;                                  // intro screens read unlock flags (e.g. the Tomcat)
 G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen toggles MISSION/DAY/NIGHT
 G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION/CLEAR/RAIN
 
@@ -317,8 +318,48 @@ function startFreeFlightMap() {
 function launchWithZoom(def) {
   launchMission(def, { zoom: true });
 }
+// ---- F-14 Tomcat unlock (squadron purchase) --------------------------------
+const TOMCAT_HASH = '8fed8dde9c9e5e971ab14782a5baf076ab2c654023a5adb1b164cc74e4b98f77';
+async function sha256hex(s) {
+  const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s.trim().toUpperCase()));
+  return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
+}
+function openTomcatUnlock() {
+  document.getElementById('tomcat-unlock').classList.remove('hidden');
+  document.getElementById('tc-error').classList.add('hidden');
+  G.audio.radioClick();
+  const inp = document.getElementById('tc-input');
+  inp.value = '';
+  setTimeout(() => inp.focus(), 50);
+}
+function closeTomcatUnlock() { document.getElementById('tomcat-unlock').classList.add('hidden'); }
+async function submitTomcatCode() {
+  const inp = document.getElementById('tc-input');
+  if (!inp.value.trim()) return;
+  if ((await sha256hex(inp.value)) !== TOMCAT_HASH) {
+    document.getElementById('tc-error').classList.remove('hidden');
+    return;
+  }
+  save.tomcat = true; persist();
+  closeTomcatUnlock();
+  G.msg('TOMCAT UNLOCKED — WELCOME TO THE JOLLY ROGERS', 'good');
+  if (G.state === 'planesel' && pendingMission) { G.player.type = 'f14'; stats.planeSelect('f14'); launchWithZoom(pendingMission); }
+}
+{
+  const tcInp = document.getElementById('tc-input');
+  tcInp.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.code === 'Enter') submitTomcatCode();
+    else if (e.code === 'Escape') closeTomcatUnlock();
+  });
+}
+// owner shortcut: ?tomcat=CODE unlocks without the overlay
+{ const tcc = new URLSearchParams(location.search).get('tomcat'); if (tcc) sha256hex(tcc).then(h => { if (h === TOMCAT_HASH) { save.tomcat = true; persist(); } }); }
+const tomcatOverlayOpen = () => !document.getElementById('tomcat-unlock').classList.contains('hidden');
+
 // plane select + map select + briefing keys
 window.addEventListener('keydown', (e) => {
+  if (tomcatOverlayOpen()) return;   // the unlock card owns the keyboard
   if (G.state === 'planesel') {
     if (e.code === 'KeyT') {
       G.dayNightSel = G.dayNightSel === 'mission' ? 'day' : G.dayNightSel === 'day' ? 'night' : 'mission';
@@ -336,6 +377,11 @@ window.addEventListener('keydown', (e) => {
       const carrierStart = pendingMission.id === 'free' ? G.freeFlightStart === 'carrier' : pendingMission.id !== 'm1';
       if (carrierStart) { G.intro.blockMsg = 'F-16 CANNOT OPERATE FROM THE CARRIER'; G.intro.blockT = G.time; G.audio.radioClick(); }
       else { G.player.type = 'f16'; stats.planeSelect('f16'); launchWithZoom(pendingMission); }
+    }
+    else if (e.code === 'Digit3') {
+      // the Tomcat is a squadron purchase: unlock code first, flight line after
+      if (save.tomcat) { G.player.type = 'f14'; stats.planeSelect('f14'); launchWithZoom(pendingMission); }
+      else { openTomcatUnlock(); }
     }
   } else if (G.state === 'mapselect') {
     const spot = FF_SPOTS.find(s => s.key === (e.code.startsWith('Digit') ? e.code.slice(5) : ''));
@@ -551,7 +597,9 @@ G.onTrapped = () => {
   G.audio.trap();
   // rearm & refuel
   const P = G.player;
-  P.fuel = P.cfg.fuel; P.stores.aim9 = 2; P.stores.aim120 = 4; P.stores.gun = 500;
+  P.fuel = P.cfg.fuel;
+  P.stores.aim9 = 2; P.stores.gun = P.type === 'f14' ? 675 : 500;
+  if (P.type === 'f14') P.stores.aim54 = 4; else P.stores.aim120 = 4;
   P.stores.chaff = 14; P.stores.flares = 14; P.damage = Math.min(P.damage, 20);
 };
 // sonic boom: crossing Mach 1 shakes the world and cracks the air
@@ -889,6 +937,7 @@ function updateTargeting(dt) {
     _v.copy(t.pos).sub(P.pos).normalize();
     const ang = P.fwd.angleTo(_v);
     if (wpn === 'aim9') { rngMax = 8500; canLock = dist > 400 && dist < rngMax && ang < 0.6; }
+    else if (wpn === 'aim54') { rngMax = 90000; canLock = dist > 1200 && dist < rngMax && ang < 0.9; }   // Phoenix: the AWG-9 reaches out
     else { rngMax = 30000; canLock = dist > 900 && dist < rngMax && ang < 0.9; }
   }
   if (canLock) G.lockLevel = Math.min(1, G.lockLevel + dt / 1.1);
@@ -900,8 +949,8 @@ function updateTargeting(dt) {
   // SPACE only: ENTER is the weapon selector, exactly like the Amiga original
   if (G.input.pressed('Space') && G.state === 'flying' && !P.dead && !P.ejected) {
     if (wpn === 'gun') { /* gun fires continuously while SPACE is held — handled below */ }
-    else if (wpn === 'aim9' || wpn === 'aim120') {
-      if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : 'NO AMRAAMS LEFT', 'warn');
+    else if (wpn === 'aim9' || wpn === 'aim120' || wpn === 'aim54') {
+      if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : wpn === 'aim54' ? 'NO PHOENIX LEFT' : 'NO AMRAAMS LEFT', 'warn');
       else {
         P.stores[wpn]--;
         const tgt = (G.locked && G.playerTarget) ? G.playerTarget : null;
@@ -909,7 +958,7 @@ function updateTargeting(dt) {
         G.audio.missileFire();
         G.shotsFired++;
         stats.missileFired(wpn);
-        G.msg(wpn === 'aim9' ? 'FOX 2!' : 'FOX 3!', 'good');
+        G.msg(wpn === 'aim9' ? 'FOX 2!' : wpn === 'aim54' ? 'FOX 3 — PHOENIX AWAY!' : 'FOX 3!', 'good');
         P._syncVisual(0, {});
       }
     }
@@ -977,16 +1026,27 @@ function handleDiscreteInput(dt) {
   // weapon select: ENTER cycles (the Amiga original's key), TAB as an alias,
   // 1/2/3 jump straight to a weapon; the voice callout says what's live
   const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
-  if (I.pressed('Enter') || I.pressed('Tab')) { const order = ['aim120', 'aim9', 'gun']; selW(order[(order.indexOf(P.weapon) + 1) % order.length]); }
-  if (I.pressed('Digit1')) selW('aim120');
+  const wOrder = P.type === 'f14' ? ['aim54', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'];
+  if (I.pressed('Enter') || I.pressed('Tab')) selW(wOrder[(wOrder.indexOf(P.weapon) + 1) % wOrder.length]);
+  if (I.pressed('Digit1')) selW(wOrder[0]);
   if (I.pressed('Digit2')) selW('aim9');
   if (I.pressed('Digit3')) selW('gun');
+  // S — swing the Tomcat's wings (spread <-> swept); noop for fixed wings
+  if (I.pressed('KeyS') && P.type === 'f14') {
+    P.sweepTarget = P.sweepTarget ? 0 : 1;
+    G.msg(P.sweepTarget ? 'WINGS SWEPT — 68°' : 'WINGS SPREAD — 20°', 'info');
+    G.audio.radioClick();
+  }
   if (I.pressed('KeyR')) {
-    // longest to shortest, like a real scope stepping down: 40 > 10 > 2 > 40
-    const ranges = [[40, 40 * NM], [10, 10 * NM], [2, 2 * NM]];
+    // longest to shortest, like a real scope stepping down — the Tomcat's
+    // AWG-9 reaches a hundred miles; everyone else tops out at 40
+    const ranges = P.type === 'f14'
+      ? [[100, 100 * NM], [40, 40 * NM], [10, 10 * NM], [2, 2 * NM]]
+      : [[40, 40 * NM], [10, 10 * NM], [2, 2 * NM]];
     const i = ranges.findIndex(r => r[0] === G.radarRangeNM);
-    const [nm, m] = ranges[(i + 1) % 3];
+    const [nm, m] = ranges[(i + 1) % ranges.length];
     G.radarRangeNM = nm; G.radarRange = m;
+    G.msg(`RADAR RANGE — ${nm} MI`, 'info');
   }
   // original key set: G gear, H hook, B brake, Shift+E eject
   if (I.pressed('KeyG') || I.pressed('KeyL')) {

@@ -6,6 +6,7 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/f14-tomcat</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/carrier-angle-deck</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/spectate-keypad-controls</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/weather-storms-lightning</loc><priority>0.7</priority></url>
@@ -81,11 +82,12 @@
   <url><loc>https://hornetbay.com/blog/hornet-bay-name</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/aircraft</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/merch</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/graphics</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/controls</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/audio</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/merch</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/bug-fix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/content</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/brand</loc><priority>0.6</priority></url>
@@ -113,6 +115,7 @@
   <url><loc>https://hornetbay.com/blog/tag/fx</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/milestone</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/fa18-hornet</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/f14-tomcat</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/f16-falcon</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/mig29-fulcrum</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/vc25a-air-force-one</loc><priority>0.6</priority></url>

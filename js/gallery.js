@@ -14,6 +14,7 @@ const CATS = { air: 'AIRCRAFT', ship: 'SHIPS' };
 const ITEMS = [
   // ---- aircraft ----
   { cat: 'air', type: 'f18',   name: 'F/A-18 HORNET',              info: 'CARRIER-CAPABLE MULTIROLE STRIKE FIGHTER — THE MOUNT' },
+  { cat: 'air', type: 'f14',   name: 'F-14 TOMCAT',                info: 'VF-84 JOLLY ROGERS 1978 — SWING-WING FLEET DEFENDER — PHOENIX CARRIER' },
   { cat: 'air', type: 'f16',   name: 'F-16 FIGHTING FALCON',       info: 'LAND-BASED AIR-DEFENCE HOT-ROD — NO TAILHOOK' },
   { cat: 'air', type: 'b747',  name: 'AIR FORCE ONE (VC-25A)',     info: 'BOEING 747-200B — THE 1994 PRESIDENTIAL MOUNT — MIND THE PAINT' },
   { cat: 'air', type: 'mig29', name: 'MIG-29 FULCRUM',             info: 'ENEMY BOGEY — TWIN-TAIL AGILE FIGHTER' },

@@ -235,7 +235,7 @@ document.getElementById('checkout').onclick = async () => {
     const cols = await (await fetch(`${FW_API}/collections?storefront_token=${FW_TOKEN}`)).json();
     const list = cols.results || cols.collections || cols;
     const all = list.find(c => /all/i.test(c.handle || c.slug || c.title)) || list[0];
-    const prods = await (await fetch(`${FW_API}/collections/${all.handle || all.slug}/products?storefront_token=${FW_TOKEN}`)).json();
+    const prods = await (await fetch(`${FW_API}/collections/${all.handle || all.slug}/products?storefront_token=${FW_TOKEN}&size=100`)).json();
     const plist = prods.results || prods.products || prods;
     catalog = plist.map(p => {
       const v = (p.variants || [])[0] || {};
@@ -246,7 +246,8 @@ document.getElementById('checkout').onclick = async () => {
               img, desc: (p.description || '').replace(/<[^>]+>/g,'').slice(0,160),
               cat: (() => { const nm = (p.name || p.title || '').toUpperCase();
                 return /TEE|HOODIE|CAP|HAT/.test(nm) ? 'APPAREL' : /MUG/.test(nm) ? 'DRINKWARE'
-                     : /STICKER/.test(nm) ? 'STICKERS' : /POSTER|PRINT/.test(nm) ? 'PRINTS'
+                     : /STICKER/.test(nm) ? 'STICKERS' : /^STL /.test(nm) ? 'STL FILES'
+                     : /UNLOCK|DLC/.test(nm) ? 'GAME DLC' : /POSTER|PRINT/.test(nm) ? 'PRINTS'
                      : /PATCH/.test(nm) ? 'PATCHES' : 'GEAR'; })(),
         variantId: v.id, live: !!v.id};
     });
