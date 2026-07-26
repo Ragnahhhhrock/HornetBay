@@ -10,7 +10,7 @@
 <meta property="og:url" content="https://hornetbay.com/print">
 <meta property="og:title" content="HORNET BAY — 3D Print Bay">
 <meta property="og:description" content="Every aircraft and ship in the sim as a printable STL. Instant download after checkout.">
-<meta property="og:image" content="https://hornetbay.com/shots/print-fa18-hornet.jpg">
+<meta property="og:image" content="https://hornetbay.com/shots/print-fa18-hornet.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@hornetbay">
 <link rel="canonical" href="https://hornetbay.com/print">
@@ -59,8 +59,8 @@
   .chip.on { color: var(--amber); border-color: #7a5a20; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
   .card { background: var(--card); border: 1px solid var(--line); border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; }
-  .card .thumb { aspect-ratio: 4/3; background: #0a1c34; }
-  .card .thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .card .thumb { aspect-ratio: 4/3; background: radial-gradient(circle at 50% 42%, #33507e 0%, #172c4e 68%, #0a1c34 100%); }
+  .card .thumb img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .card .body { padding: 12px 14px 14px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
   .name { color: #fff; font-size: 14px; letter-spacing: 1px; font-weight: 700; }
   .meta { color: var(--ink-dim); font-size: 11px; letter-spacing: 1px; }
@@ -73,7 +73,7 @@
   .free { border: 1px solid #2e7d4f; color: #6fdf9f; background: none; font: inherit; font-weight: 700; font-size: 12px; letter-spacing: 1px; padding: 7px 13px; border-radius: 3px; cursor: pointer; display: inline-block; }
   .free:hover { border-color: #6fdf9f; }
   .bundle { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; background: linear-gradient(135deg, #14203c, #0d1428); border: 1px solid #7a5a20; border-radius: 6px; padding: 18px 20px; margin: 18px 0 6px; }
-  .bundle img { width: 280px; max-width: 100%; border-radius: 4px; }
+  .bundle img { width: 280px; max-width: 100%; border-radius: 4px; background: radial-gradient(circle at 50% 42%, #33507e 0%, #172c4e 68%, #0a1c34 100%); }
   .bundle .bbody { flex: 1; min-width: 260px; }
   .bundle h2 { color: var(--amber); font-size: 18px; letter-spacing: 2px; margin-bottom: 6px; }
   .bundle p { color: var(--ink-dim); font-size: 12px; margin-bottom: 10px; }
@@ -105,7 +105,7 @@
   <div id="notice"></div>
 
   <div class="bundle">
-    <img src="/shots/print-fa18-hornet.jpg" alt="The complete Hornet Bay fleet as printable models">
+    <img src="/shots/print-fa18-hornet.png" alt="The complete Hornet Bay fleet as printable models">
     <div class="bbody">
       <h2>THE COMPLETE FLEET &mdash; ALL 22 STLS</h2>
       <p>Every fighter, every heavy, every hull: 10 aircraft and 12 vessels in one zip, with printing notes for each. Squadron discount applied &mdash; the lot costs less than half the individual files.</p>
@@ -120,7 +120,7 @@
   <div class="grid" id="grid"></div>
 
   <div class="card" style="margin-top:14px;flex-direction:row;flex-wrap:wrap;align-items:center;gap:16px;padding:14px 18px">
-    <img src="/shots/print-fishing-boat.jpg" alt="Free sample: the fishing boat STL" style="width:180px;border-radius:4px">
+    <img src="/shots/print-fishing-boat.png" alt="Free sample: the fishing boat STL" style="width:180px;border-radius:4px;background:radial-gradient(circle at 50% 42%, #33507e 0%, #172c4e 68%, #0a1c34 100%)">
     <div style="flex:1;min-width:240px">
       <div class="name">FREE SAMPLE &mdash; FISHING BOAT</div>
       <div class="meta">prints 120mm &middot; 1:183 &middot; ZIP 6 KB &middot; no checkout, no email</div>
@@ -159,7 +159,7 @@ const CARDS = [
   "name": "F/A-18 HORNET",
   "cat": "AIRCRAFT",
   "price": 4,
-  "img": "/shots/print-fa18-hornet.jpg",
+  "img": "/shots/print-fa18-hornet.png",
   "meta": "prints 150mm · 1:118 · STL 58 KB",
   "desc": "The mount itself — carrier-capable strike fighter, gear up, ready for the cat.",
   "zip": "fa18-hornet.zip"
@@ -169,7 +169,7 @@ const CARDS = [
   "name": "F-16 FIGHTING FALCON",
   "cat": "AIRCRAFT",
   "price": 4,
-  "img": "/shots/print-f16-falcon.jpg",
+  "img": "/shots/print-f16-falcon.png",
   "meta": "prints 150mm · 1:110 · STL 50 KB",
   "desc": "The land-based hot-rod. No tailhook — the boat said no.",
   "zip": "f16-falcon.zip"
@@ -179,7 +179,7 @@ const CARDS = [
   "name": "MIG-29 FULCRUM",
   "cat": "AIRCRAFT",
   "price": 4,
-  "img": "/shots/print-mig29-fulcrum.jpg",
+  "img": "/shots/print-mig29-fulcrum.png",
   "meta": "prints 150mm · 1:143 · STL 42 KB",
   "desc": "The bogey of choice over the Bay. Twin tails, red stars, bad intentions.",
   "zip": "mig29-fulcrum.zip"
@@ -189,7 +189,7 @@ const CARDS = [
   "name": "AIR FORCE ONE (VC-25A)",
   "cat": "AIRCRAFT",
   "price": 6,
-  "img": "/shots/print-vc25a-air-force-one.jpg",
+  "img": "/shots/print-vc25a-air-force-one.png",
   "meta": "prints 200mm · 1:403 · STL 32 KB",
   "desc": "The 1994 presidential 747-200B. Mind the paint. She has an escort for a reason.",
   "zip": "vc25a-air-force-one.zip"
@@ -199,7 +199,7 @@ const CARDS = [
   "name": "ALLIED AIRLINES 747-400",
   "cat": "AIRCRAFT",
   "price": 6,
-  "img": "/shots/print-b747-400-allied.jpg",
+  "img": "/shots/print-b747-400-allied.png",
   "meta": "prints 200mm · 1:403 · STL 29 KB",
   "desc": "388 souls aboard. The Queen of the SFO heavies — check your fire.",
   "zip": "b747-400-allied.zip"
@@ -209,7 +209,7 @@ const CARDS = [
   "name": "LIBERTY AIR 737-400",
   "cat": "AIRCRAFT",
   "price": 5,
-  "img": "/shots/print-b737-400-liberty.jpg",
+  "img": "/shots/print-b737-400-liberty.png",
   "meta": "prints 180mm · 1:224 · STL 20 KB",
   "desc": "Polished-silver shuttle, 146 souls. The Bay commuter.",
   "zip": "b737-400-liberty.zip"
@@ -219,7 +219,7 @@ const CARDS = [
   "name": "PACIFIC EMPRESS DC-10",
   "cat": "AIRCRAFT",
   "price": 6,
-  "img": "/shots/print-dc10-pacific-empress.jpg",
+  "img": "/shots/print-dc10-pacific-empress.png",
   "meta": "prints 200mm · 1:330 · STL 28 KB",
   "desc": "Trijet heavy, 268 souls. The defector flew one of these in.",
   "zip": "dc10-pacific-empress.zip"
@@ -229,7 +229,7 @@ const CARDS = [
   "name": "CASCADE AIR MD-90",
   "cat": "AIRCRAFT",
   "price": 5,
-  "img": "/shots/print-md90-cascade.jpg",
+  "img": "/shots/print-md90-cascade.png",
   "meta": "prints 180mm · 1:303 · STL 22 KB",
   "desc": "T-tail Mad Dog with rear twins, 158 souls.",
   "zip": "md90-cascade.zip"
@@ -239,7 +239,7 @@ const CARDS = [
   "name": "BOEING 707 INTERCONTINENTAL",
   "cat": "AIRCRAFT",
   "price": 5,
-  "img": "/shots/print-b707-intercontinental.jpg",
+  "img": "/shots/print-b707-intercontinental.png",
   "meta": "prints 180mm · 1:289 · STL 15 KB",
   "desc": "The classic long-hauler — still working the ident runs out of SFO.",
   "zip": "b707-intercontinental.zip"
@@ -249,7 +249,7 @@ const CARDS = [
   "name": "CRUISE MISSILE",
   "cat": "AIRCRAFT",
   "price": 3,
-  "img": "/shots/print-cruise-missile.jpg",
+  "img": "/shots/print-cruise-missile.png",
   "meta": "prints 120mm · 1:57 · STL 5 KB",
   "desc": "The Moffett bandit — low, fast, and not here to sightsee. Prints in one piece.",
   "zip": "cruise-missile.zip"
@@ -259,7 +259,7 @@ const CARDS = [
   "name": "USS ENTERPRISE (CVN-65)",
   "cat": "SHIPS",
   "price": 8,
-  "img": "/shots/print-uss-enterprise-cvn65.jpg",
+  "img": "/shots/print-uss-enterprise-cvn65.png",
   "meta": "prints 250mm · 1:1384 · STL 46 KB",
   "desc": "The Big E — your home plate. Angled deck, island, the works.",
   "zip": "uss-enterprise-cvn65.zip"
@@ -269,7 +269,7 @@ const CARDS = [
   "name": "GUIDED-MISSILE CRUISER",
   "cat": "SHIPS",
   "price": 6,
-  "img": "/shots/print-guided-missile-cruiser.jpg",
+  "img": "/shots/print-guided-missile-cruiser.png",
   "meta": "prints 220mm · 1:786 · STL 14 KB",
   "desc": "The picket ahead of the Big E. Turrets fore, helo deck aft.",
   "zip": "guided-missile-cruiser.zip"
@@ -279,7 +279,7 @@ const CARDS = [
   "name": "DESTROYER",
   "cat": "SHIPS",
   "price": 6,
-  "img": "/shots/print-destroyer.jpg",
+  "img": "/shots/print-destroyer.png",
   "meta": "prints 220mm · 1:682 · STL 10 KB",
   "desc": "Beam escort, port and starboard stations. Greyhound of the group.",
   "zip": "destroyer.zip"
@@ -289,7 +289,7 @@ const CARDS = [
   "name": "FRIGATE",
   "cat": "SHIPS",
   "price": 5,
-  "img": "/shots/print-frigate.jpg",
+  "img": "/shots/print-frigate.png",
   "meta": "prints 200mm · 1:675 · STL 9 KB",
   "desc": "The astern picket, clear of the approach. The small grey roommate.",
   "zip": "frigate.zip"
@@ -299,7 +299,7 @@ const CARDS = [
   "name": "MT PETRO PACIFIC",
   "cat": "SHIPS",
   "price": 7,
-  "img": "/shots/print-mt-petro-pacific.jpg",
+  "img": "/shots/print-mt-petro-pacific.png",
   "meta": "prints 250mm · 1:1440 · STL 8 KB",
   "desc": "360 m of supertanker — the giant of the lane. Barely answers her helm.",
   "zip": "mt-petro-pacific.zip"
@@ -309,7 +309,7 @@ const CARDS = [
   "name": "MS BAY MONARCH",
   "cat": "SHIPS",
   "price": 6,
-  "img": "/shots/print-ms-bay-monarch.jpg",
+  "img": "/shots/print-ms-bay-monarch.png",
   "meta": "prints 230mm · 1:1000 · STL 12 KB",
   "desc": "The cruise liner — stacked white decks and the fastest hull in the lane.",
   "zip": "ms-bay-monarch.zip"
@@ -319,7 +319,7 @@ const CARDS = [
   "name": "MV BAY TRADER",
   "cat": "SHIPS",
   "price": 6,
-  "img": "/shots/print-mv-bay-trader.jpg",
+  "img": "/shots/print-mv-bay-trader.png",
   "meta": "prints 220mm · 1:773 · STL 17 KB",
   "desc": "Container freighter, lane regular, stacked high.",
   "zip": "mv-bay-trader.zip"
@@ -329,7 +329,7 @@ const CARDS = [
   "name": "SHADOW SUB",
   "cat": "SHIPS",
   "price": 5,
-  "img": "/shots/print-shadow-sub.jpg",
+  "img": "/shots/print-shadow-sub.png",
   "meta": "prints 200mm · 1:626 · STL 22 KB",
   "desc": "A submersible aircraft carrier, surfaced. Up to no good in the lane.",
   "zip": "shadow-sub.zip"
@@ -339,7 +339,7 @@ const CARDS = [
   "name": "FISHING BOAT",
   "cat": "SHIPS",
   "price": 3,
-  "img": "/shots/print-fishing-boat.jpg",
+  "img": "/shots/print-fishing-boat.png",
   "meta": "prints 120mm · 1:183 · STL 4 KB",
   "desc": "The 22 m crabber that works the banks outside the Gate.",
   "zip": "fishing-boat.zip"
@@ -349,7 +349,7 @@ const CARDS = [
   "name": "SAILBOAT",
   "cat": "SHIPS",
   "price": 3,
-  "img": "/shots/print-sailboat.jpg",
+  "img": "/shots/print-sailboat.png",
   "meta": "prints 100mm · 1:176 · STL 3 KB",
   "desc": "Weekend sloop, 11 m. Mind your wake.",
   "zip": "sailboat.zip"
@@ -359,7 +359,7 @@ const CARDS = [
   "name": "MOTOR CRUISER",
   "cat": "SHIPS",
   "price": 3,
-  "img": "/shots/print-motor-cruiser.jpg",
+  "img": "/shots/print-motor-cruiser.png",
   "meta": "prints 100mm · 1:110 · STL 2 KB",
   "desc": "11 m cabin cruiser — the other half of the weekend traffic.",
   "zip": "motor-cruiser.zip"
@@ -369,7 +369,7 @@ const CARDS = [
   "name": "RESCUE RAFT",
   "cat": "SHIPS",
   "price": 2,
-  "img": "/shots/print-rescue-raft.jpg",
+  "img": "/shots/print-rescue-raft.png",
   "meta": "prints 80mm · 1:54 · STL 13 KB",
   "desc": "Mission 4's customer. Holds one downed pilot; snacks not included.",
   "zip": "rescue-raft.zip"

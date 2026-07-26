@@ -232,6 +232,7 @@ function buildMenu(mode = 'main') {
   addBtn('B', 'BLOG', '↗', () => window.open('/blog', '_blank'));
   addBtn('S', 'HORNET BAY STORE', '↗', () => window.open('/store', '_blank'));
   addBtn('A', 'ANALYTICS DASHBOARD', '↗', () => window.open('/analytics', '_blank'));
+  addBtn('P', '3D PRINT BAY', '↗', () => window.open('/print', '_blank'));
   addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ mission: 'MISSION DEFAULT', day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
   addBtn('R', 'TOGGLE CLEAR or RAIN WEATHER', `NOW: ${{ mission: 'MISSION DEFAULT', clear: 'CLEAR', rain: 'RAIN' }[G.weatherSel]}`, () => cycleMenuWeather());
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
@@ -242,7 +243,7 @@ function buildMenu(mode = 'main') {
 window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : null;
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : e.code === 'KeyP' ? 'P' : null;
   if (!d) return;
   const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
   // swallow the keypress whole: the button click may change G.state (menu ->

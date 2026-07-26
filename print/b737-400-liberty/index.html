@@ -10,7 +10,7 @@
 <meta property="og:url" content="https://hornetbay.com/print/b737-400-liberty">
 <meta property="og:title" content="LIBERTY AIR 737-400 STL — HORNET BAY 3D Print Bay">
 <meta property="og:description" content="Polished-silver shuttle, 146 souls. The Bay commuter.">
-<meta property="og:image" content="https://hornetbay.com/shots/print-b737-400-liberty-a1.jpg">
+<meta property="og:image" content="https://hornetbay.com/shots/print-b737-400-liberty-a1.png">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@hornetbay">
 <link rel="canonical" href="https://hornetbay.com/print/b737-400-liberty">
@@ -20,7 +20,7 @@
  "@type": "Product",
  "name": "LIBERTY AIR 737-400 \u2014 3D printable STL",
  "description": "Polished-silver shuttle, 146 souls. The Bay commuter.",
- "image": "https://hornetbay.com/shots/print-b737-400-liberty-a1.jpg",
+ "image": "https://hornetbay.com/shots/print-b737-400-liberty-a1.png",
  "brand": {
   "@type": "Brand",
   "name": "Hornet Bay"
@@ -72,9 +72,9 @@
   .cols { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 1fr); gap: 22px; }
   @media (max-width: 900px) { .cols { grid-template-columns: 1fr; } }
   .viewer { background: var(--card); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
-  .viewer img#main { width: 100%; display: block; aspect-ratio: 4/3; object-fit: cover; background: #0a1c34; }
+  .viewer img#main { width: 100%; display: block; aspect-ratio: 4/3; object-fit: contain; background: radial-gradient(circle at 50% 42%, #33507e 0%, #172c4e 68%, #0a1c34 100%); }
   .thumbs { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 8px; }
-  .thumbs img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; opacity: .65; }
+  .thumbs img { width: 100%; aspect-ratio: 4/3; object-fit: contain; border: 1px solid var(--line); border-radius: 3px; cursor: pointer; opacity: .65; background: radial-gradient(circle at 50% 42%, #33507e 0%, #172c4e 68%, #0a1c34 100%); }
   .thumbs img.on, .thumbs img:hover { opacity: 1; border-color: var(--amber); }
   .panel { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 18px 20px; align-self: start; position: sticky; top: 18px; }
   h1 { color: #fff; font-size: 22px; letter-spacing: 2px; margin-bottom: 4px; }
@@ -104,7 +104,7 @@
   </header>
   <div class="cols">
     <div class="viewer">
-      <img id="main" src="/shots/print-b737-400-liberty-a1.jpg" alt="LIBERTY AIR 737-400 printable model — view 1 of 6">
+      <img id="main" src="/shots/print-b737-400-liberty-a1.png" alt="LIBERTY AIR 737-400 printable model — view 1 of 6">
       <div class="thumbs" id="thumbs"></div>
     </div>
     <div class="panel">
@@ -137,7 +137,7 @@ const ID = 'b737-400-liberty', NAME = 'LIBERTY AIR 737-400', PRICE = 5;
 const TH = document.getElementById('thumbs'), MAIN = document.getElementById('main');
 for (let i = 1; i <= 6; i++) {
   const im = document.createElement('img');
-  im.src = `/shots/print-${ID}-a${i}.jpg`;
+  im.src = `/shots/print-${ID}-a${i}.png`;
   im.alt = `${NAME} — view ${i} of 6`;
   if (i === 1) im.classList.add('on');
   im.onclick = () => { MAIN.src = im.src; TH.querySelectorAll('img').forEach(x => x.classList.remove('on')); im.classList.add('on'); };
