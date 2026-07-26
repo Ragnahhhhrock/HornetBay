@@ -180,7 +180,9 @@ function buildMenu(mode = 'main') {
   const addBtn = (num, label, tag, cb) => {
     const b = document.createElement('button');
     b.className = 'mbtn';
-    b.innerHTML = `${num ? `<span class="mnum">${num}</span>` : ''}${label}${tag ? `<span class="tag">${tag}</span>` : ''}`;
+    // main menu: digit keys stay bound but no number badge is shown on the row
+    const showKey = num && !(mode === 'main' && /^\d+$/.test(num));
+    b.innerHTML = `${showKey ? `<span class="mnum">${num}</span>` : ''}${label}${tag ? `<span class="tag">${tag}</span>` : ''}`;
     b.dataset.key = num || '';
     if (cb) b.onclick = () => { G.audio.ensure(); cb(); };
     list.appendChild(b);
@@ -218,9 +220,6 @@ function buildMenu(mode = 'main') {
   if (G._menuResume) addBtn('Q', 'RESUME FLIGHT', 'BACK IN THE COCKPIT', () => resumeFlight());
   addBtn('1', 'DEMO', '', () => startDemo(true));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
-  addBtn('3', 'TRAINING: DEMO OF MANEUVERS', 'SOON', () => G.msg('TRAINING NOT AVAILABLE THIS TOUR', 'info'));
-  addBtn('4', 'TRAINING: PRACTICE MANEUVERS', 'SOON', () => G.msg('TRAINING NOT AVAILABLE THIS TOUR', 'info'));
-  addBtn('5', 'QUALIFICATION: REQUIRED FOR MISSIONS', save.qualified ? 'QUALIFIED' : '', () => startBriefing('qual'));
   addBtn('6', 'SELECTABLE MISSIONS', '', () => buildMenu('missions'));
   addBtn('7', 'NEXT ACTIVE ADVANCED MISSION', '', () => {
     const next = MISSION_ORDER.find(id => !save.done[id]) || MISSION_ORDER[0];
