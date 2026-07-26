@@ -139,6 +139,7 @@ const G = {
   orbit: { yaw: 0, pitch: 0.25, dist: 55, manual: false },
   shakeT: 0, smokeTrail: false,
   xmag: 1.0, towerName: '',
+  timeScale: 1,           // Z cycles 1/2/4/8 — the whole simulation runs faster
   msg(text, kind = 'info') { this.messages.unshift({ text, kind, t: this.time }); if (this.messages.length > 6) this.messages.pop(); },
   radio(text) { this.msg(text, 'radio'); this.audio.radioClick(); },
   addScore(n) { this.score += n; },
@@ -973,6 +974,12 @@ function handleDiscreteInput(dt) {
   }
   // X — straight back to the cockpit from any view, no cycling
   if (I.pressed('KeyX') && (G.view !== 'cockpit' || G.specTarget)) { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
+  // Z — time acceleration: 2x, 4x, 8x, then back to normal
+  if (I.pressed('KeyZ') && (G.state === 'flying' || G.state === 'dead')) {
+    const _ts = [1, 2, 4, 8];
+    G.timeScale = _ts[(_ts.indexOf(G.timeScale) + 1) % _ts.length];
+    G.msg(G.timeScale > 1 ? `TIME ACCEL ${G.timeScale}X` : 'TIME ACCEL OFF', 'info');
+  }
   // J — spectate: ride along with every other aircraft in the area, in turn.
   // airliners, MiGs, the defector, the wingman — everything on the scope.
   if (I.pressed('KeyJ')) {
@@ -1325,7 +1332,7 @@ function frame() {
     // headless warp handled at boot; nothing here
   }
   stepGame(dt);
-  updateCamera(dt);
+  updateCamera(dt * ((G.state === 'flying' || G.state === 'dead') ? G.timeScale : 1));
   renderer.render(scene, camera);
   G.input.postUpdate();
   if (qsTimer > 0) {
@@ -1448,6 +1455,9 @@ function stepGame(dt) {
     G.fx.update(dt);
     hud.draw(G, dt);
   } else if (G.state === 'flying' || G.state === 'dead') {
+    // time acceleration: the flying world steps G.timeScale times per frame
+    // (discrete input already ran once at the top of stepGame)
+    for (let _sub = 0, _subs = (G.timeScale > 1 ? G.timeScale : 1); _sub < _subs; _sub++) {
     G.time += dt;
     G.shakeT = Math.max(0, G.shakeT - dt * 1.3);
     const P = G.player;
@@ -1504,7 +1514,8 @@ function stepGame(dt) {
     updateRadarContacts();
     // audio — once the pilot is out, the jet's engine stays silent for good
     G.audio.updateFlight(P.ejected ? 0 : P.throttle, !P.ejected && P.ab, P.ejected ? 0 : P.speed);
-    hud.draw(G, dt);
+    if (_sub === _subs - 1) hud.draw(G, dt);
+    }
   } else if (G.state === 'paused') {
     hud.draw(G, 0);
   }

@@ -67,7 +67,7 @@ export class HUD {
       this._messages(c, G, s);
       const slabel = 'SPECTATE — ' + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
-      c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
+      c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
     } else if (G.view === 'cockpit') {
       this._hudGlass(c, st);
       c.save();
@@ -94,7 +94,7 @@ export class HUD {
         : G.view === 'orbit' ? 'EXTERNAL VIEW'
         : G.view === 'cockpitoff' ? 'COCKPIT OFF' : 'CHASE VIEW';
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
-      c.textAlign = 'center'; c.fillText(`${vlabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
+      c.textAlign = 'center'; c.fillText(`${vlabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105); c.textAlign = 'left';
     }
     this._mouseStick(c, G, s);
     if (G.mapview) G.mapview.draw(c, w, h, G);   // live map rides above the HUD
@@ -529,7 +529,7 @@ export class HUD {
     const rows = [
       [`${fmtN(alt)} FT`, GREEN], [`${Math.round(sp).toString().padStart(3, '0')} KTS`, GREEN],
       [`${Math.round((0.07 + 0.93 * P.throttle) * 100)}% THRST${P.ab ? ' AB' : ''}`, GREEN],
-      [`${(G.xmag || 1).toFixed(1)} XMAG`, GREEN], [`${G.radarRangeNM} MI RNG`, GREEN],
+      [`${(G.xmag || 1).toFixed(1)} XMAG${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, GREEN], [`${G.radarRangeNM} MI RNG`, GREEN],
       [`DMG ${Math.round(P.damage)}%`, P.damage > 50 ? RED : GREEN],
       [`CHF ${P.stores.chaff} FLR ${P.stores.flares}`, GREEN],
     ];
