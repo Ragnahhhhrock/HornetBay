@@ -1151,9 +1151,9 @@ function handleDiscreteInput(dt) {
   }
   // X — straight back to the cockpit from any view, no cycling
   if (I.pressed('KeyX') && (G.view !== 'cockpit' || G.specTarget)) { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
-  // Z — time acceleration: 2x, 4x, 8x, then back to normal
+  // Z — time acceleration: 2x, 4x, 8x, 16x, 32x, then back to normal
   if (I.pressed('KeyZ') && (G.state === 'flying' || G.state === 'dead')) {
-    const _ts = [1, 2, 4, 8];
+    const _ts = [1, 2, 4, 8, 16, 32];
     G.timeScale = _ts[(_ts.indexOf(G.timeScale) + 1) % _ts.length];
     G.msg(G.timeScale > 1 ? `TIME ACCEL ${G.timeScale}X` : 'TIME ACCEL OFF', 'info');
   }
@@ -1636,9 +1636,10 @@ function frame() {
 // spectate audio: what engine does the ridden contact have?
 function specSoundKind(s) {
   if (s.kind === 'heli') return 'prop';         // rotor whirr (checked first — helos carry a len for the camera)
-  const ty = s.type || '';
+  const ty = s.type || (s.def && s.def.type) || '';   // air-wing frames keep it on .def
   if (/^(e2c|c2|p3)$/.test(ty)) return 'prop';
-  if (s.kind === 'airliner' || /^(b747|b744|b737|dc10|md90|b707|cruise)$/.test(ty)) return 'turbofan';
+  // airliners and the S-3 (twin TF34s) sing the turbofan whine
+  if (s.kind === 'airliner' || /^(b747|b744|b737|dc10|md90|b707|cruise|s3)$/.test(ty)) return 'turbofan';
   if (s.cfg) return null;                       // missiles
   if (s.len && !s.model) return null;           // vessels & the carrier (aircraft all carry a model)
   return 'jet';
