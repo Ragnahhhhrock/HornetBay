@@ -16,6 +16,7 @@ import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
 import { HeliOps } from './rotors.js';
 import { P3Patrol } from './patrol.js';
+import { AswOps, EscortWeapons } from './asw.js';
 import { Awacs } from './awacs.js';
 import { Wingman, ORDERS } from './wingman.js';
 import { buildModel } from './models.js';
@@ -508,6 +509,9 @@ function launchMission(def, opts = {}) {
   G.heliOps = new HeliOps(G);   // the cruiser flies its Seahawk, shuttles work the pads
   if (G.p3) G.p3.dispose();
   G.p3 = new P3Patrol(G);       // the Orion holds its oval west of the group
+  if (G.asw) G.asw.dispose();
+  G.asw = new AswOps(G);        // buoys, torps and the prowler west of the Gate
+  G.shipWeapons = new EscortWeapons(G);   // Klakring's SM-1s and Harpoons
   if (G.awacs) G.awacs.dispose();
   G.awacs = new Awacs(G);       // VAW-123 keeps the big picture from on high
   G.airWing = new AirWing(G);   // VA-52 / VS-37 / VRC-30 work the deck cycle
@@ -1722,6 +1726,8 @@ function stepGame(dt) {
     if (G.traffic) G.traffic.update(dt);   // SFO airline movements, 24/7
     if (G.heliOps) G.heliOps.update(dt);
     if (G.p3) G.p3.update(dt);
+    if (G.asw) G.asw.update(dt);        // the sub hunt: buoys, torps, dips
+    if (G.shipWeapons) G.shipWeapons.update(dt);   // the frigate's missiles
     if (G.awacs) G.awacs.update(dt);
     if (G.wingman) {
       const wm = G.wingman;

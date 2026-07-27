@@ -40,6 +40,8 @@ export class P3Patrol {
     if (ai.dead || ai.removeMe) return;
     // spin the props
     for (const p of ai.model.userData.props || []) p.rotation.z += dt * 55;
+    // ASW owns the stick while she works a submarine contact
+    if (G.asw && G.asw.p3Engaged) return;
     if (this.mode === 'hunt') {
       // steer to the next point on the oval
       this.legT = (this.legT ?? 0) + dt * 0.0045;   // ~3.7 min per lap

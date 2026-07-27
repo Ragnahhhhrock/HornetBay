@@ -92,8 +92,9 @@ export class Helicopter {
         this.bank = damp(this.bank, clamp(dh * 1.6, -0.55, 0.55), 3, dt);   // roll into the turn
         const wantSpeed = dist > 400 ? this.cruiseSpeed : clamp(dist * 0.12, 8, this.cruiseSpeed);
         this.speed = damp(this.speed, wantSpeed, 0.6, dt);
-        // hold level altitude; on the final leg glide down toward the landing
-        let ty = t.y ?? this.cruiseAlt;
+        // level flight at cruise altitude — never chase per-waypoint heights;
+        // only the final leg descends, gliding down toward the landing
+        let ty = this.cruiseAlt;
         if (this.target) {
           const gy = this.target.anchor ? this.target.anchor.getPos(_v2).y : (this.target.y ?? 0);
           ty = Math.min(ty, gy + 12 + Math.max(dist - 120, 0) * 0.35);
@@ -107,6 +108,41 @@ export class Helicopter {
         const gh = Math.max(groundHeight(this.pos.x, this.pos.z), 0) + 24;
         if (this.pos.y < gh) this.pos.y = gh;
         if (dist < 120) this.mode = this.target ? 'approach' : 'transit';
+        break;
+      }
+      case 'dip': {
+        // ASW dipping pass: run in at cruise, hover at 18 m over the contact,
+        // winch for six seconds, climb out (ASW owns the target)
+        const t = this.target;
+        if (!t) { this.mode = 'transit'; break; }
+        const dist = Math.hypot(t.x - this.pos.x, t.z - this.pos.z);
+        if (this.dipPhase === undefined) this.dipPhase = 0;
+        if (this.dipPhase === 0) {            // run-in
+          this.speed = damp(this.speed, dist > 800 ? this.cruiseSpeed : clamp(dist * 0.25, 10, 30), 1.5, dt);
+          const wantHdg = Math.atan2(t.x - this.pos.x, -(t.z - this.pos.z));
+          const dh = wrapAngle(wantHdg - this.heading);
+          this.bank = damp(this.bank, clamp(dh * 1.6, -0.55, 0.55), 3, dt);
+          this.heading += clamp(dh, -0.9 * dt, 0.9 * dt);
+          this.pos.x += Math.sin(this.heading) * this.speed * dt;
+          this.pos.z += -Math.cos(this.heading) * this.speed * dt;
+          const ty = dist > 800 ? this.cruiseAlt : 18 + dist * 0.04;
+          this.vy = damp(this.vy, clamp((ty - this.pos.y) * 0.5, -5, 4), 1.5, dt);
+          this.pos.y += this.vy * dt;
+          if (dist < 70) { this.dipPhase = 1; this.dipT = 6; }   // the winch phase pulls her down to 18
+        } else if (this.dipPhase === 1) {     // on station, winch down
+          this.speed = damp(this.speed, 0, 2, dt);
+          this.vy = damp(this.vy, clamp((18 - this.pos.y) * 0.8, -2, 2), 2, dt);
+          this.pos.y += this.vy * dt;
+          this.dipT -= dt;
+          if (this.dipT <= 0) { this.dipPhase = 2; if (G.asw) G.asw.heloDip(this); }
+        } else {                              // climb out and hand back
+          this.vy = damp(this.vy, clamp((this.cruiseAlt - this.pos.y) * 0.6, 0.8, 5), 2, dt);
+          this.pos.y += this.vy * dt;
+          this.speed = damp(this.speed, this.cruiseSpeed * 0.6, 1, dt);
+          this.pos.x += Math.sin(this.heading) * this.speed * dt;
+          this.pos.z += -Math.cos(this.heading) * this.speed * dt;
+          if (this.pos.y >= this.cruiseAlt - 3) { this.dipPhase = undefined; this.mode = 'transit'; }
+        }
         break;
       }
       case 'approach': {
@@ -158,7 +194,9 @@ export class Helicopter {
 
   _sync(dt) {
     this.hover += dt * 1.7;
-    const bob = (this.mode === 'parked' || this.mode === 'spool') ? 0 : Math.sin(this.hover) * 0.25;
+    // hover wobble only in the approach's settle — the climb and the cruise
+    // are rock steady
+    const bob = this.mode === 'approach' ? Math.sin(this.hover) * 0.25 : 0;
     this.model.rotation.set(this.pitchA, Math.PI - this.heading, this.bank, 'YXZ');
     this._bob = bob;
   }
@@ -196,10 +234,10 @@ export class HeliOps {
       this.helis.push(h);
     }
     // the Army's AH-64 Apache — K-MAN holding a continuous orbit over the city
-    const ap = new Helicopter(G.scene, G.world, { type: 'apache', spun: true, hoverAlt: 0, cruiseAlt: 300, cruiseSpeed: 48 });
+    const ap = new Helicopter(G.scene, G.world, { type: 'apache', spun: true, hoverAlt: 0, cruiseAlt: 420, cruiseSpeed: 48 });
     ap.name = 'K-MAN'; ap.task = 'orbit';
     ap._orbit = { cx: 6200, cz: 8500, r: 2600, n: 12, i: 0 };
-    ap.pos.set(ap._orbit.cx + ap._orbit.r, 300, ap._orbit.cz);
+    ap.pos.set(ap._orbit.cx + ap._orbit.r, 420, ap._orbit.cz);
     ap.wp = this._orbitPoint(ap, 1); ap._orbit.i = 1;
     ap.mode = 'transit';
     this.helis.push(ap);
@@ -217,8 +255,8 @@ export class HeliOps {
     const p = sh0.pos;
     const f = sh0.fwd(new THREE.Vector3());
     const mk = (fx, fz, y) => ({ x: p.x + f.x * fx - f.z * fz, y, z: p.z + f.z * fx + f.x * fz });
-    sh.wp = mk(700, 900, 120);
-    sh._legs = [mk(0, 1400, 130), mk(-900, 600, 130), mk(-500, -700, 110)];
+    sh.wp = mk(700, 900, sh.cruiseAlt);
+    sh._legs = [mk(0, 1400, sh.cruiseAlt), mk(-900, 600, sh.cruiseAlt), mk(-500, -700, sh.cruiseAlt)];
     sh.target = { anchor: sh.home };
     sh.mode = 'spool';
   }

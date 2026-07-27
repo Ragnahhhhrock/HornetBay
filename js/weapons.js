@@ -155,6 +155,9 @@ const MISSILE_TYPES = {
   aim54:  { vmax: 1300, accel: 250, turn: 1.7, life: 90, prox: 40, dmg: 160, ir: false, len: 4.0, dia: 0.38 },
   r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false },
   r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true  },
+  // shipboard rounds: Klakring's SM-1 area-defence SAM and the sea-skimming Harpoon
+  sm1:     { vmax: 950,  accel: 320, turn: 3.4, life: 40, prox: 30, dmg: 130, ir: false },
+  harpoon: { vmax: 320,  accel: 70,  turn: 1.1, life: 150, prox: 45, dmg: 120, ir: false, len: 4.6, dia: 0.34 },
 };
 let missileGeo = null, missileMat = null;
 
@@ -189,7 +192,7 @@ export class Missile {
   fwd(out) { return out.copy(this.vel).normalize(); }
   get speed() { return this.vel.length(); }
   get len() { return this.cfg.len || 3.4; }
-  get name() { return ({ aim9: 'AIM-9', aim120: 'AIM-120', aim54: 'AIM-54', r27: 'R-27', r73: 'R-73' })[this.type] || this.type.toUpperCase(); }
+  get name() { return ({ aim9: 'AIM-9', aim120: 'AIM-120', aim54: 'AIM-54', r27: 'R-27', r73: 'R-73', sm1: 'SM-1', harpoon: 'HARPOON' })[this.type] || this.type.toUpperCase(); }
   get removeMe() { return false; }
   update(dt) {
     const G = this.G, cfg = this.cfg;
