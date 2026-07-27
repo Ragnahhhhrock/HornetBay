@@ -1018,6 +1018,11 @@ function updateRadarContacts() {
     c.push({ pos: b.pos, kind: b.kind || 'bandit', identified: b.identified });
   }
   c.push({ pos: G.world.carrier.pos, kind: 'carrier' });
+  // large hulls on the scope: warships, freighters, tankers, container ships,
+  // the cruise liner — yachts and fishing boats are below the radar's notice
+  for (const s of (G.world.ships ? G.world.ships.all : [])) {
+    if ((s.len || 0) >= 100) c.push({ pos: s.pos, kind: 'ship' });
+  }
   for (const m of G.missiles) if (!m.dead && m.target === G.player) c.push({ pos: m.pos, kind: 'missile' });
 }
 
@@ -1507,7 +1512,8 @@ function frame() {
   // lightning struck this frame: flash already painted — now the thunder
   if (G.world.thunderDist) { G.audio.thunder(G.world.thunderDist); G.world.thunderDist = 0; }
   updateCamera(dt * ((G.state === 'flying' || G.state === 'dead') ? G.timeScale : 1));
-  renderer.render(scene, camera);
+  if (!G._skipRender) renderer.render(scene, camera);   // the gallery floor renders its own cells
+  G._skipRender = false;
   G.input.postUpdate();
   if (qsTimer > 0) {
     qsTimer -= rawDt;

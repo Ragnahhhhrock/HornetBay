@@ -617,9 +617,10 @@ export class HUD {
         case 'wingman': c.fillStyle = '#58ff98'; break;    // your wingman: bright green
         case 'missile': c.fillStyle = Math.sin(G.time * 14) > 0 ? RED : '#4a0d05'; break;
         case 'sub': c.fillStyle = '#ff58c8'; break;
+        case 'ship': c.fillStyle = '#8fa8b8'; break;      // large hulls: steel grey
         default: c.fillStyle = WHITE;
       }
-      if (ct.kind === 'carrier' || ct.kind === 'sub') {
+      if (ct.kind === 'carrier' || ct.kind === 'sub' || ct.kind === 'ship') {
         c.beginPath(); c.moveTo(x, y - 4 * s); c.lineTo(x + 4 * s, y + 3 * s); c.lineTo(x - 4 * s, y + 3 * s); c.closePath(); c.fill();
       } else {
         c.fillRect(x - 2 * s, y - 2 * s, 4 * s, 4 * s);

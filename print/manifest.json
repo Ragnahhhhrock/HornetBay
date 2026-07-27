@@ -179,6 +179,70 @@
   }
  },
  {
+  "id": "p3-orion",
+  "name": "P-3 ORION",
+  "real": 35.6,
+  "target": 180,
+  "price": 5,
+  "blurb": "The sub hunter — four turboprops, MAD boom out, 500 feet over the sea lanes.",
+  "file": "p3-orion.stl",
+  "kb": 28,
+  "scale": 225,
+  "dims": {
+   "x": 134.9,
+   "y": 43.9,
+   "z": 180
+  }
+ },
+ {
+  "id": "sh60-seahawk",
+  "name": "SH-60 SEAHAWK",
+  "real": 19.8,
+  "target": 150,
+  "price": 5,
+  "blurb": "The cruiser's rotor — prints on its wheels with the main rotor spread.",
+  "file": "sh60-seahawk.stl",
+  "kb": 23,
+  "scale": 108,
+  "dims": {
+   "x": 133.3,
+   "y": 39.7,
+   "z": 150
+  }
+ },
+ {
+  "id": "e2c-hawkeye",
+  "name": "E-2C HAWKEYE",
+  "real": 24.6,
+  "target": 180,
+  "price": 6,
+  "blurb": "VAW-123 Screwtops — quad tail, four blades a side, and the black corkscrew on the rotodome.",
+  "file": "e2c-hawkeye.stl",
+  "kb": 30,
+  "scale": 149,
+  "dims": {
+   "x": 165.2,
+   "y": 50.4,
+   "z": 180
+  }
+ },
+ {
+  "id": "ah64-apache",
+  "name": "AH-64 APACHE",
+  "real": 17.7,
+  "target": 150,
+  "price": 5,
+  "blurb": "The Army's attack helicopter — tandem cockpit, chin gun, Hellfires on the stubs. K-MAN's mount.",
+  "file": "ah64-apache.stl",
+  "kb": 41,
+  "scale": 109,
+  "dims": {
+   "x": 132.2,
+   "y": 39.2,
+   "z": 150
+  }
+ },
+ {
   "id": "uss-enterprise-cvn65",
   "name": "USS ENTERPRISE (CVN-65)",
   "real": 342,

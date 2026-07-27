@@ -89,6 +89,15 @@ export class MapView {
     if (car && car.group.visible) this._ship(c, mx(car.pos.x), my(car.pos.z), car.heading, '#f2f2f2');
     const sub = G.world.enemySub;
     if (sub && sub.group.visible) this._ship(c, mx(sub.pos.x), my(sub.pos.z), sub.heading, '#ff4a3a');
+    // every large hull with her name: warships, freighters, tankers, the
+    // container ships and the cruise liner. small craft are not charted.
+    c.font = 'bold 8px "Courier New", monospace';
+    for (const s of (G.world.ships ? G.world.ships.all : [])) {
+      if ((s.len || 0) < 100 || !s.pos) continue;
+      const sx = mx(s.pos.x), sy = my(s.pos.z);
+      this._ship(c, sx, sy, s.heading || 0, '#9fb2bd');
+      if (s.name) { c.fillStyle = '#9fb2bd'; c.fillText(s.name, sx + 7, sy - 5); }
+    }
     // every aircraft in the area with its callsign: hostiles red, friendlies
     // green, patrol/awacs cyan, civil traffic white — wingman, P-3, E-2C and
     // the airliners all live in G.bandits

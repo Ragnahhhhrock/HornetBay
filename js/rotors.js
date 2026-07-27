@@ -188,6 +188,19 @@ export class HeliOps {
       h.name = 'SHUTTLE ' + (i === 0 ? 'ONE' : 'TWO');
       this.helis.push(h);
     }
+    // the Army's AH-64 Apache — K-MAN holding a continuous orbit over the city
+    const ap = new Helicopter(G.scene, G.world, { type: 'apache', spun: true, hoverAlt: 0, cruiseAlt: 300, cruiseSpeed: 48 });
+    ap.name = 'K-MAN'; ap.task = 'orbit';
+    ap._orbit = { cx: 6200, cz: 8500, r: 2600, n: 12, i: 0 };
+    ap.pos.set(ap._orbit.cx + ap._orbit.r, 300, ap._orbit.cz);
+    ap.wp = this._orbitPoint(ap, 1); ap._orbit.i = 1;
+    ap.mode = 'transit';
+    this.helis.push(ap);
+  }
+
+  _orbitPoint(h, i) {
+    const o = h._orbit, a = (i / o.n) * Math.PI * 2;
+    return { x: o.cx + Math.cos(a) * o.r, y: h.cruiseAlt, z: o.cz + Math.sin(a) * o.r };
   }
 
   _circuit(sh) {
@@ -238,6 +251,10 @@ export class HeliOps {
       } else if (h.task === 'shuttle' && h.mode === 'transit') {
         const d = Math.hypot(h.wp.x - h.pos.x, h.wp.z - h.pos.z);
         if (d < 200) h.mode = 'approach';
+      } else if (h.task === 'orbit' && h.mode === 'transit') {
+        // K-MAN's wheel over the city: walk the orbit vertices forever
+        const d = Math.hypot(h.wp.x - h.pos.x, h.wp.z - h.pos.z);
+        if (d < 260) { h._orbit.i = (h._orbit.i + 1) % h._orbit.n; h.wp = this._orbitPoint(h, h._orbit.i); }
       }
       if (h.mode === 'parked' && h._dest) { h.pad = h._dest; h._dest = null; h.wait = rand(18, 45); }
     }

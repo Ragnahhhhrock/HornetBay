@@ -773,6 +773,76 @@ export function buildSeahawk() {
   return g;
 }
 
+// ---------------------------------------------------------------- AH-64 APACHE
+export function buildApache() {
+  const g = new THREE.Group();
+  const C = 0x515a30, CD = 0x3c4423, GL = 0x141c22;   // army olive drab
+  // narrow fuselage: nose, tandem stepped cockpit, engine deck
+  const nose = cone(0.85, 2.2, C, 8); nose.scale.set(1.0, 0.85, 1); nose.position.set(0, -0.1, 4.6); g.add(nose);
+  const body = box(1.7, 1.5, 5.4, C); body.position.set(0, 0.05, 1.3); g.add(body);
+  // sensor turret ball on the nose + the 30mm chain gun under the chin
+  const turret = new THREE.Mesh(new THREE.SphereGeometry(0.42, 8, 6), M(GL)); turret.position.set(0, 0.35, 5.2); g.add(turret);
+  const gun = cyl(0.09, 0.09, 1.3, 0x1c2024, 6); gun.position.set(0, -0.85, 4.1); gun.rotation.x = Math.PI / 2 + 0.12; g.add(gun);
+  const gunMt = box(0.5, 0.5, 0.8, CD); gunMt.position.set(0, -0.7, 3.6); g.add(gunMt);
+  // tandem glass: gunner front low, pilot back high — the Apache step
+  const gF = box(1.15, 0.7, 1.3, GL); gF.position.set(0, 0.7, 3.1); gF.rotation.x = 0.22; g.add(gF);
+  const gR = box(1.2, 0.8, 1.4, GL); gR.position.set(0, 1.05, 1.6); gR.rotation.x = 0.18; g.add(gR);
+  // engine nacelles on the fuselage shoulders, either side of the mast
+  for (const s of [1, -1]) {
+    const nac = box(0.75, 0.75, 2.2, CD); nac.position.set(s * 1.2, 1.15, 0.4); g.add(nac);
+    const exh = cyl(0.24, 0.3, 0.7, 0x22262a, 6); exh.position.set(s * 1.62, 1.2, -0.6); exh.rotation.z = s * Math.PI / 2; g.add(exh);
+  }
+  // stub wings with pylons: hellfire rack outboard, rocket pod inboard
+  for (const s of [1, -1]) {
+    const wing = box(2.6, 0.16, 1.1, C); wing.position.set(s * 2.1, 0.35, 0.4); g.add(wing);
+    const rack = box(0.5, 0.62, 1.5, 0x2c3320); rack.position.set(s * 3.2, -0.05, 0.4); g.add(rack);
+    for (let i = 0; i < 4; i++) { const msl = cyl(0.09, 0.09, 1.6, 0x22262b, 5); msl.position.set(s * 3.2 + (i % 2) * 0.22 - 0.11, -0.42 + Math.floor(i / 2) * 0.22, 0.4); msl.rotation.x = Math.PI / 2; g.add(msl); }
+    const pod = cyl(0.28, 0.28, 1.7, CD, 8); pod.position.set(s * 1.3, -0.35, 0.4); pod.rotation.x = Math.PI / 2; g.add(pod);
+  }
+  // tail boom + fin, tail rotor on the port face
+  const boom = cyl(0.55, 0.28, 6.6, C, 8); boom.position.set(0, 0.5, -4.9); g.add(boom);
+  const stab = box(2.8, 0.13, 0.85, C); stab.position.set(0, 0.6, -6.4); g.add(stab);
+  const fin = box(0.16, 1.8, 1.2, C); fin.position.set(0, 1.3, -7.7); fin.rotation.x = -0.45; g.add(fin);
+  const ventral = box(0.14, 0.9, 1.3, C); ventral.position.set(0, -0.55, -7.3); ventral.rotation.x = 0.3; g.add(ventral);
+  const tr = new THREE.Group(); tr.position.set(-0.24, 1.45, -7.75);
+  for (let i = 0; i < 4; i++) {
+    const b = box(0.09, 1.1, 0.15, 0x1c2024); b.position.set(0, 0.55, 0);
+    const holder = new THREE.Group(); holder.rotation.z = i * Math.PI / 2;
+    holder.add(b); tr.add(holder);
+  }
+  tr.rotation.y = Math.PI / 2;
+  g.add(tr);
+  // main rotor mast + 4 broad blades, no painted tips (army)
+  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.9, 6), M(CD));
+  mast.position.set(0, 1.7, 0.3); g.add(mast);
+  const hub = new THREE.Group(); hub.position.set(0, 2.2, 0.3);
+  for (let i = 0; i < 4; i++) {
+    const holder = new THREE.Group(); holder.rotation.y = i * Math.PI / 2 + 0.2;
+    const b = box(7.2, 0.07, 0.5, 0x22262b); b.position.x = 3.7;
+    holder.add(b); hub.add(holder);
+  }
+  g.add(hub);
+  const disc = new THREE.Mesh(new THREE.CircleGeometry(7.6, 24),
+    new THREE.MeshBasicMaterial({ color: 0x30363c, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false }));
+  disc.rotation.x = -Math.PI / 2; disc.position.set(0, 2.22, 0.3); disc.visible = false; g.add(disc);
+  // tail-dragger gear: two mains + tailwheel
+  for (const s of [1, -1]) {
+    const strut = box(0.13, 0.8, 0.13, CD); strut.position.set(s * 1.1, -0.95, 0.9); g.add(strut);
+    const wh = cyl(0.32, 0.32, 0.2, 0x14171a, 8); wh.rotation.z = Math.PI / 2; wh.position.set(s * 1.1, -1.4, 0.9); g.add(wh);
+  }
+  const tw = cyl(0.2, 0.2, 0.16, 0x14171a, 8); tw.rotation.z = Math.PI / 2; tw.position.set(0, -0.55, -6.8); g.add(tw);
+  // U.S. ARMY titles on the boom
+  const tex = _nameTex('U.S. ARMY', 0x151a10);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 0.32),
+      new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.6, 0.55, -3.9); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, rotor: hub, tailRotor: tr, rotorDisc: disc, type: 'apache' };
+  addNavLights(g, 1.4, -7.7, 1.3);
+  return g;
+}
+
 // ---------------- E-2C Hawkeye ----------------
 export function buildE2C() {
   const g = new THREE.Group();
@@ -879,6 +949,7 @@ export function buildModel(type, livery = 0) {
     case 'f14': return buildF14();
     case 'mig29': return buildMiG29();
     case 'seahawk': return buildSeahawk();
+    case 'apache': return buildApache();
     case 'p3': return buildP3();
     case 'e2c': return buildE2C();
     case 'b747': return build747();
