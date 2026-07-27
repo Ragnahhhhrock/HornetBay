@@ -849,6 +849,8 @@ export function buildE2C() {
   const W = 0xd6dce2, GY = 0xaeb6be, DK = 0x232e38;
   const fus = cyl(1.65, 1.45, 15.5, W, 12); g.add(fus);
   const nose = cone(1.65, 3.4, W, 10); nose.position.set(0, 0, 9.3); g.add(nose);
+  // aft fuselage section: carries the quad tail, tapers to the stinger
+  const aft = cone(1.45, 5.2, W, 10); aft.rotation.x = Math.PI; aft.position.set(0, 0, -9.95); g.add(aft);
   const ck = cyl(1.68, 1.68, 1.5, DK, 10); ck.scale.set(1, 0.55, 1); ck.position.set(0, 0.55, 7.6); g.add(ck);
   // high wing + two turboprops, four blades each
   const wG = wingGeo([[1.9, 2.6], [1.9, -2.4], [12.3, -3.0], [12.3, -1.6]], 0.35);
