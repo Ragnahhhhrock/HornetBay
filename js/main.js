@@ -323,7 +323,10 @@ function launchWithZoom(def) {
   launchMission(def, { zoom: true });
 }
 // ---- F-14 Tomcat unlock (squadron purchase) --------------------------------
-const TOMCAT_HASH = '8fed8dde9c9e5e971ab14782a5baf076ab2c654023a5adb1b164cc74e4b98f77';
+const TOMCAT_HASHES = new Set([
+  '8fed8dde9c9e5e971ab14782a5baf076ab2c654023a5adb1b164cc74e4b98f77',   // squadron purchase code
+  '0f4a124e2e2c3c4da4ea5f3999cce2b074840cf3a7eff4d53ec6a4031712b2e9',   // 'maverick'
+]);
 async function sha256hex(s) {
   const d = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s.trim().toUpperCase()));
   return [...new Uint8Array(d)].map(b => b.toString(16).padStart(2, '0')).join('');
@@ -340,7 +343,7 @@ function closeTomcatUnlock() { document.getElementById('tomcat-unlock').classLis
 async function submitTomcatCode() {
   const inp = document.getElementById('tc-input');
   if (!inp.value.trim()) return;
-  if ((await sha256hex(inp.value)) !== TOMCAT_HASH) {
+  if (!TOMCAT_HASHES.has(await sha256hex(inp.value))) {
     document.getElementById('tc-error').classList.remove('hidden');
     return;
   }
@@ -358,7 +361,7 @@ async function submitTomcatCode() {
   });
 }
 // owner shortcut: ?tomcat=CODE unlocks without the overlay
-{ const tcc = new URLSearchParams(location.search).get('tomcat'); if (tcc) sha256hex(tcc).then(h => { if (h === TOMCAT_HASH) { save.tomcat = true; persist(); } }); }
+{ const tcc = new URLSearchParams(location.search).get('tomcat'); if (tcc) sha256hex(tcc).then(h => { if (TOMCAT_HASHES.has(h)) { save.tomcat = true; persist(); } }); }
 const tomcatOverlayOpen = () => !document.getElementById('tomcat-unlock').classList.contains('hidden');
 
 // ---- wingman orders card (comma key, like the classic comms menu) ----
