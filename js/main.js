@@ -181,8 +181,19 @@ G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION
 // ---------------- menu (original 1-8 structure) ----------------
 const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7'];
 let menuMode = 'main';
+// every menu screen carries a URL stub (#missions, #gallery, #m1 …) so any
+// item is a shareable link. setHash stays silent until the boot router has
+// read the incoming hash — otherwise showMenu() would clobber the link you
+// arrived on before routeHash() gets to see it
+let hashRouting = false;
+function setHash(h) {
+  if (!hashRouting) return;
+  const url = h ? '#' + h : location.pathname + location.search;
+  if (location.hash !== '#' + h) history.replaceState(null, '', url);
+}
 function buildMenu(mode = 'main') {
   menuMode = mode;
+  setHash(mode === 'missions' ? 'missions' : mode === 'log' ? 'log' : 'menu');
   const list = $('menu-list');
   list.innerHTML = '';
   const addBtn = (num, label, tag, cb) => {
@@ -231,6 +242,7 @@ function buildMenu(mode = 'main') {
   addBtn('6', 'MISSIONS', '', () => buildMenu('missions'));
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
   addBtn('9', 'GALLERY', '', () => {
+    setHash('gallery');
     $('menu').classList.add('hidden');
     stopDemo();
     G.gallery.enter();
@@ -305,6 +317,7 @@ let pendingMission = null;
 function startBriefing(id) {
   const def = MISSIONS.find(m => m.id === id);
   pendingMission = def;
+  setHash(id);
   $('menu').classList.add('hidden');
   stopDemo();
   G.intro.briefing(def, () => enterPlaneSelect(def));
@@ -316,6 +329,7 @@ function enterPlaneSelect(def) {
   G.intro.planeSelect();
 }
 function startFreeFlightMap() {
+  setHash('freeflight');
   $('menu').classList.add('hidden');
   stopDemo();
   G.intro.mapSelect();
@@ -443,6 +457,7 @@ $('debrief-next').onclick = () => { $('debrief').classList.add('hidden'); G.stat
 G._manualPaused = false;
 G.openManual = () => {
   if (G.state === 'flying') { togglePause(); G._manualPaused = true; }
+  setHash('manual');
   $('controls').classList.remove('hidden');
   $('pause').classList.add('hidden');          // manual reads above the PAUSED card
 };
@@ -1783,6 +1798,27 @@ function syncNavLights(dt) {
   if (gm && gm.userData.nav) for (const sp of gm.userData.nav) set(sp);
 }
 
+// ---------------- URL stubs: every menu item is a link ----------------
+// #menu #freeflight #missions #m1..#m7 #log #gallery #manual #resume
+// #day #night #clear #clouds #rain #storm #blog #store #analytics #print
+function routeHash() {
+  const h = location.hash.replace(/^#\/?/, '').toLowerCase();
+  if (!h) return;
+  const atMenu = G.state === 'menu';
+  if (h === 'menu') { if (!atMenu) quitToMenu(); else buildMenu('main'); return; }
+  if (!atMenu) return;   // mid-sortie: don't yank the controls for a link click
+  if (h === 'freeflight') startFreeFlightMap();
+  else if (h === 'missions') buildMenu('missions');
+  else if (/^m[1-7]$/.test(h)) startBriefing(h);
+  else if (h === 'log') buildMenu('log');
+  else if (h === 'gallery') { setHash('gallery'); $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter(); }
+  else if (h === 'manual') G.openManual();
+  else if (h === 'resume') { if (G._menuResume) resumeFlight(); }
+  else if (h === 'day' || h === 'night') { G.dayNightSel = h; save.dayNight = h; persist(); applyMenuTimeOfDay(); buildMenu('main'); }
+  else if (['clear', 'clouds', 'rain', 'storm'].includes(h)) { G.weatherSel = h; save.weather = h; persist(); applyMenuWeather(); buildMenu('main'); }
+  else if (['blog', 'store', 'analytics', 'print'].includes(h)) location.href = '/' + h;
+}
+
 // ---------------- URL params for direct launch (testing) ----------------
 const params = new URLSearchParams(location.search);
 FIXDT = parseFloat(params.get('fixdt') || '0');
@@ -1854,6 +1890,13 @@ else if (auto) {
     G.player.model.scale.setScalar(4);
   }
 }
+// arm the URL stubs: from here on the address bar tracks the menu, an
+// incoming #link routes now (test ?auto hooks win over it), and live edits
+// of the hash route on hashchange
+hashRouting = true;
+if (!auto) routeHash();
+else setHash('menu');
+window.addEventListener('hashchange', routeHash);
 // ---- tutorial caption tracks: big step cards burned into rec= footage ----
 // timed against scriptT (the warp clock) so captions always match the flying
 const CAPTIONS = {
