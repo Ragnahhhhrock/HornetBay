@@ -185,6 +185,12 @@ export class Missile {
     // orient
     this.mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), this.dir);
   }
+  // spectate adapter: the J/O camera rides anything with pos/fwd/speed/len
+  fwd(out) { return out.copy(this.vel).normalize(); }
+  get speed() { return this.vel.length(); }
+  get len() { return this.cfg.len || 3.4; }
+  get name() { return ({ aim9: 'AIM-9', aim120: 'AIM-120', aim54: 'AIM-54', r27: 'R-27', r73: 'R-73' })[this.type] || this.type.toUpperCase(); }
+  get removeMe() { return false; }
   update(dt) {
     const G = this.G, cfg = this.cfg;
     this.life -= dt;

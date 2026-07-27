@@ -89,11 +89,28 @@ export class MapView {
     if (car && car.group.visible) this._ship(c, mx(car.pos.x), my(car.pos.z), car.heading, '#f2f2f2');
     const sub = G.world.enemySub;
     if (sub && sub.group.visible) this._ship(c, mx(sub.pos.x), my(sub.pos.z), sub.heading, '#ff4a3a');
-    // bandits as red dots
-    c.fillStyle = '#ff4a3a';
+    // every aircraft in the area with its callsign: hostiles red, friendlies
+    // green, patrol/awacs cyan, civil traffic white — wingman, P-3, E-2C and
+    // the airliners all live in G.bandits
+    c.font = 'bold 9px "Courier New", monospace';
+    c.textAlign = 'left';
     for (const b of G.bandits || []) {
       if (!b.alive || !b.pos) continue;
-      c.beginPath(); c.arc(mx(b.pos.x), my(b.pos.z), 3, 0, Math.PI * 2); c.fill();
+      const col = b.hostile ? '#ff4a3a'
+        : (b.kind === 'patrol' || b.kind === 'awacs') ? '#58d8ff'
+        : b.kind === 'wingman' ? '#58ff98' : '#e8ecf0';
+      const bx2 = mx(b.pos.x), by2 = my(b.pos.z);
+      c.fillStyle = col;
+      c.beginPath(); c.arc(bx2, by2, 3, 0, Math.PI * 2); c.fill();
+      c.fillText(b.name || String(b.type || 'CONTACT').toUpperCase(), bx2 + 6, by2 + 3);
+    }
+    // helicopters: square rotor markers with callsigns
+    for (const h2 of (G.heliOps ? G.heliOps.helis : [])) {
+      if (!h2.pos) continue;
+      const hx = mx(h2.pos.x), hy = my(h2.pos.z);
+      c.fillStyle = '#58ff98';
+      c.fillRect(hx - 2.5, hy - 2.5, 5, 5);
+      c.fillText(h2.name || 'HELO', hx + 6, hy + 3);
     }
     // waypoint as a green diamond
     if (G.waypoint) {

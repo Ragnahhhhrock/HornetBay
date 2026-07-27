@@ -866,7 +866,7 @@ function updateCamera(dt) {
     if (I.down('BracketLeft') || I.down('NumpadSubtract') || I.down('Numpad3')) o.dist = clamp(o.dist * (1 + cdt * 1.4), 0.35, 5);    // [ / KP- : back off
     if (I.pressed('Digit0') || I.pressed('Numpad0')) { o.yaw = 0; o.pitch = 0.1; o.dist = 1; }
     const sf = spec.fwd(_v2);
-    const big = spec.len ? Math.max(2, spec.len / 45) : /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
+    const big = spec.cfg ? 0.85 : spec.len ? Math.max(2, spec.len / 45) : /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
     const base = (24 + (spec.speed || 120) * 0.03) * big * o.dist;
     // orbit offset in the target's frame: start behind it, swing by yaw, lift by pitch
     const bx = -sf.x, bz = -sf.z;
@@ -1144,6 +1144,21 @@ function handleDiscreteInput(dt) {
       G.specTarget = n === others.length ? null : others[n];
       if (!G.specTarget) G.specOrbit = null;   // back in your own cockpit — orbit resets
       G.msg(G.specTarget ? 'SPECTATING \u2014 ' + (G.specTarget.name || G.specTarget.vtype || G.specTarget.type || 'CONTACT').toUpperCase() + '  (J FOR NEXT)' : 'BACK IN YOUR OWN COCKPIT', 'info');
+    }
+  }
+  // O — missile view: ride the newest round in flight, with the full spectate
+  // camera (SHIFT+arrows / right-drag pan, wheel / [ ] zoom, 0 reframe). O
+  // again cycles the rounds in the air, then hands you back your cockpit.
+  if (I.pressed('KeyO')) {
+    const live = (G.missiles || []).filter(m => !m.dead);
+    if (!live.length) {
+      if (G.specTarget && G.specTarget.cfg) { G.specTarget = null; G.specOrbit = null; G.msg('BACK IN YOUR OWN COCKPIT', 'info'); }
+      else G.msg('NO MISSILES IN FLIGHT', 'info');
+    } else {
+      const cur = live.indexOf(G.specTarget);
+      const n = (cur + 1) % (live.length + 1);
+      G.specTarget = n === live.length ? null : live[n];
+      G.msg(G.specTarget ? 'MISSILE VIEW — ' + G.specTarget.name + '  (O FOR NEXT / COCKPIT)' : 'BACK IN YOUR OWN COCKPIT', 'info');
     }
   }
   // U — HUD on/off, for clean screens and footage

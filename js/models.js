@@ -507,22 +507,31 @@ function _nameTex(text, hex) {
   return t;
 }
 
-// VAW-123 Screwtops corkscrew: a black barber-pole band wrapping the rotodome rim
-let _spiralTexCache = null;
-function _spiralTex() {
-  if (_spiralTexCache) return _spiralTexCache;
-  const c = document.createElement('canvas'); c.width = 1024; c.height = 64;
+// VAW-123 Screwtops corkscrew: a black pinwheel spiral on the rotodome's flat
+// faces — as the dome turns, the swirl screws like the squadron's namesake
+let _swirlTexCache = null;
+function _swirlTex() {
+  if (_swirlTexCache) return _swirlTexCache;
+  const c = document.createElement('canvas'); c.width = 512; c.height = 512;
   const x = c.getContext('2d');
-  x.fillStyle = '#cfd6dc'; x.fillRect(0, 0, 1024, 64);
-  x.fillStyle = '#15191d';
-  // three turns around the circumference, 50% duty; drawn at +-64 so the wrap tiles seamlessly
-  for (let px = 0; px < 1024; px += 2) {
-    const yc = (px * 3 * 64 / 1024) % 64;
-    for (const k of [-64, 0, 64]) x.fillRect(px, yc - 16 + k, 2, 32);
+  x.fillStyle = '#e8ecef'; x.fillRect(0, 0, 512, 512);
+  x.strokeStyle = '#15191d'; x.lineCap = 'round'; x.lineWidth = 44;
+  // archimedean swirl: about two turns from the hub out to the rim
+  const CX = 256, R0 = 26, R1 = 216, TURNS = 2.1;
+  x.beginPath();
+  for (let t = 0; t <= 1.0001; t += 0.004) {
+    const th = t * TURNS * 2 * Math.PI, r = R0 + (R1 - R0) * t;
+    const px = CX + r * Math.cos(th), py = CX + r * Math.sin(th);
+    if (t === 0) x.moveTo(px, py); else x.lineTo(px, py);
   }
-  _spiralTexCache = new THREE.CanvasTexture(c);
-  _spiralTexCache.colorSpace = THREE.SRGBColorSpace;
-  return _spiralTexCache;
+  x.stroke();
+  // white hub + a clean white ring at the very edge, like the squadron paint
+  x.fillStyle = '#e8ecef'; x.beginPath(); x.arc(CX, CX, 22, 0, Math.PI * 2); x.fill();
+  x.strokeStyle = '#e8ecef'; x.lineWidth = 26;
+  x.beginPath(); x.arc(CX, CX, 243, 0, Math.PI * 2); x.stroke();
+  _swirlTexCache = new THREE.CanvasTexture(c);
+  _swirlTexCache.colorSpace = THREE.SRGBColorSpace;
+  return _swirlTexCache;
 }
 
 // shared airframe dresser: belly, cheatline, window band, titles, fin accent
@@ -786,9 +795,9 @@ export function buildE2C() {
   const rd = new THREE.Group(); rd.position.set(0, 3.15, -2.2);
   const stA = box(0.28, 2.2, 0.5, GY); stA.position.set(0, -1.6, 0.8); stA.rotation.x = 0.35; rd.add(stA);
   const stB = box(0.28, 2.2, 0.5, GY); stB.position.set(0, -1.6, -0.8); stB.rotation.x = -0.35; rd.add(stB);
-  // VAW-123 Screwtops: the black corkscrew painted around the dome's rim
-  const domeSide = new THREE.MeshBasicMaterial({ map: _spiralTex() });
-  const disc = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.6, 0.8, 20), [domeSide, M(0xcfd6dc), M(0xcfd6dc)]);
+  // VAW-123 Screwtops: the black corkscrew pinwheel on the dome's flat faces
+  const swirl = new THREE.MeshBasicMaterial({ map: _swirlTex() });
+  const disc = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.6, 0.8, 20), [M(0xcfd6dc), swirl, swirl]);
   rd.add(disc);
   const rim = new THREE.Mesh(new THREE.CylinderGeometry(3.62, 3.62, 0.3, 20), [M(GY), M(GY), M(GY)]);
   rim.position.y = -0.55; rd.add(rim);   // under-ring, clear of the spiral band

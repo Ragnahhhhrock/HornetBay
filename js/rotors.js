@@ -176,6 +176,7 @@ export class HeliOps {
     };
     const sh = new Helicopter(G.scene, G.world, { anchor, hoverAlt: 26, cruiseAlt: 120, cruiseSpeed: 42 });
     sh.home = anchor; sh.task = 'circuit'; sh.wait = rand(6, 14);
+    sh.name = 'NAVY 701';
     this.seahawk = sh; this.helis.push(sh);
     // two shuttles working the pads
     const pads = G.world.helipads;
@@ -184,6 +185,7 @@ export class HeliOps {
       const h = new Helicopter(G.scene, G.world, { hoverAlt: 14, cruiseAlt: 190, cruiseSpeed: 52 });
       h.pos.set(pad.x, pad.y, pad.z); h.pad = pad; pad.booked = h;
       h.task = 'shuttle'; h.wait = rand(8, 25) + i * 20;
+      h.name = 'SHUTTLE ' + (i === 0 ? 'ONE' : 'TWO');
       this.helis.push(h);
     }
   }

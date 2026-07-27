@@ -65,7 +65,7 @@ export class HUD {
     if (G.specTarget) {
       // spectate: riding another aircraft — no cockpit, no own-ship symbology
       this._messages(c, G, s);
-      const slabel = 'SPECTATE — ' + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
+      const slabel = (G.specTarget.cfg ? 'MISSILE VIEW — ' : 'SPECTATE — ') + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
       c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105);
       c.fillStyle = DIM;
