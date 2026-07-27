@@ -34,6 +34,9 @@ const ITEMS = [
   { cat: 'air', type: 'a6',     name: 'A-6E INTRUDER',              info: 'VA-52 KNIGHT RIDERS 1994 — ALL-WEATHER ATTACK — TRAPS ABOARD THE BIG E' },
   { cat: 'air', type: 'c2',     name: 'C-2A GREYHOUND',             short: 'C-2 GREYHOUND',    info: 'VRC-30 PROVIDERS 1994 — THE COD — MAIL, PARTS AND PASSENGERS ABOARD' },
   { cat: 'air', type: 's3',     name: 'S-3B VIKING',                short: 'S-3 VIKING',       info: 'VS-37 SAWBUCKS 1994 — THE HOOVER — SUB HUNTER WITH THE MAD BOOM OUT' },
+  { cat: 'air', type: 'av8b',   name: 'AV-8B HARRIER II',           short: 'AV-8B HARRIER',    info: 'VMA-513 FLYING NIGHTMARES — THE JUMP JET — FOUR NOZZLES, NO AFTERBURNER' },
+  { cat: 'air', type: 'balloon', name: 'SURVEILLANCE BALLOON',      short: 'SPY BALLOON',      info: 'HIGH-ALTITUDE INTRUDER — 60,000 FT AND DRIFTING THE COAST — SPLASH IT' },
+  { cat: 'air', type: 'boat',   name: 'GO-FAST BOAT',               short: 'GO-FAST BOAT',     info: 'TWIN-OUTBOARD RUNABOUT — THE HIJACKERS\' RIDE — CATCH IT BEFORE IT BOARDS' },
   // ---- shipping ----
   { cat: 'ship', name: 'USS ENTERPRISE (CVN-65)', info: 'THE BIG E — NUCLEAR SUPERCARRIER — YOUR HOME PLATE',
     dist: 620, zmin: 150, zmax: 1500,
@@ -174,11 +177,19 @@ export class Gallery {
     this.G.scene.add(this.model);
     this.dist = it.dist || 40;
     this._zmin = it.zmin || 18; this._zmax = it.zmax || 170;
+    if (this.onShow) this.onShow(it);   // deep-link sync: every asset has its own URL stub
+  }
+  showType(type) {   // deep link target: focus a specific asset by its type slug
+    const i = ITEMS.findIndex(it => it.type === type);
+    if (i < 0) return false;
+    this._show(i);
+    return true;
   }
   // ---------------- the floor ----------------
   _buildGrid() {
     this._teardownGrid();
     this.mode = 'grid';
+    if (this.onGrid) this.onGrid();
     const sc = this._gridScene = new THREE.Scene();
     sc.background = new THREE.Color(0x0c1420);
     sc.add(new THREE.HemisphereLight(0xcfe0f0, 0x2c3a2c, 1.15));

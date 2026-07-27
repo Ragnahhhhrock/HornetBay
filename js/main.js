@@ -162,6 +162,8 @@ const hud = new HUD($('hud'));
 G.hud = hud;
 G.mapview = new MapView();   // N toggles the live tactical map
 G.gallery = new Gallery(G, () => showMenu());   // menu item 9: aircraft viewer
+G.gallery.onShow = (it) => setHash('gallery/' + it.type);   // every asset has its own URL stub
+G.gallery.onGrid = () => setHash('gallery');
 
 // world is heavy — build lazily on first load but before menu demo
 G.world = new World(scene);
@@ -180,7 +182,7 @@ G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen 
 G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION/CLEAR/RAIN
 
 // ---------------- menu (original 1-8 structure) ----------------
-const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7'];
+const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13'];
 let menuMode = 'main';
 // every menu screen carries a URL stub (#missions, #gallery, #m1 …) so any
 // item is a shareable link. setHash stays silent until the boot router has
@@ -206,13 +208,17 @@ function buildMenu(mode = 'main') {
     b.innerHTML = `${showKey ? `<span class="mnum">${num}</span>` : ''}${label}${tag ? `<span class="tag">${tag}</span>` : ''}`;
     b.dataset.key = num || '';
     if (cb) b.onclick = () => { G.audio.ensure(); cb(); };
+    else b.classList.add('locked');
     list.appendChild(b);
   };
   if (mode === 'missions') {
     $('menu-title').textContent = 'SELECTABLE MISSIONS';
     MISSION_ORDER.forEach((id, i) => {
       const def = MISSIONS.find(m => m.id === id);
-      addBtn(`F${i + 1}`, def.title, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      // campaign progression: each mission flown unlocks the next
+      const locked = i > 0 && !save.done[MISSION_ORDER[i - 1]];
+      if (locked) addBtn(`F${i + 1}`, def.title, 'LOCKED', null);
+      else addBtn(`F${i + 1}`, def.title, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
     });
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
     return;
@@ -307,6 +313,7 @@ function showMenu() {
   $('briefing').classList.add('hidden');
   $('debrief').classList.add('hidden');
   $('pause').classList.add('hidden');
+  $('obj-card').classList.add('hidden');
   buildMenu();
   startDemo();
   applyMenuTimeOfDay();   // menu backdrop reflects the selected time of day
@@ -497,6 +504,7 @@ function launchMission(def, opts = {}) {
   $('briefing').classList.add('hidden');
   $('debrief').classList.add('hidden');
   $('pause').classList.add('hidden');
+  $('obj-card').classList.add('hidden');
   stopDemo();
   // clear entities
   if (G.chute) { G.chute.dispose(); G.chute = null; }
@@ -526,6 +534,9 @@ function launchMission(def, opts = {}) {
   G.crashHandled = false;                        // arm the crash handler again
   G.fx.clearDebris();
   G.world.enemySub.group.visible = false;   // m6 spawns its own destructible sub entity
+  const _bnr = G.world.carrier.group.getObjectByName('m9banner');   // m9 dresses the island for one sortie only
+  if (_bnr) G.world.carrier.group.remove(_bnr);
+  for (const v of G.world.ships.all) v._held = false;   // m11 seizes the Bay Monarch for one sortie only
   G.world.setTimeOfDay(def.time || 'day');
   G.mission = Object.assign({}, def);
   G.mission.setup(G);
@@ -594,8 +605,8 @@ G.explode = (pos, scale = 1) => {
   G.audio.explosion(camera.position.distanceTo(pos));
   flash(0.35 * scale);
 };
-G.fireEnemyMissile = (owner, target) => {
-  const type = Math.random() < 0.5 ? 'r27' : 'r73';
+G.fireEnemyMissile = (owner, target, type) => {
+  type = type || (Math.random() < 0.5 ? 'r27' : 'r73');
   G.missiles.push(new Missile(G, owner, type, target));
   G.audio.enemyMissile();
   if (target === G.player) G.msg('!! MISSILE LAUNCH — BREAK !!', 'bad');
@@ -698,6 +709,7 @@ G.completeMission = (title, text) => {
     $('debrief-title').className = 'good';
     $('debrief-body').textContent = text + `\n\nFINAL SCORE: ${G.score} · KILLS: ${G.kills}`;
     $('debrief').classList.remove('hidden');
+    $('obj-card').classList.add('hidden');
     G.state = 'debrief';
   }, 2500);
   G.msg('MISSION COMPLETE', 'good');
@@ -714,6 +726,7 @@ G.failMission = (title, text) => {
     $('debrief-title').className = 'bad';
     $('debrief-body').textContent = text + `\n\nSCORE: ${G.score}`;
     $('debrief').classList.remove('hidden');
+    $('obj-card').classList.add('hidden');
     G.state = 'debrief';
   }, 2200);
   G.msg('MISSION FAILED', 'bad');
@@ -1063,6 +1076,16 @@ function handleDiscreteInput(dt) {
   // N toggles the live map — works from the cockpit and the pause card
   if (I.pressed('KeyN') && (G.state === 'flying' || G.state === 'paused')) {
     G.msg(G.mapview.toggle() ? 'MAP ON' : 'MAP OFF', 'info');
+  }
+  // I toggles the mission objectives card — the typed brief, recallable mid-flight
+  if (I.pressed('KeyI') && (G.state === 'flying' || G.state === 'paused')) {
+    const card = $('obj-card');
+    if (card.classList.contains('hidden')) {
+      const def = G.missionDef || {};
+      $('obj-title').textContent = (def.code ? def.code + ' — ' : '') + (def.title || 'FREE FLIGHT');
+      $('obj-body').textContent = (def.brief && def.brief.length) ? def.brief.join('\n') : 'NO TASKING — THE SKY IS YOURS.';
+      card.classList.remove('hidden');
+    } else card.classList.add('hidden');
   }
   // map pan/zoom: drag the chart, wheel to zoom — the gun stays quiet while
   // the drag is on the chart
@@ -1816,8 +1839,18 @@ function routeHash() {
   if (!atMenu) return;   // mid-sortie: don't yank the controls for a link click
   if (h === 'freeflight') startFreeFlightMap();
   else if (h === 'missions') buildMenu('missions');
-  else if (/^m[1-7]$/.test(h)) startBriefing(h);
+  else if (/^m([1-9]|1[0-3])$/.test(h)) {
+    // deep links respect the campaign chain — a locked mission sends you to the list
+    const i = MISSION_ORDER.indexOf(h);
+    if (i > 0 && !save.done[MISSION_ORDER[i - 1]]) buildMenu('missions');
+    else startBriefing(h);
+  }
   else if (h === 'log') buildMenu('log');
+  else if (h.startsWith('gallery/')) {
+    const type = h.slice(8);
+    $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter();
+    if (!G.gallery.showType(type)) showMenu();   // unknown asset — back to the menu
+  }
   else if (h === 'gallery') { setHash('gallery'); $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter(); }
   else if (h === 'manual') G.openManual();
   else if (h === 'resume') { if (G._menuResume) resumeFlight(); }

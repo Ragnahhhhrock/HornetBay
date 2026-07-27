@@ -49,6 +49,16 @@ export class FXPool {
   contrail(pos) {
     this.spawn(pos, _v.set(0, 0.2, 0), 3.2, 1.5, 0xf0f0f0, false, 1.7);
   }
+  // a catapult stroke vents steam the length of the track — bright white,
+  // slow to rise, slow to fade
+  steamLine(a, b, n = 22) {
+    for (let i = 0; i < n; i++) {
+      const t = i / (n - 1);
+      _v.lerpVectors(a, b, t);
+      _v.x += randSpread(1.4); _v.z += randSpread(1.4);
+      this.spawn(_v, _d.set(randSpread(1.6), rand(1.5, 4), randSpread(1.6)), rand(4, 8), rand(2.5, 5), 0xf4f6f6, false, 2.8);
+    }
+  }
   explosion(pos, scale = 1) {
     this.flash(pos, 26 * scale, 0xfff4c0, 0.22);
     this.flash(pos, 60 * scale, 0xff9840, 0.35);

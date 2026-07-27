@@ -154,10 +154,22 @@ class Airframe {
         break;
       }
       case 'hold': {
-        // holdback bar engaged, then the cat fires
+        // holdback bar engaged — and the cat officer waits for full wing
+        // spread: nobody goes off the pointy end with folded wings
+        const ud = this.model.userData;
+        if (ud.wingL && (this.wingFold ?? 0) > 0.05) break;
         this._t -= dt;
         this.localHdg = damp(this.localHdg, 0, 6, dt);
-        if (this._t <= 0) { this.mode = 'launch'; this._radio(G, 'TOWER: ' + this.name + ', CAT 2 — YOU\'RE AWAY.'); }
+        if (this._t <= 0) {
+          this.mode = 'launch';
+          this._radio(G, 'TOWER: ' + this.name + ', CAT 2 — YOU\'RE AWAY.');
+          // steam vents the length of the track
+          if (G.fx) {
+            const a = carrierLocalToWorld(this.world.carrier, this.dl.x, 3.0, this.dl.z - 6, _v2);
+            const b = carrierLocalToWorld(this.world.carrier, this.dl.x, 3.0, this.dl.z + 64, _d);
+            G.fx.steamLine(a, b);
+          }
+        }
         break;
       }
       case 'launch': {
@@ -267,6 +279,7 @@ class Airframe {
     }
     if (this.onDeck) this._syncDeck(dt);
     else this._syncAir(dt);
+    this._syncFold(dt);
   }
 
   _patternWps() {
@@ -310,6 +323,18 @@ class Airframe {
   }
   _syncAir(dt) {
     this.model.rotation.set(this.pitchA, Math.PI - this.heading, this.bank, 'YXZ');
+  }
+  _syncFold(dt) {
+    // wings fold on the spot like the real jets: A-6/S-3 hinge up outboard of
+    // the fold joint, the C-2's Sto-Wing slews back along the fuselage
+    const ud = this.model.userData;
+    if (!ud.wingL) return;
+    const want = (this.mode === 'parked' || this.mode === 'taxiPark') ? 1 : 0;
+    if (this.wingFold == null) this.wingFold = want;   // boot state snaps — no deck-wide unfold on load
+    this.wingFold = damp(this.wingFold, want, 1.2, dt);
+    const f = this.wingFold;
+    if (ud.foldUp) { ud.wingL.rotation.z = -f * 1.85; ud.wingR.rotation.z = f * 1.85; }
+    else { ud.wingL.rotation.y = f * 1.5; ud.wingR.rotation.y = -f * 1.5; }
   }
 
   dispose() { this.scene.remove(this.model); }

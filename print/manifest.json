@@ -339,6 +339,54 @@
   }
  },
  {
+  "id": "av8b-harrier",
+  "name": "AV-8B HARRIER II",
+  "real": 14.1,
+  "target": 150,
+  "price": 5,
+  "blurb": "VMA-513 Flying Nightmares — the jump jet. Four nozzles, anhedral wing, bicycle gear with wingtip outriggers.",
+  "file": "av8b-harrier.stl",
+  "kb": 38,
+  "scale": 116,
+  "dims": {
+   "x": 97,
+   "y": 45.6,
+   "z": 150
+  }
+ },
+ {
+  "id": "spy-balloon",
+  "name": "SURVEILLANCE BALLOON",
+  "real": 61,
+  "target": 180,
+  "price": 4,
+  "blurb": "The 2023 intruder — 200 feet of latex and truss at 60,000 feet, solar arrays out. Prints as one conversation piece.",
+  "file": "spy-balloon.stl",
+  "kb": 106,
+  "scale": 172,
+  "dims": {
+   "x": 105.6,
+   "y": 180,
+   "z": 105.6
+  }
+ },
+ {
+  "id": "gofast-boat",
+  "name": "GO-FAST BOAT",
+  "real": 9,
+  "target": 120,
+  "price": 3,
+  "blurb": "Twin-outboard runabout, 9 m — the hijackers' ride from the Bay Monarch siege.",
+  "file": "gofast-boat.stl",
+  "kb": 4,
+  "scale": 75,
+  "dims": {
+   "x": 41.1,
+   "y": 39.2,
+   "z": 120
+  }
+ },
+ {
   "id": "uss-enterprise-cvn65",
   "name": "USS ENTERPRISE (CVN-65)",
   "real": 342,

@@ -317,7 +317,7 @@ export class EscortWeapons {
       let best = null, bd = 1e9;
       for (const b of G.bandits) {
         if (!b.hostile || b.dead || b.ejected || b.removeMe) continue;
-        if (b.type === 'sub' || b.pos.y < 40) continue;
+        if (b.noAA || b.type === 'sub' || b.pos.y < 40) continue;
         const d = b.pos.distanceTo(ffg.pos);
         if (d < 22000 && d < bd) { bd = d; best = b; }
       }

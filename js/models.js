@@ -867,12 +867,15 @@ export function buildE2C() {
   const rd = new THREE.Group(); rd.position.set(0, 3.15, -2.2);
   const stA = box(0.28, 2.2, 0.5, GY); stA.position.set(0, -1.6, 0.8); stA.rotation.x = 0.35; rd.add(stA);
   const stB = box(0.28, 2.2, 0.5, GY); stB.position.set(0, -1.6, -0.8); stB.rotation.x = -0.35; rd.add(stB);
-  // VAW-123 Screwtops: the black corkscrew pinwheel on the dome's flat faces
+  // VAW-123 Screwtops: the black corkscrew pinwheel on the dome's flat faces —
+  // only the disc spins on its struts
+  const spin = new THREE.Group();
   const swirl = new THREE.MeshBasicMaterial({ map: _swirlTex() });
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(3.6, 3.6, 0.8, 20), [M(0xcfd6dc), swirl, swirl]);
-  rd.add(disc);
+  spin.add(disc);
   const rim = new THREE.Mesh(new THREE.CylinderGeometry(3.62, 3.62, 0.3, 20), [M(GY), M(GY), M(GY)]);
-  rim.position.y = -0.55; rd.add(rim);   // under-ring, clear of the spiral band
+  rim.position.y = -0.55; spin.add(rim);   // under-ring, clear of the spiral band
+  rd.add(spin);
   g.add(rd);
   // quad tail: tall centre fin, two outboard fins, ventral fin
   const sG = wingGeo([[0.9, 1.1], [0.9, -1.7], [5.4, -2.4], [5.4, -1.4]], 0.28);
@@ -898,7 +901,7 @@ export function buildE2C() {
       new THREE.MeshBasicMaterial({ map: ac, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.36, 3.1, -14.2); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, props, rotodome: rd, type: 'e2c' };
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, props, rotodome: spin, type: 'e2c' };
   addNavLights(g, 12.3, -14.0, 1.6);
   return g;
 }
@@ -985,7 +988,8 @@ export function buildA6() {
   }
   // mid swept wing
   const wG = wingGeo([[1.0, 1.7], [1.0, -2.5], [8.1, -4.2], [8.1, -2.9]], 0.24);
-  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 0.28; g.add(w); }
+  let wingR, wingL;
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 0.28; g.add(w); if (s > 0) wingR = w; else wingL = w; }
   // tall single fin with the forward dorsal run
   const fin = new THREE.Mesh(wingGeo([[0, 2.2], [0, -3.1], [3.5, -4.3], [3.5, -3.1]], 0.22), M(C));
   fin.rotation.z = Math.PI / 2; fin.position.set(0, 0.7, -5.4); g.add(fin);
@@ -1015,7 +1019,7 @@ export function buildA6() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.34), new THREE.MeshBasicMaterial({ map: modex, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.82, 0.1, 7.2); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab: [], gear, hook, stabL, stabR, stores: {}, type: 'a6' };
+  g.userData = { ab: [], gear, hook, stabL, stabR, stores: {}, wingR, wingL, foldUp: true, type: 'a6' };
   addNavLights(g, 8.2, -7.9, 1.0);
   return g;
 }
@@ -1034,7 +1038,8 @@ export function buildC2() {
   const ramp = box(2.5, 0.14, 4.2, 0x98a0a8); ramp.position.set(0, -1.5, -8.2); ramp.rotation.x = 0.24; g.add(ramp);
   // high wing + two T56 turboprops, four blades each
   const wG = wingGeo([[1.9, 2.6], [1.9, -2.4], [12.3, -3.0], [12.3, -1.6]], 0.35);
-  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(GY)); w.scale.x = s; w.position.y = 1.5; g.add(w); }
+  let wingR, wingL;
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(GY)); w.scale.x = s; w.position.y = 1.5; g.add(w); if (s > 0) wingR = w; else wingL = w; }
   const props = [];
   for (const s of [1, -1]) {
     const nac = cyl(0.74, 0.62, 4.6, GY, 8); nac.position.set(s * 5.4, 0.85, 0.5); g.add(nac);
@@ -1070,7 +1075,7 @@ export function buildC2() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.5), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.17, 3.1, -13.9); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab: [], gear, hook, stabL: null, stabR: null, stores: {}, props, type: 'c2' };
+  g.userData = { ab: [], gear, hook, stabL: null, stabR: null, stores: {}, props, wingR, wingL, foldUp: false, type: 'c2' };
   addNavLights(g, 12.3, -13.7, 1.6);
   return g;
 }
@@ -1088,7 +1093,8 @@ export function buildS3() {
   const st = cyl(0.3, 0.08, 3.4, CD, 8); st.position.set(0, 0.2, -7.4); g.add(st);
   // high wing, slight sweep
   const wG = wingGeo([[1.2, 1.9], [1.2, -2.0], [10.4, -3.7], [10.4, -2.5]], 0.26);
-  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 1.05; g.add(w); }
+  let wingR, wingL;
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 1.05; g.add(w); if (s > 0) wingR = w; else wingL = w; }
   // TF34 pods slung under the wing
   for (const s of [1, -1]) {
     const nac = cyl(0.64, 0.56, 3.6, C, 10); nac.position.set(s * 3.7, 0.25, 0.8); g.add(nac);
@@ -1127,7 +1133,7 @@ export function buildS3() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.34), new THREE.MeshBasicMaterial({ map: modex, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.8, 0.05, 6.9); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab: [], gear, hook, stabL, stabR, stores: {}, type: 's3' };
+  g.userData = { ab: [], gear, hook, stabL, stabR, stores: {}, wingR, wingL, foldUp: true, type: 's3' };
   addNavLights(g, 10.5, -8.6, 1.2);
   return g;
 }
@@ -1315,6 +1321,192 @@ export function buildSU27() {
   return g;
 }
 
+// ---------------- AV-8B Harrier II — VMA-513 Flying Nightmares ----------------
+// the jump jet: bicycle gear with wingtip outriggers, four rotating nozzles,
+// big semicircular intakes and a drooping anhedral wing. No afterburner —
+// the Pegasus is all fan.
+export function buildHarrier() {
+  const g = new THREE.Group();
+  const C = 0x9fa8ad, CD = 0x868f95, GL = 0x202a33, DK = 0x39434c;
+  // plump fuselage with the fan hump rising behind the cockpit
+  const fus = cyl(0.98, 0.9, 10.6, C, 12); g.add(fus);
+  const nose = cone(0.98, 2.9, C, 10); nose.position.set(0, 0.08, 6.7); g.add(nose);
+  // pointy little pitot — the Harrier's lance
+  const pitot = cyl(0.03, 0.03, 1.5, DK, 5); pitot.position.set(0, 0.18, 8.6); g.add(pitot);
+  // bubble canopy well forward
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.72, 10, 8), M(0x3a4a55));
+  canopy.scale.set(0.82, 0.72, 1.6); canopy.position.set(0, 0.88, 4.6); g.add(canopy);
+  // dorsal hump over the fan, running back to the tail
+  const hump = box(0.9, 0.55, 6.2, CD); hump.position.set(0, 0.85, -1.2); g.add(hump);
+  // the big semicircular intakes with suction doors dotted along the tops
+  for (const s of [1, -1]) {
+    const it = new THREE.Mesh(new THREE.CylinderGeometry(1.0, 1.0, 2.2, 12, 1, false, 0, Math.PI), M(CD));
+    it.rotation.z = Math.PI / 2; it.rotation.y = Math.PI / 2;   // half-round, flat face inboard
+    it.position.set(s * 0.92, 0.35, 1.9); g.add(it);
+    const mouth = new THREE.Mesh(new THREE.CircleGeometry(0.82, 12, 0, Math.PI), M(0x0c0e10));
+    mouth.position.set(s * 0.92, 0.35, 3.02); g.add(mouth);
+  }
+  // four rotating nozzles amidships — the vectored-thrust signature
+  const nozzles = [];
+  for (const s of [1, -1]) for (const z of [0.6, -1.4]) {
+    const nz = new THREE.Group();
+    const body = cyl(0.34, 0.28, 1.0, 0x4a535a, 8); body.rotation.x = Math.PI / 2; nz.add(body);
+    const lip = cyl(0.3, 0.3, 0.1, 0x14181c, 8); lip.rotation.x = Math.PI / 2; lip.position.z = -0.5; nz.add(lip);
+    nz.position.set(s * 1.05, -0.15, z); nz.rotation.x = Math.PI / 2;   // aft-canted in wing-borne flight
+    g.add(nz); nozzles.push(nz);
+  }
+  // high wing with the marked anhedral, big LERX running to the intakes
+  const wG = wingGeo([[1.1, 1.6], [1.1, -1.9], [5.7, -3.1], [5.7, -1.7]], 0.22);
+  let wingR, wingL;
+  for (const s of [1, -1]) {
+    const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 1.05;
+    w.rotation.z = s * -0.16;   // the droop
+    g.add(w);
+    const lrx = new THREE.Mesh(wingGeo([[0.9, 2.6], [0.9, 1.6], [2.4, 0.6], [2.4, 0.2]], 0.14), M(C));
+    lrx.scale.x = s; lrx.position.y = 0.75; g.add(lrx);
+    if (s > 0) wingR = w; else wingL = w;
+  }
+  // single fin + anhedral stabilators low on the tailcone, ventral strake
+  const fin = new THREE.Mesh(wingGeo([[0, 2.1], [0, -2.9], [3.2, -3.9], [3.2, -2.7]], 0.2), M(C));
+  fin.rotation.z = Math.PI / 2; fin.position.set(0, 0.8, -4.2); g.add(fin);
+  const sG = wingGeo([[0.3, 0.4], [0.3, -1.3], [3.1, -1.7], [3.1, -0.8]], 0.15);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.35, 0.1, -4.9); stabL.rotation.z = 0.28; g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.35, 0.1, -4.9); stabR.rotation.z = -0.28; g.add(stabR);
+  const vent = box(0.12, 0.7, 2.0, CD); vent.position.set(0, -0.95, -4.0); g.add(vent);
+  // twin gun/ammo pods faired into the belly — the GAU-12 fit
+  for (const s of [1, -1]) {
+    const pod = cyl(0.24, 0.2, 3.4, CD, 8); pod.position.set(s * 0.42, -0.95, -0.6); g.add(pod);
+  }
+  // bicycle gear: tandem mains on the centerline + wingtip outriggers
+  const gear = _gearSet([[0, -1.7, 2.6], [0, -1.7, -2.2], [5.5, -0.9, -2.2], [-5.5, -0.9, -2.2]], 0.26, 1.0);
+  g.add(gear);
+  // MARINES on the intakes, modex 55 on the nose (VMA-513)
+  const usmc = _nameTex('MARINES', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 0.4), new THREE.MeshBasicMaterial({ map: usmc, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.62, 0.3, -0.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const modex = _nameTex('WF 55', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.42), new THREE.MeshBasicMaterial({ map: modex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.62, 0.0, 5.9); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear, hook: null, stabL, stabR, stores: {}, wingR, wingL, foldUp: false, nozzles, type: 'av8b' };
+  addNavLights(g, 5.7, -6.6, 1.0);
+  return g;
+}
+
+// ---------------- high-altitude surveillance balloon ----------------
+// the 2023 intruder: a white latex envelope the size of three buses riding
+// the jet stream at 60,000 ft, truss payload underneath with solar arrays.
+export function buildBalloon() {
+  const g = new THREE.Group();
+  // envelope: slightly teardrop latex, fat at the equator
+  const env = new THREE.Mesh(new THREE.SphereGeometry(9, 18, 14), M(0xf2f4f6));
+  env.scale.set(1, 1.15, 1); g.add(env);
+  // subtle panel seams: meridian gore lines from pole to pole
+  for (let i = 0; i < 6; i++) {
+    const seam = new THREE.Mesh(new THREE.TorusGeometry(9.02, 0.05, 4, 32), M(0xd8dde2));
+    seam.rotation.y = (i / 6) * Math.PI;   // torus already stands in a vertical plane
+    seam.scale.set(1, 1.15, 1);
+    g.add(seam);
+  }
+  // net lines down to the payload
+  const rig = new THREE.Group();
+  for (let i = 0; i < 4; i++) {
+    const a = (i / 4) * Math.PI * 2 + Math.PI / 4;
+    const line = cyl(0.03, 0.03, 10.4, 0x8a9098, 4);
+    line.position.set(Math.cos(a) * 2.4, -12.4, Math.sin(a) * 2.4);
+    line.rotation.x = Math.cos(a) * 0.22; line.rotation.z = -Math.sin(a) * 0.22;
+    line.rotation.order = 'ZXY';
+    rig.add(line);
+  }
+  g.add(rig);
+  // payload truss with equipment boxes and the big solar panel wings
+  const truss = new THREE.Group();
+  const bus = box(3.2, 1.6, 2.2, 0xb8bec4); truss.add(bus);
+  const crate = box(1.2, 1.0, 1.4, 0x9aa2a8); crate.position.set(1.4, -1.1, 0); truss.add(crate);
+  const antenna = cyl(0.04, 0.04, 2.6, 0x565e66, 5); antenna.position.set(-1.2, -1.6, 0); antenna.rotation.x = Math.PI / 2; truss.add(antenna);
+  for (const s of [1, -1]) {
+    const panel = box(6.4, 0.12, 2.6, 0x24384c); panel.position.set(s * 5.0, 0.2, 0); truss.add(panel);
+    const boom = cyl(0.06, 0.06, 3.4, 0x8a9098, 5); boom.rotation.z = Math.PI / 2; boom.position.set(s * 2.6, 0.2, 0); truss.add(boom);
+  }
+  truss.position.y = -17.6; g.add(truss);
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, balloon: env, payload: truss, type: 'balloon' };
+  return g;
+}
+
+// ---------------- go-fast boat — the hijackers' runabouts ----------------
+// 9 m planing hull, center console, twin outboards: the classic smuggler's
+// speedboat, and the thing swarming a seized cruise ship looks exactly like.
+export function buildBoat() {
+  const g = new THREE.Group();
+  const H = 0xdadde0, DK = 0x2b343c;
+  // planing hull with a raked bow
+  const hull = new THREE.Mesh(wingGeo([[0, 4.6], [1.35, 2.2], [1.5, -4.2], [-1.5, -4.2], [-1.35, 2.2]], 1.1), M(H));
+  hull.rotation.y = Math.PI; hull.position.y = 0.1; g.add(hull);
+  // gunwale stripe
+  const stripe = box(3.1, 0.14, 8.2, 0x2050a0); stripe.position.y = 1.06; g.add(stripe);
+  // center console + windscreen
+  const con = box(1.1, 0.9, 1.3, H); con.position.set(0, 1.6, 0.4); g.add(con);
+  const ws = box(1.0, 0.5, 0.12, 0x3a4a55); ws.position.set(0, 2.25, 1.0); ws.rotation.x = -0.3; g.add(ws);
+  // twin outboards
+  for (const s of [1, -1]) {
+    const ob = box(0.4, 0.9, 0.7, DK); ob.position.set(s * 0.55, 1.0, -4.5); g.add(ob);
+  }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, type: 'boat' };
+  return g;
+}
+
+// ---------------- MISSION ACCOMPLISHED banner (m9 set dressing) ------------
+// flag-cloth backdrop, bold white serif — hung from the island for the
+// carrier address. Scale-y animates the unfurl.
+let _bannerTex = null;
+export function buildBanner() {
+  if (!_bannerTex) {
+    const c = document.createElement('canvas'); c.width = 2048; c.height = 1024;
+    const x = c.getContext('2d');
+    // clean navy field so the words carry; flag trim at the edges only
+    x.fillStyle = '#16224e'; x.fillRect(0, 0, 2048, 1024);
+    // canton of stars, top-left
+    x.fillStyle = '#0a1440'; x.fillRect(0, 0, 520, 330);
+    x.fillStyle = '#ffffff';
+    for (let r = 0; r < 5; r++) for (let s = 0; s < 8; s++) {
+      x.beginPath(); x.arc(42 + s * 60 + (r % 2) * 28, 40 + r * 60, 11, 0, 7); x.fill();
+    }
+    // stripes along the bottom edge
+    for (let i = 0; i < 4; i++) {
+      x.fillStyle = i % 2 ? '#ffffff' : '#b22234';
+      x.fillRect(0, 880 + i * 36, 2048, 36);
+    }
+    // the words — big serif, dark outline, hard shadow: readable from the groove
+    x.font = '900 200px Georgia, "Times New Roman", serif';
+    x.textAlign = 'center'; x.textBaseline = 'middle';
+    x.lineJoin = 'round';
+    x.strokeStyle = '#0a1030'; x.lineWidth = 22;
+    x.strokeText('MISSION', 1024, 330);
+    x.strokeText('ACCOMPLISHED', 1024, 620);
+    x.shadowColor = 'rgba(0,0,0,.5)'; x.shadowBlur = 14; x.shadowOffsetY = 7;
+    x.fillStyle = '#ffffff';
+    x.fillText('MISSION', 1024, 330);
+    x.fillText('ACCOMPLISHED', 1024, 620);
+    _bannerTex = new THREE.CanvasTexture(c);
+    _bannerTex.anisotropy = 4;
+  }
+  const g = new THREE.Group();
+  const cloth = new THREE.Mesh(new THREE.PlaneGeometry(12, 6),
+    new THREE.MeshBasicMaterial({ map: _bannerTex, side: THREE.DoubleSide }));
+  g.add(cloth);
+  // suspension lines running up to the island top
+  const lm = M(0x888888);
+  for (const s of [1, -1]) {
+    const line = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 8, 4), lm);
+    line.position.set(s * 5.8, 7, 0); g.add(line);
+  }
+  g.userData = { cloth, type: 'banner' };
+  return g;
+}
+
 export function buildModel(type, livery = 0) {
   switch (type) {
     case 'f18': return buildFA18();
@@ -1331,6 +1523,9 @@ export function buildModel(type, livery = 0) {
     case 'apache': return buildApache();
     case 'p3': return buildP3();
     case 'e2c': return buildE2C();
+    case 'av8b': return buildHarrier();
+    case 'balloon': return buildBalloon();
+    case 'boat': return buildBoat();
     case 'b747': return build747();
     case 'b707': return build707();
     case 'b744': return build744(livery);

@@ -285,6 +285,7 @@ class TrafficShip extends Vessel {
     this.group.rotation.y = Math.PI - this.heading;
   }
   update(dt) {
+    if (this._held) return;   // dead in the water (m11: engines seized by the hijackers)
     const wp = this.route[this.idx];
     const dist = this.steer(dt, wp[0], wp[1]);
     if (dist < 240) {

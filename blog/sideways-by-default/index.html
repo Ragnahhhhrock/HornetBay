@@ -129,6 +129,13 @@
   .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
+  /* journal search */
+  #blog-search-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  #blog-search { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 4px 10px; letter-spacing: 1px; width: min(230px, 42vw); }
+  #blog-search:focus { outline: none; border-color: var(--amber); }
+  #blog-search::placeholder { color: var(--ink-dim); }
+  #blog-search-clear { visibility: hidden; }
+  #blog-search-clear.show { visibility: visible; }
   #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
   #blog-menu .bm-note { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; letter-spacing: 1px; margin-top: 2px; }
 </style>

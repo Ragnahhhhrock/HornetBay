@@ -154,6 +154,12 @@ export class Player {
           og.catFired = true;
           G.msg('CATAPULT SHOT!', 'good');
           if (G.audio.catapult) G.audio.catapult();
+          // steam vents the length of the track behind the shuttle
+          if (G.fx) {
+            const a = carrierLocalToWorld(carrier, this.deckLocal.x, this.deckLocal.y + 0.5, this.deckLocal.z - 6);
+            const b = carrierLocalToWorld(carrier, this.deckLocal.x, this.deckLocal.y + 0.5, this.deckLocal.z + 64);
+            G.fx.steamLine(a, b);
+          }
         }
       } else {
         acc += 30;

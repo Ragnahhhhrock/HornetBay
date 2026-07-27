@@ -5,6 +5,7 @@ import { groundHeight } from './world.js';
 import { buildModel } from './models.js';
 
 const _v = new THREE.Vector3(), _d = new THREE.Vector3(), _e = new THREE.Euler(), _dq = new THREE.Quaternion();
+const _up = new THREE.Vector3(0, 1, 0);
 
 export class AIAircraft {
   constructor(scene, world, type, opts = {}) {
@@ -28,6 +29,9 @@ export class AIAircraft {
     this.target = null;                      // attack target (AIAircraft or Player)
     this.fireCooldown = rand(2, 5);
     this.evasionT = 0; this.evadeDir = null; this.flareT = -9; this.chaffT = -9;
+    this.maneuver = null;                    // active aerobatic maneuver (aces)
+    this._attackWeaveT = rand(2, 4);         // idle weave timer in the attack
+    this._offBoresightT = 0;                 // how long the shot isn't coming
     this.dead = false; this.removeMe = false; this.deadT = 0;
     this.landed = false; this.landSpeed = 0;
     this.bank = 0; this.pitch = 0;
@@ -70,7 +74,8 @@ export class AIAircraft {
 
   update(dt, G) {
     if (this.dead) { this._updateDead(dt, G); return; }
-    switch (this.mode) {
+    if (this.maneuver) this._updateManeuver(dt, G);
+    else switch (this.mode) {
       case 'route': this._updateRoute(dt, G); break;
       case 'intercept': this._updateIntercept(dt, G); break;
       case 'attack': this._updateAttack(dt, G); break;
@@ -131,6 +136,35 @@ export class AIAircraft {
     const t = this.target;
     if (!t || t.dead || t.ejected) { this.mode = 'route'; this.target = null; return; }
     const dist = this.pos.distanceTo(t.pos);
+    // skilled pilots never hold a straight pursuit: they weave on the way in,
+    // and if the shot isn't coming they reverse hard — loop or split-S back
+    // onto the target's tail for the kill shot
+    if (this.skill >= 1.25 && !this.maneuver) {
+      const f = this.fwd(_v);
+      _d.copy(t.pos).sub(this.pos).normalize();
+      const ang = f.angleTo(_d);
+      if (ang > 0.7) this._offBoresightT += dt; else this._offBoresightT = 0;
+      this._attackWeaveT -= dt;
+      if (this._offBoresightT > 2.2) {
+        this._offBoresightT = 0;
+        const agl = this.pos.y - groundHeight(this.pos.x, this.pos.z);
+        const kind = agl > 950 && Math.random() < 0.5 ? 'loop' : (agl > 750 ? 'splitS' : 'break');
+        this._startManeuver(kind, G, t.pos);
+        return;
+      }
+      if (this._attackWeaveT <= 0 && dist > 2500) {
+        this._attackWeaveT = rand(2.2, 4.0) / this.skill;
+        this._startManeuver(Math.random() < 0.6 ? 'jink' : 'barrel', G, t.pos);
+        return;
+      }
+    } else if (this.skill >= 0.8 && !this.maneuver) {
+      this._attackWeaveT -= dt;
+      if (this._attackWeaveT <= 0 && dist > 3000) {
+        this._attackWeaveT = rand(3.0, 5.0) / this.skill;
+        this._startManeuver('jink', G, t.pos);
+        return;
+      }
+    }
     // pursue
     _d.copy(t.pos).addScaledVector(t.vel, clamp(dist / 600, 0, 2.5)).sub(this.pos).normalize();
     this._steerToward(_d, dt);
@@ -186,6 +220,104 @@ export class AIAircraft {
     this._steerToward(_d, dt, 0.6);
   }
 
+  // ---- aerobatic maneuver library (skilled bandits) ------------------------
+  // break: hard 90-degree turn onto the threat's beam. jink: snap-roll
+  // S-turns. splitS: roll inverted, pull through, out the other way. loop:
+  // over the top and back down the hill. barrel: a full aileron roll that
+  // keeps rough heading. Aces chain these so they never fly straight.
+  _startManeuver(kind, G, threatPos) {
+    if (this.maneuver || this.terrainFollow || this.surface || this.landed) return;
+    const m = { kind, t: 0, side: Math.random() < 0.5 ? 1 : -1, baseHdg: this.heading };
+    const f = this.fwd(new THREE.Vector3());
+    if (kind === 'break') {
+      m.dur = rand(1.4, 2.0);
+      // turn onto the beam of whatever is threatening us (away from it)
+      let a = m.side * Math.PI / 2 * rand(0.85, 1.15);
+      if (threatPos) {
+        _d.copy(threatPos).sub(this.pos).normalize();
+        const c = f.x * _d.z - f.z * _d.x;   // >0: threat off the right wing
+        a = (c > 0 ? -1 : 1) * Math.PI / 2 * rand(0.85, 1.15);
+      }
+      m.dir = f.applyAxisAngle(_up, a);
+      m.dir.y = 0.12; m.dir.normalize();
+    } else if (kind === 'jink') {
+      m.dur = rand(1.8, 2.6); m.flipT = 0;
+    } else if (kind === 'splitS') {
+      m.dur = rand(2.6, 3.2);
+    } else if (kind === 'loop') {
+      m.dur = rand(4.4, 5.2);
+    } else { // barrel
+      m.dur = rand(2.2, 2.8);
+    }
+    this.maneuver = m;
+    if (this.onEvent) this.onEvent('maneuver', { unit: this, kind });
+  }
+  _updateManeuver(dt, G) {
+    const m = this.maneuver;
+    m.t += dt;
+    const f = this.fwd(_v);
+    // never aerobatic into the dirt — pull out early
+    const agl = this.pos.y - groundHeight(this.pos.x, this.pos.z);
+    if (agl < 300 && (m.kind === 'splitS' || (m.kind === 'loop' && m.t > m.dur * 0.5))) {
+      this.maneuver = null; this.bank = damp(this.bank, 0, 5, dt); this.pitch = Math.max(this.pitch, 0);
+      return;
+    }
+    switch (m.kind) {
+      case 'break': {
+        this._steerToward(m.dir, dt, 1.7);
+        this.bank = damp(this.bank, Math.sign(f.z * m.dir.x - f.x * m.dir.z) * 1.35, 5, dt);
+        this.targetSpeed = Math.max(this.targetSpeed, 280);
+        break;
+      }
+      case 'jink': {
+        m.flipT -= dt;
+        if (m.flipT <= 0) { m.flipT = 0.45; m.side *= -1; }
+        _d.copy(f).applyAxisAngle(_up, m.side * 0.85);
+        _d.y = clamp(_d.y + m.side * 0.1, -0.35, 0.35); _d.normalize();
+        this._steerToward(_d, dt, 1.6);
+        this.bank = damp(this.bank, m.side * 1.35, 6, dt);   // snap rolls between cuts
+        this.targetSpeed = Math.max(this.targetSpeed, 270);
+        break;
+      }
+      case 'splitS': {
+        const ph = m.t / m.dur;
+        if (ph < 0.25) {
+          this.bank = damp(this.bank, m.side * Math.PI, 5, dt);   // roll inverted
+        } else {
+          const prog = clamp((ph - 0.25) / 0.6, 0, 1);
+          const wantHdg = m.baseHdg + m.side * Math.PI * prog;
+          _d.set(Math.sin(wantHdg), -0.85 * Math.sin(prog * Math.PI), -Math.cos(wantHdg)).normalize();
+          this._steerToward(_d, dt, 1.6);
+          this.bank = damp(this.bank, m.side * Math.PI * (1 - prog), 4, dt);
+        }
+        this.targetSpeed = Math.max(this.targetSpeed, 300);
+        break;
+      }
+      case 'loop': {
+        const ph = m.t / m.dur;
+        const prof = Math.sin(ph * Math.PI * 2);   // up, over the top, back down
+        _d.set(Math.sin(m.baseHdg), prof * 1.15, -Math.cos(m.baseHdg)).normalize();
+        this._steerToward(_d, dt, 1.35);
+        const apex = Math.max(0, 1 - Math.abs(ph - 0.3) / 0.16);
+        this.bank = damp(this.bank, m.side * Math.PI * Math.min(1, apex * 1.7), 4, dt);
+        this.targetSpeed = Math.max(this.targetSpeed, 260);
+        break;
+      }
+      default: { // barrel — a full roll around the velocity vector
+        const ph = m.t / m.dur;
+        _d.copy(f).applyAxisAngle(_up, Math.sin(ph * Math.PI * 2) * 0.25);
+        _d.y = clamp(_d.y + Math.cos(ph * Math.PI * 2) * 0.16, -0.4, 0.4); _d.normalize();
+        this._steerToward(_d, dt, 1.2);
+        this.bank = m.side * ph * Math.PI * 2;
+        break;
+      }
+    }
+    if (m.t >= m.dur) {
+      this.maneuver = null;
+      this.evasionT = rand(0.3, 0.9) / this.skill;   // chain another if still pressed
+    }
+  }
+
   _checkThreats(dt, G) {
     // evade if player's missile is inbound on us, or player locked & close behind
     let threatened = false;
@@ -202,19 +334,39 @@ export class AIAircraft {
     }
     if (threatened) {
       this.evasionT -= dt;
-      if (this.evasionT <= 0) {
+      if (this.evasionT <= 0 && !this.maneuver) {
         this.evasionT = rand(1.2, 2.4) / this.skill;
-        const f = this.fwd(new THREE.Vector3());
-        const ax = rand(0.7, 1.6) * (Math.random() < 0.5 ? 1 : -1);
-        const ay = rand(-0.5, 0.5);
-        this.evadeDir = f.applyAxisAngle(new THREE.Vector3(0, 1, 0), ax);
-        this.evadeDir.y = clamp(this.evadeDir.y + ay, -0.5, 0.5);
-        this.evadeDir.normalize();
+        const s = this.skill;
+        const agl = this.pos.y - groundHeight(this.pos.x, this.pos.z);
+        // threat position for break-side selection
+        let threatPos = null;
+        for (const m of G.missiles) if (!m.dead && m.target === this) { threatPos = m.pos; break; }
+        if (!threatPos) threatPos = G.player.pos;
+        if (s >= 1.25) {
+          // ace: the full aerobatic library — hard to hit, never level for long
+          const pool = threatened === 'missile'
+            ? ['break', 'splitS', 'barrel', 'jink', 'loop']
+            : ['jink', 'barrel', 'break', 'splitS'];
+          let kind = pool[(Math.random() * pool.length) | 0];
+          if (agl < 750 && (kind === 'splitS' || kind === 'loop')) kind = Math.random() < 0.5 ? 'break' : 'jink';
+          this._startManeuver(kind, G, threatPos);
+        } else if (s >= 0.8) {
+          // regular: hard breaks and jinks
+          this._startManeuver(Math.random() < 0.55 ? 'break' : 'jink', G, threatPos);
+        } else {
+          // rookie: a flat panicky turn
+          const f = this.fwd(new THREE.Vector3());
+          const ax = rand(0.7, 1.6) * (Math.random() < 0.5 ? 1 : -1);
+          const ay = rand(-0.5, 0.5);
+          this.evadeDir = f.applyAxisAngle(new THREE.Vector3(0, 1, 0), ax);
+          this.evadeDir.y = clamp(this.evadeDir.y + ay, -0.5, 0.5);
+          this.evadeDir.normalize();
+        }
         if (threatened === 'missile' && Math.random() < 0.5 * this.skill) this.flareT = G.time;
         if (threatened === 'missile' && Math.random() < 0.4 * this.skill) this.chaffT = G.time;
         if (this.onEvent) this.onEvent('evade', this);
       }
-      if (this.evadeDir) this._steerToward(this.evadeDir, dt, 1.4);
+      if (!this.maneuver && this.evadeDir) this._steerToward(this.evadeDir, dt, 1.4);
       this.targetSpeed = 300;
     }
   }
@@ -241,6 +393,22 @@ export class AIAircraft {
   }
   _updateDead(dt, G) {
     this.deadT += dt;
+    if (this.type === 'balloon') {
+      // the envelope shreds on the first frames, then the payload truss
+      // tumbles out of the sky on its own
+      if (!this._shredded) {
+        this._shredded = true;
+        const u = this.model.userData;
+        if (u.balloon) u.balloon.visible = false;
+        G.fx.explosion(this.pos, 1.0);
+        for (let i = 0; i < 8; i++) G.fx.smoke(this.pos, 2.5, 5, 0xf2f4f6);
+      }
+      this.vel.set(0, 0, 0);
+      this.pos.y -= (14 + this.deadT * 6) * dt;
+      this.model.rotation.x += 0.9 * dt; this.model.rotation.z += 0.6 * dt;
+      if (this.pos.y < 2) { G.explode(this.pos.clone().setY(0), 1.6); G.fx.splash(this.pos.clone().setY(0), 2.2); this.removeMe = true; }
+      return;
+    }
     if (this.type === 'sub') {
       // the sub sinks stern-first under the waves
       this.vel.set(0, 0, 0);
@@ -279,6 +447,11 @@ export class AIAircraft {
       f.visible = !this.dead && this.targetSpeed > 240;
       if (f.visible) { const s = 0.7 + Math.random() * 0.5; f.scale.set(s, s, 0.7 + Math.random() * 0.6); }
     }
+    // mission-spawned props and rotors keep turning (the ambient fleets spin
+    // theirs in their own managers — an AIAircraft has to do it here)
+    if (u.props && !this.dead) for (const p of u.props) p.rotation.z += dt * 42;
+    if (u.rotor && !this.dead) { u.rotor.rotation.y += dt * 27; if (u.tailRotor) u.tailRotor.rotation.x += dt * 55; }
+    if (u.rotorDisc) u.rotorDisc.visible = !this.dead && this.speed > 2;
     if (this.smoking && !this.dead && Math.random() < 0.25) {
       // light damage smoke handled by main via fx
     }
