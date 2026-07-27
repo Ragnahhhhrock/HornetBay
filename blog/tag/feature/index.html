@@ -120,6 +120,15 @@
   .share-btn:hover { color: var(--amber); border-color: var(--amber); }
   .share-copy { color: var(--ink-dim); }
   .share-copy:hover { color: var(--amber-hi); }
+
+  /* blog menu (tag filter) + pagination */
+  #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
+  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
+  .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
+  #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
+  #blog-menu .bm-note { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; letter-spacing: 1px; margin-top: 2px; }
 </style>
 <script type="application/ld+json">
 {
@@ -137,8 +146,20 @@
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
 </header>
 <main>
-<div class="taghead">#FEATURE &mdash; 47 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;47</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<div class="taghead">#FEATURE &mdash; 48 ENTRIES</div>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;48</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<article id="blog-menu">
+    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <h2><a class="title-link" href="/blog/blog-menu">Cards, filters and pages: the journal gets organized</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/blog-menu.jpg"><img src="/shots/blog-menu.jpg" alt="The Hornet Bay blog menu — a row of tag filter chips above the journal entries" loading="lazy"></a>
+    <p>Eighty-four entries in, the journal needed a filing system. Four upgrades this push, all about getting a story in front of you &mdash; and getting you to the story:</p>
+    <ol>
+      <li><b>Every post has a proper Twitter card.</b> Each entry&rsquo;s page already carried its own title, description and screenshot for shares &mdash; now the few image-less entries fall back to the squadron crest, so a pasted link always unfurls with art. X, Facebook, anywhere that reads the meta.</li>
+      <li><b>Instagram joins the share bar.</b> There&rsquo;s no web share dialog for Instagram (they like it that way), so the button does the honest thing: copies the entry&rsquo;s link and tells you it&rsquo;s ready for your story or bio. Six buttons and a copy-link now ride under every post.</li>
+      <li><b>The journal paginates.</b> Ten entries to a page, newest at the top, with a pager at the foot &mdash; eighty-four entries came to nine pages. Page position lives in the address hash, so a link to page 5 is a link you can share.</li>
+      <li><b>And a filter menu.</b> A row of tag chips &mdash; FEATURE, AIRCRAFT, SPECS, GRAPHICS, MERCH and the rest &mdash; sits under the header. Pick one and the journal narrows to just those entries, paginated the same way; the tag rides the hash too, so filtered views are shareable links. The canonical tag shelves at /blog/tag/&hellip; remain for the crawlers.</li>
+    </ol>
+  </article>
 <article id="share-and-share-alike">
     <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
     <h2><a class="title-link" href="/blog/share-and-share-alike">Share and share alike: buttons on every journal entry</a> <span class="hash">dea8c80</span></h2>
@@ -612,6 +633,18 @@
       if (el.href.indexOf('mailto:') !== 0) { el.target = '_blank'; el.rel = 'noopener'; }
       d.appendChild(el);
     });
+    var ig = document.createElement('button');
+    ig.className = 'share-btn'; ig.type = 'button'; ig.textContent = 'INSTAGRAM';
+    ig.title = 'Instagram has no web share dialog — copies the link for your story or bio';
+    ig.addEventListener('click', function () {
+      function done() { ig.textContent = 'COPIED — PASTE IN YOUR STORY'; setTimeout(function () { ig.textContent = 'INSTAGRAM'; }, 1900); }
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(done, done); }
+      else {
+        var t = document.createElement('textarea'); t.value = url; document.body.appendChild(t);
+        t.select(); try { document.execCommand('copy'); } catch (e) {} t.remove(); done();
+      }
+    });
+    d.appendChild(ig);
     var cp = document.createElement('button');
     cp.className = 'share-btn share-copy'; cp.type = 'button'; cp.textContent = 'COPY LINK';
     cp.addEventListener('click', function () {

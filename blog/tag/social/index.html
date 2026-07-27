@@ -120,6 +120,15 @@
   .share-btn:hover { color: var(--amber); border-color: var(--amber); }
   .share-copy { color: var(--ink-dim); }
   .share-copy:hover { color: var(--amber-hi); }
+
+  /* blog menu (tag filter) + pagination */
+  #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
+  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
+  .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
+  #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
+  #blog-menu .bm-note { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; letter-spacing: 1px; margin-top: 2px; }
 </style>
 <script type="application/ld+json">
 {
@@ -138,7 +147,7 @@
 </header>
 <main>
 <div class="taghead">#SOCIAL &mdash; 2 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;47</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;48</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
 <article id="social-cards">
     <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/social">SOCIAL</a></span></div>
     <h2><a class="title-link" href="/blog/social-cards">Social cards: OG image &amp; Twitter card</a> <span class="hash">cb689f1</span></h2>
@@ -179,6 +188,18 @@
       if (el.href.indexOf('mailto:') !== 0) { el.target = '_blank'; el.rel = 'noopener'; }
       d.appendChild(el);
     });
+    var ig = document.createElement('button');
+    ig.className = 'share-btn'; ig.type = 'button'; ig.textContent = 'INSTAGRAM';
+    ig.title = 'Instagram has no web share dialog — copies the link for your story or bio';
+    ig.addEventListener('click', function () {
+      function done() { ig.textContent = 'COPIED — PASTE IN YOUR STORY'; setTimeout(function () { ig.textContent = 'INSTAGRAM'; }, 1900); }
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(done, done); }
+      else {
+        var t = document.createElement('textarea'); t.value = url; document.body.appendChild(t);
+        t.select(); try { document.execCommand('copy'); } catch (e) {} t.remove(); done();
+      }
+    });
+    d.appendChild(ig);
     var cp = document.createElement('button');
     cp.className = 'share-btn share-copy'; cp.type = 'button'; cp.textContent = 'COPY LINK';
     cp.addEventListener('click', function () {

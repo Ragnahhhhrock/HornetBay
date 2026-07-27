@@ -122,6 +122,15 @@
   .share-btn:hover { color: var(--amber); border-color: var(--amber); }
   .share-copy { color: var(--ink-dim); }
   .share-copy:hover { color: var(--amber-hi); }
+
+  /* blog menu (tag filter) + pagination */
+  #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
+  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
+  .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
+  #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
+  #blog-menu .bm-note { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; letter-spacing: 1px; margin-top: 2px; }
 </style>
 <script type="application/ld+json">
 {
@@ -195,6 +204,18 @@
       if (el.href.indexOf('mailto:') !== 0) { el.target = '_blank'; el.rel = 'noopener'; }
       d.appendChild(el);
     });
+    var ig = document.createElement('button');
+    ig.className = 'share-btn'; ig.type = 'button'; ig.textContent = 'INSTAGRAM';
+    ig.title = 'Instagram has no web share dialog — copies the link for your story or bio';
+    ig.addEventListener('click', function () {
+      function done() { ig.textContent = 'COPIED — PASTE IN YOUR STORY'; setTimeout(function () { ig.textContent = 'INSTAGRAM'; }, 1900); }
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(done, done); }
+      else {
+        var t = document.createElement('textarea'); t.value = url; document.body.appendChild(t);
+        t.select(); try { document.execCommand('copy'); } catch (e) {} t.remove(); done();
+      }
+    });
+    d.appendChild(ig);
     var cp = document.createElement('button');
     cp.className = 'share-btn share-copy'; cp.type = 'button'; cp.textContent = 'COPY LINK';
     cp.addEventListener('click', function () {

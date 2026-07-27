@@ -6,6 +6,7 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/blog-menu</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/share-and-share-alike</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/clarry-g</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/ah64-apache</loc><priority>0.7</priority></url>
