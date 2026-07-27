@@ -243,6 +243,102 @@
   }
  },
  {
+  "id": "a6e-intruder",
+  "name": "A-6E INTRUDER",
+  "real": 16.7,
+  "target": 150,
+  "price": 5,
+  "blurb": "VA-52 Knight Riders, 1994. Side-by-side all-weather attack — refuelling probe out, TRAM ball under the nose.",
+  "file": "a6e-intruder.stl",
+  "kb": 28,
+  "scale": 129,
+  "dims": {
+   "x": 125.3,
+   "y": 40.8,
+   "z": 150
+  }
+ },
+ {
+  "id": "c2-greyhound",
+  "name": "C-2A GREYHOUND",
+  "real": 17.3,
+  "target": 180,
+  "price": 5,
+  "blurb": "VRC-30 Providers, 1994. The COD — quad tail, four blades a side, cargo ramp in the upswept tail.",
+  "file": "c2-greyhound.stl",
+  "kb": 25,
+  "scale": 144,
+  "dims": {
+   "x": 171,
+   "y": 52.1,
+   "z": 180
+  }
+ },
+ {
+  "id": "s3-viking",
+  "name": "S-3B VIKING",
+  "real": 16.3,
+  "target": 150,
+  "price": 5,
+  "blurb": "VS-37 Sawbucks, 1994. The Hoover — twin pods under the wing, MAD boom in the tail.",
+  "file": "s3-viking.stl",
+  "kb": 27,
+  "scale": 139,
+  "dims": {
+   "x": 150,
+   "y": 46.2,
+   "z": 127.6
+  }
+ },
+ {
+  "id": "f15-eagle",
+  "name": "F-15 EAGLE",
+  "real": 19.4,
+  "target": 150,
+  "price": 5,
+  "blurb": "U.S. Air Force air superiority — twin tails canted out, twin burners, no tailhook.",
+  "file": "f15-eagle.stl",
+  "kb": 27,
+  "scale": 118,
+  "dims": {
+   "x": 110.4,
+   "y": 39.3,
+   "z": 150
+  }
+ },
+ {
+  "id": "a10-warthog",
+  "name": "A-10 THUNDERBOLT II",
+  "real": 16.3,
+  "target": 150,
+  "price": 5,
+  "blurb": "The Hawg — built around the gun. Straight wing, twin tails, engines on the shoulders.",
+  "file": "a10-warthog.stl",
+  "kb": 28,
+  "scale": 116,
+  "dims": {
+   "x": 150,
+   "y": 30.4,
+   "z": 125.9
+  }
+ },
+ {
+  "id": "su27-flanker",
+  "name": "SU-27 FLANKER",
+  "real": 21.9,
+  "target": 150,
+  "price": 5,
+  "blurb": "Soviet front-line fighter — drooped nose, tail stinger, red stars and blue 38.",
+  "file": "su27-flanker.stl",
+  "kb": 34,
+  "scale": 143,
+  "dims": {
+   "x": 101.9,
+   "y": 36.5,
+   "z": 150
+  }
+ },
+ {
   "id": "uss-enterprise-cvn65",
   "name": "USS ENTERPRISE (CVN-65)",
   "real": 342,

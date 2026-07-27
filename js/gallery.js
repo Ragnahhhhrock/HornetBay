@@ -16,8 +16,11 @@ const ITEMS = [
   { cat: 'air', type: 'f18',   name: 'F/A-18 HORNET',              info: 'CARRIER-CAPABLE MULTIROLE STRIKE FIGHTER — THE MOUNT' },
   { cat: 'air', type: 'f14',   name: 'F-14 TOMCAT',                info: 'VF-84 JOLLY ROGERS 1978 — SWING-WING FLEET DEFENDER — PHOENIX CARRIER' },
   { cat: 'air', type: 'f16',   name: 'F-16 FIGHTING FALCON',       short: 'F-16 FALCON',       info: 'LAND-BASED AIR-DEFENCE HOT-ROD — NO TAILHOOK' },
-  { cat: 'air', type: 'b747',  name: 'AIR FORCE ONE (VC-25A)',     short: 'AIR FORCE ONE',     info: 'BOEING 747-200B — THE 1994 PRESIDENTIAL MOUNT — MIND THE PAINT' },
+  { cat: 'air', type: 'f15',   name: 'F-15 EAGLE',                 info: 'U.S. AIR FORCE AIR SUPERIORITY — TWIN TAILS, NO TAILHOOK' },
+  { cat: 'air', type: 'a10',   name: 'A-10 THUNDERBOLT II',        short: 'A-10 WARTHOG',      info: 'U.S. AIR FORCE CLOSE AIR SUPPORT — BUILT AROUND THE GUN — NO TAILHOOK' },
   { cat: 'air', type: 'mig29', name: 'MIG-29 FULCRUM',             info: 'ENEMY BOGEY — TWIN-TAIL AGILE FIGHTER' },
+  { cat: 'air', type: 'su27',  name: 'SU-27 FLANKER',              info: 'SOVIET FRONT-LINE FIGHTER — RED STARS, BLUE 38 — WATCH THE MERGE' },
+  { cat: 'air', type: 'b747',  name: 'AIR FORCE ONE (VC-25A)',     short: 'AIR FORCE ONE',     info: 'BOEING 747-200B — THE 1994 PRESIDENTIAL MOUNT — MIND THE PAINT' },
   { cat: 'air', type: 'b744',  name: 'ALLIED AIRLINES 747-400',    short: 'ALLIED 747-400',   info: 'SFO HEAVY — 388 SOULS ABOARD — FRIENDLY SKIES: CHECK YOUR FIRE', livery: 0 },
   { cat: 'air', type: 'b737',  name: 'LIBERTY AIR 737-400',        short: 'LIBERTY 737-400',   info: 'SHORT-HAUL SHUTTLE — 146 SOULS ABOARD — POLISHED SILVER: CHECK YOUR FIRE', livery: 1 },
   { cat: 'air', type: 'dc10',  name: 'PACIFIC EMPRESS DC-10',      short: 'PACIFIC DC-10',     info: 'TRIJET HEAVY — 268 SOULS ABOARD — THE DEFECTOR FLEW ONE OF THESE', livery: 3 },
@@ -28,17 +31,20 @@ const ITEMS = [
   { cat: 'air', type: 'seahawk', name: 'SH-60 SEAHAWK',             info: 'U.S. NAVY ROTOR — FLIES THE CRUISER\'S AFT DECK CIRCUIT AND THE BAY PADS' },
   { cat: 'air', type: 'apache',  name: 'AH-64 APACHE',              info: 'U.S. ARMY ATTACK HELICOPTER — K-MAN HOLDING THE ORBIT OVER THE CITY' },
   { cat: 'air', type: 'e2c',    name: 'E-2C HAWKEYE',               info: 'VAW-123 SCREWTOPS — THE EYES OF THE FLEET, ROTODOME TURNING AT 23,000 FT' },
+  { cat: 'air', type: 'a6',     name: 'A-6E INTRUDER',              info: 'VA-52 KNIGHT RIDERS 1994 — ALL-WEATHER ATTACK — TRAPS ABOARD THE BIG E' },
+  { cat: 'air', type: 'c2',     name: 'C-2A GREYHOUND',             short: 'C-2 GREYHOUND',    info: 'VRC-30 PROVIDERS 1994 — THE COD — MAIL, PARTS AND PASSENGERS ABOARD' },
+  { cat: 'air', type: 's3',     name: 'S-3B VIKING',                short: 'S-3 VIKING',       info: 'VS-37 SAWBUCKS 1994 — THE HOOVER — SUB HUNTER WITH THE MAD BOOM OUT' },
   // ---- shipping ----
   { cat: 'ship', name: 'USS ENTERPRISE (CVN-65)', info: 'THE BIG E — NUCLEAR SUPERCARRIER — YOUR HOME PLATE',
     dist: 620, zmin: 150, zmax: 1500,
     make: (scene) => new Carrier({ scene }, new THREE.Vector3(), 0, false).group },
-  { cat: 'ship', name: 'GUIDED-MISSILE CRUISER', info: '173M — THE PICKET AHEAD OF THE BIG E',
+  { cat: 'ship', name: 'USS GETTYSBURG (CG-64)', short: 'USS GETTYSBURG', info: 'TICONDEROGA-CLASS AEGIS CRUISER — THE PICKET AHEAD OF THE BIG E',
     dist: 330, zmin: 60, zmax: 800,
     make: () => buildWarship({ len: 173, beam: 17, sup: [{ w: 12, h: 8, d: 26, z: 18, bridge: 1 }, { w: 10, h: 6, d: 18, z: -18 }], funnels: [{ z: -6 }, { z: -30 }], masts: [{ z: 30, h: 14 }, { z: -40, h: 11 }], turret: [58, 44], helo: 1 }) },
-  { cat: 'ship', name: 'DESTROYER', info: '150M — BEAM ESCORT, PORT AND STARBOARD STATIONS',
+  { cat: 'ship', name: 'USS STOUT (DDG-55)', short: 'USS STOUT', info: 'GUIDED-MISSILE DESTROYER — STARBOARD BEAM; USS NICHOLSON DD-982 HOLDS PORT',
     dist: 300, zmin: 60, zmax: 700,
     make: () => buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
-  { cat: 'ship', name: 'FRIGATE', info: '135M — THE ASTERN PICKET, CLEAR OF THE APPROACH',
+  { cat: 'ship', name: 'USS KLAKRING (FFG-42)', short: 'USS KLAKRING', info: 'OLIVER HAZARD PERRY-CLASS FRIGATE — THE ASTERN PICKET, CLEAR OF THE APPROACH',
     dist: 280, zmin: 50, zmax: 700,
     make: () => buildWarship({ len: 135, beam: 14, sup: [{ w: 10, h: 6, d: 20, z: 6, bridge: 1 }], funnels: [{ z: -18, h: 9 }], masts: [{ z: 16, h: 12 }], turret: [42], helo: 1 }) },
   { cat: 'ship', name: 'MT PETRO PACIFIC', info: '360M SUPERTANKER — GIANT OF THE LANE — 3.5 KT, BARELY TURNS',
@@ -113,6 +119,8 @@ export class Gallery {
   _catList(cat) { return ITEMS.map((it, i) => ({ it, i })).filter(x => x.it.cat === (cat || this.cat)); }
   enter() {
     this.G.state = 'gallery';
+    // swallow the keypress that opened us — the menu's 9 mustn't jump the floor
+    if (this.G.input && this.G.input.justPressed) this.G.input.justPressed.clear();
     window.addEventListener('mousedown', this._onDown);
     window.addEventListener('mousemove', this._onMove);
     window.addEventListener('mouseup', this._onUp);

@@ -118,14 +118,16 @@ export class Intro {
         pos: s.id === 'carrier' ? G.world.carrier?.pos : G.world.landmarks[s.id],
       })));
     } else if (this.active === 'planesel') {
-      // carrier start? the F-16 isn't even offered — no tailhook, no boat ops
+      // carrier start? the land-based jets aren't even offered — no tailhook
       const tomcat = this.G.save && this.G.save.tomcat ? '3 ..... F-14 TOMCAT' : '3 ..... F-14 TOMCAT [DLC]';
-      const planeOpts = (this.carrierStart ? '1 ..... F/A-18 HORNET' : '1 ..... F/A-18 HORNET     2 ..... F-16 FALCON') + `     ${tomcat}`;
+      const planeOpts = (this.carrierStart
+        ? '1 ..... F/A-18 HORNET'
+        : '1 ..... F/A-18 HORNET     2 ..... F-16 FALCON     4 ..... F-15 EAGLE     5 ..... A-10 WARTHOG') + `     ${tomcat}`;
       c.fillText(`SELECT:  ${planeOpts}     T ..... TIME: ${(this.G.dayNightSel || 'mission').toUpperCase()}     R ..... WX: ${(this.G.weatherSel || 'mission').toUpperCase()}`, w / 2, h - 8);
       if (this.carrierStart) {
         c.font = `bold 13px "Courier New", monospace`;
         c.fillStyle = '#9ab';
-        c.fillText('F-16 UNAVAILABLE — NO TAILHOOK FOR CARRIER OPS', w / 2, h - 30);
+        c.fillText('USAF JETS UNAVAILABLE — NO TAILHOOK FOR CARRIER OPS', w / 2, h - 30);
         c.font = 'bold 15px "Courier New", monospace';
         c.fillStyle = '#ffe23a';
       }

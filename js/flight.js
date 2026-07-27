@@ -11,7 +11,15 @@ export const PLANES = {
   f18: { label: 'F/A-18 HORNET', maxThrust: 11.5, abBoost: 13.0, dragK: 0.000114, maxRoll: 3.4,
          gMax: 10, stall: 95, rotate: 80, fuel: 25000, burnMil: 20, burnAB: 47.5, ceiling: 12487 },
   f16: { label: 'F-16 FALCON',   maxThrust: 11.0, abBoost: 12.0, dragK: 0.000108, maxRoll: 4.6,
-         gMax: 11, stall: 90, rotate: 76, fuel: 18000, burnMil: 18.75, burnAB: 43.75, ceiling: 12487 },
+         gMax: 11, stall: 90, rotate: 76, fuel: 18000, burnMil: 18.75, burnAB: 43.75, ceiling: 12487, noBoat: true },
+  // the Eagle: two big motors and a wing like a barn door — a rocket ship
+  // with manners, but USAF kit: no hook, no bridle, no boat
+  f15: { label: 'F-15 EAGLE',    maxThrust: 12.5, abBoost: 15.0, dragK: 0.000118, maxRoll: 4.4,
+         gMax: 9, stall: 96, rotate: 82, fuel: 23000, burnMil: 21, burnAB: 52, ceiling: 16764, noBoat: true },
+  // the Hawg: two fans, a bathtub, and a very large gun. Slow, honest, and
+  // utterly uninterested in the pattern — land-based like the rest of the USAF
+  a10: { label: 'A-10 THUNDERBOLT II', maxThrust: 4.9, abBoost: 0, dragK: 0.000150, maxRoll: 2.4,
+         gMax: 7, stall: 62, rotate: 58, fuel: 11000, burnMil: 7.5, burnAB: 0, ceiling: 11000, noBoat: true },
   // Tomcat: heavier, thirstier, higher. Base numbers are wings-spread; the
   // swept column lerps in as sweep01 -> 1 (S key): slicker but hungrier for
   // lift — swept slow flight stalls hard, so spread for the boat.
@@ -53,8 +61,10 @@ export class Player {
     this.sweepTarget = 0; this.sweep01 = 0;            // F-14 swing wing: 0 spread, 1 swept
     this.stores = this.type === 'f14'
       ? { aim54: 4, aim9: 2, gun: 675, chaff: 14, flares: 14 }
-      : { aim9: 2, aim120: 4, gun: 500, chaff: 14, flares: 14 };
-    this.weapon = this.type === 'f14' ? 'aim54' : 'aim120';
+      : this.type === 'a10'
+        ? { aim9: 2, gun: 1150, chaff: 14, flares: 14 }   // the Hawg's fight is the gun — 1,150 of 30mm
+        : { aim9: 2, aim120: 4, gun: 500, chaff: 14, flares: 14 };
+    this.weapon = this.type === 'f14' ? 'aim54' : this.type === 'a10' ? 'gun' : 'aim120';
     this.dead = false; this.ejected = false; this.stalled = false; this.modelDown = false;
     this._parkedEject = false; this._deckRide = null;
     this.onGround = null; this.deckLocal = null; this.smokeT = 0; this.contrailT = 0;
@@ -129,8 +139,8 @@ export class Player {
     const thrEff = 0.07 + 0.93 * this.throttle;
     let thrustA = cfg.maxThrust * thrEff + (this.ab ? cfg.abBoost : 0);
     // ad-hoc deck roll (bolter / taxi launch): deck crew flings you off the bow —
-    // carrier jets only; the F-16 has no catapult bridle (and no hook)
-    if (og.type === 'carrier' && !og.cat && this.type !== 'f16' && this.throttle > 0.85 && !og.trapped) thrustA += 20;
+    // carrier jets only; noBoat types have no catapult bridle (and no hook)
+    if (og.type === 'carrier' && !og.cat && !cfg.noBoat && this.throttle > 0.85 && !og.trapped) thrustA += 20;
     const brakeA = this.brakes ? (og.trapped ? 34 : 9) : 0;
     let acc = thrustA - brakeA - 0.4;
     // C-13 steam catapult: the holdback bar pins the jet until the pilot calls

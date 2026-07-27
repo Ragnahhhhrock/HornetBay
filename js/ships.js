@@ -304,12 +304,15 @@ export class Ships {
     this.all = [];
 
     // --- the battle group: guided-missile cruiser ahead, two destroyers on
-    // the beams, frigate astern (far enough back to keep the approach clear)
+    // the beams, frigate astern (far enough back to keep the approach clear).
+    // named for the Big E's mid-90s consorts: Gettysburg rode shotgun on the
+    // '96 return to sea, and Gettysburg / Stout / Nicholson / Klakring all
+    // sailed with the '98 group (Navy Wire Service, 9 Nov 1998)
     const escortDefs = [
-      { name: 'GUIDED-MISSILE CRUISER', station: { x: 0, z: 2400 },     len: 173, beam: 17, model: buildWarship({ len: 173, beam: 17, sup: [{ w: 12, h: 8, d: 26, z: 18, bridge: 1 }, { w: 10, h: 6, d: 18, z: -18 }], funnels: [{ z: -6 }, { z: -30 }], masts: [{ z: 30, h: 14 }, { z: -40, h: 11 }], turret: [58, 44], helo: 1 }) },
-      { name: 'DESTROYER', station: { x: -1500, z: 300 },  len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
-      { name: 'DESTROYER', station: { x: 1500, z: 300 },   len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
-      { name: 'FRIGATE', station: { x: 0, z: -2800 },    len: 135, beam: 14, model: buildWarship({ len: 135, beam: 14, sup: [{ w: 10, h: 6, d: 20, z: 6, bridge: 1 }], funnels: [{ z: -18, h: 9 }], masts: [{ z: 16, h: 12 }], turret: [42], helo: 1 }) },
+      { name: 'USS GETTYSBURG CG-64', station: { x: 0, z: 2400 },     len: 173, beam: 17, model: buildWarship({ len: 173, beam: 17, sup: [{ w: 12, h: 8, d: 26, z: 18, bridge: 1 }, { w: 10, h: 6, d: 18, z: -18 }], funnels: [{ z: -6 }, { z: -30 }], masts: [{ z: 30, h: 14 }, { z: -40, h: 11 }], turret: [58, 44], helo: 1 }) },
+      { name: 'USS NICHOLSON DD-982', station: { x: -1500, z: 300 },  len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
+      { name: 'USS STOUT DDG-55', station: { x: 1500, z: 300 },   len: 150, beam: 16, model: buildWarship({ len: 150, beam: 16, sup: [{ w: 11, h: 7, d: 22, z: 10, bridge: 1 }], funnels: [{ z: -14 }, { z: -26 }], masts: [{ z: 22, h: 15 }], turret: [48], helo: 1 }) },
+      { name: 'USS KLAKRING FFG-42', station: { x: 0, z: -2800 },    len: 135, beam: 14, model: buildWarship({ len: 135, beam: 14, sup: [{ w: 10, h: 6, d: 20, z: 6, bridge: 1 }], funnels: [{ z: -18, h: 9 }], masts: [{ z: 16, h: 12 }], turret: [42], helo: 1 }) },
     ];
     this.escorts = escortDefs.map(d => {
       const e = new Escort(world, d.model, d.station);

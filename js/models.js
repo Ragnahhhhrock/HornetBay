@@ -399,11 +399,11 @@ export function buildMiG29() {
   for (const s of [1, -1]) {
     const t = new THREE.Mesh(tG, M(C));
     t.rotation.z = Math.PI / 2 - s * 0.28; t.position.set(s * 2.4, 0.6, -3.6); g.add(t);
-    const fs = starDecal(1.3); fs.position.set(s * 2.95, 1.9, -5.0); fs.rotation.y = s * Math.PI / 2; g.add(fs);
+    const fs = starDecal(1.3); fs.position.set(s * 2.5, 1.9, -5.0); fs.rotation.y = s * Math.PI / 2; g.add(fs);
   }
   // red stars on the wing tops — the enemy's colours
   for (const s of [1, -1]) {
-    const ws = starDecal(1.6); ws.position.set(s * 3.6, 0.24, -2.6); ws.rotation.x = -Math.PI / 2; g.add(ws);
+    const ws = starDecal(1.6); ws.position.set(s * 3.6, 0.43, -2.6); ws.rotation.x = -Math.PI / 2; g.add(ws);
   }
   const sG = wingGeo([[0.4, 0.2], [0.4, -1.6], [3.4, -1.4], [3.4, -0.6]], 0.14);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.6, 0, -6.6); g.add(stabL);
@@ -944,11 +944,388 @@ export function buildP3() {
   return g;
 }
 
+// shared landing-gear cluster for the bigger birds: each entry [x, y, z] puts
+// a wheel at that fuselage station, strut reaching up into the airframe
+function _gearSet(pts, r = 0.34, strutLen = 1.35) {
+  const gear = new THREE.Group();
+  const gm = M(0x2c3136);
+  for (const [x, y, z] of pts) {
+    const w = new THREE.Group();
+    const strut = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, strutLen, 6), gm);
+    strut.position.y = strutLen / 2 + 0.05; w.add(strut);
+    const tire = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.22, 10), gm);
+    tire.rotation.z = Math.PI / 2; tire.position.y = 0.1; w.add(tire);
+    w.position.set(x, y, z); gear.add(w);
+  }
+  return gear;
+}
+// (soviet red stars come from starDecal() up in the MiG-29 section)
+
+
+// ---------------- A-6E Intruder — VA-52 Knight Riders, CVW-15 (NL), 1994 ----------------
+export function buildA6() {
+  const g = new THREE.Group();
+  const C = 0xaab2b8, CD = 0x8d979e, GL = 0x232e38, DK = 0x39434c;
+  // fat little all-weather bomber: rounded body, side-by-side greenhouse
+  const fus = cyl(1.08, 0.95, 12.6, C, 12); g.add(fus);
+  const nose = cone(1.08, 3.4, DK, 10); nose.scale.set(1, 0.92, 1); nose.position.set(0, 0, 8.0); g.add(nose);
+  // fixed refuelling probe spearing up off the nose — the Intruder silhouette
+  const probe = cyl(0.035, 0.035, 1.7, CD, 5); probe.position.set(0, 0.62, 7.0); probe.rotation.x = -0.62; g.add(probe);
+  // TRAM chin turret under the radome
+  const tram = new THREE.Mesh(new THREE.SphereGeometry(0.3, 8, 6), M(GL)); tram.position.set(0, -0.72, 6.2); g.add(tram);
+  // wide side-by-side canopy — pilot left, B/N right and a half-step back
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.95, 10, 8), M(0x4a5a64));
+  canopy.scale.set(1.05, 0.62, 1.55); canopy.position.set(0, 0.78, 3.9); g.add(canopy);
+  // cheek intakes feeding the buried J52s, exhausts out under the wing roots
+  for (const s of [1, -1]) {
+    const it = box(0.5, 0.85, 2.6, CD); it.position.set(s * 1.06, -0.12, 2.0); g.add(it);
+    const mouth = box(0.38, 0.6, 0.12, 0x0c0e10); mouth.position.set(s * 1.06, -0.12, 3.34); g.add(mouth);
+    const exh = cyl(0.4, 0.34, 1.5, 0x2c3136, 8); exh.position.set(s * 0.78, -0.55, -5.9); g.add(exh);
+    const pipe = cyl(0.3, 0.3, 0.14, 0x0a0a0c, 8); pipe.position.set(s * 0.78, -0.55, -6.62); g.add(pipe);
+  }
+  // mid swept wing
+  const wG = wingGeo([[1.0, 1.7], [1.0, -2.5], [8.1, -4.2], [8.1, -2.9]], 0.24);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 0.28; g.add(w); }
+  // tall single fin with the forward dorsal run
+  const fin = new THREE.Mesh(wingGeo([[0, 2.2], [0, -3.1], [3.5, -4.3], [3.5, -3.1]], 0.22), M(C));
+  fin.rotation.z = Math.PI / 2; fin.position.set(0, 0.7, -5.4); g.add(fin);
+  const dorsal = box(0.16, 0.5, 2.6, CD); dorsal.position.set(0, 0.95, -3.9); dorsal.rotation.x = 0.25; g.add(dorsal);
+  // all-moving stabilators, low on the aft fuselage
+  const sG = wingGeo([[0.3, 0.4], [0.3, -1.5], [3.4, -2.0], [3.4, -1.0]], 0.15);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, -0.05, -5.9); g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, -0.05, -5.9); g.add(stabR);
+  // gear + hook (VA-52 worked the boat)
+  const gear = _gearSet([[0, -1.85, 4.6], [0.95, -1.85, -0.4], [-0.95, -1.85, -0.4]]);
+  g.add(gear);
+  const hook = box(0.1, 0.1, 2.4, 0xcccccc); hook.position.set(0, -0.6, -7.2);
+  hook.rotation.x = -0.5; hook.visible = false; g.add(hook);
+  // 1994 low-vis: grey on grey — NAVY aft, NL 501 on the fin, modex on the nose
+  const navy = _nameTex('U.S. NAVY', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 0.45), new THREE.MeshBasicMaterial({ map: navy, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.12, 0.35, -3.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const code = _nameTex('NL 501', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.5), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.13, 2.6, -6.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const modex = _nameTex('501', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.34), new THREE.MeshBasicMaterial({ map: modex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.82, 0.1, 7.2); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear, hook, stabL, stabR, stores: {}, type: 'a6' };
+  addNavLights(g, 8.2, -7.9, 1.0);
+  return g;
+}
+
+// ---------------- C-2A Greyhound — VRC-30 Providers Det, 1994 ----------------
+export function buildC2() {
+  const g = new THREE.Group();
+  const W = 0xd8dde2, GY = 0xb0b8c0, DK = 0x232e38, TX = 0x39434c;
+  // the E-2's cargo-hauling sister: same wing, tails and T56s, bigger box
+  const fus = cyl(1.95, 1.75, 14.6, GY, 12); g.add(fus);
+  const crown = cyl(1.98, 1.78, 12.6, W, 12); crown.scale.set(1, 0.55, 1); crown.position.set(0, 0.68, 0.6); g.add(crown);
+  const nose = cone(1.95, 3.2, GY, 10); nose.position.set(0, 0, 8.8); g.add(nose);
+  const ck = cyl(1.98, 1.98, 1.6, DK, 10); ck.scale.set(1, 0.55, 1); ck.position.set(0, 0.62, 7.2); g.add(ck);
+  // upswept tail with the loading ramp — the Greyhound's whole reason for being
+  const aft = cone(1.75, 5.4, GY, 10); aft.rotation.x = Math.PI; aft.scale.set(1, 0.85, 1); aft.position.set(0, 0.3, -9.7); g.add(aft);
+  const ramp = box(2.5, 0.14, 4.2, 0x98a0a8); ramp.position.set(0, -1.5, -8.2); ramp.rotation.x = 0.24; g.add(ramp);
+  // high wing + two T56 turboprops, four blades each
+  const wG = wingGeo([[1.9, 2.6], [1.9, -2.4], [12.3, -3.0], [12.3, -1.6]], 0.35);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(GY)); w.scale.x = s; w.position.y = 1.5; g.add(w); }
+  const props = [];
+  for (const s of [1, -1]) {
+    const nac = cyl(0.74, 0.62, 4.6, GY, 8); nac.position.set(s * 5.4, 0.85, 0.5); g.add(nac);
+    const spin = new THREE.Group(); spin.position.set(s * 5.4, 0.85, 2.95);
+    for (let i = 0; i < 4; i++) { const b = box(0.13, 3.7, 0.09, 0x1a1e22); b.rotation.z = i * Math.PI / 4; spin.add(b); }
+    const dome = cone(0.22, 0.45, DK, 8); dome.position.z = 0.1; spin.add(dome);
+    g.add(spin); props.push(spin);
+  }
+  // quad tail: tall centre fin, two outboard fins, ventral fin (E-2 hand-me-down)
+  const sG = wingGeo([[0.9, 1.1], [0.9, -1.7], [5.4, -2.4], [5.4, -1.4]], 0.28);
+  for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(GY)); st.scale.x = s; st.position.set(0, 0.6, -11.9); g.add(st); }
+  const fin = new THREE.Mesh(wingGeo([[0, 2.4], [0, -2.6], [3.8, -3.4], [3.8, -2.6]], 0.3), M(GY));
+  fin.rotation.z = Math.PI / 2; fin.position.set(0, 1.0, -12.1); g.add(fin);
+  for (const s of [1, -1]) {
+    const of = new THREE.Mesh(wingGeo([[0, 1.2], [0, -1.6], [2.4, -2.2], [2.4, -1.5]], 0.22), M(GY));
+    of.rotation.z = Math.PI / 2; of.position.set(s * 5.2, 0.9, -12.5); g.add(of);
+  }
+  const vf = new THREE.Mesh(wingGeo([[0, 0.9], [0, -1.4], [1.8, -1.9], [1.8, -1.3]], 0.2), M(GY));
+  vf.rotation.z = -Math.PI / 2; vf.position.set(0, -0.9, -12.3); g.add(vf);
+  // gear + hook — the COD traps aboard like everybody else
+  const gear = _gearSet([[0, -2.35, 5.4], [1.35, -2.35, -0.6], [-1.35, -2.35, -0.6]], 0.4, 1.6);
+  g.add(gear);
+  const hook = box(0.1, 0.1, 2.4, 0xcccccc); hook.position.set(0, -0.9, -9.6);
+  hook.rotation.x = -0.5; hook.visible = false; g.add(hook);
+  // VRC-30: NAVY titles, RW tail code, modex 30
+  const navy = _nameTex('U.S. NAVY', TX);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(4.6, 0.6), new THREE.MeshBasicMaterial({ map: navy, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.98, 0.5, -4.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const code = _nameTex('RW 30', TX);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.8, 0.5), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.17, 3.1, -13.9); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear, hook, stabL: null, stabR: null, stores: {}, props, type: 'c2' };
+  addNavLights(g, 12.3, -13.7, 1.6);
+  return g;
+}
+
+// ---------------- S-3B Viking — VS-37 Sawbucks, CVW-15 (NL), 1994 ----------------
+export function buildS3() {
+  const g = new THREE.Group();
+  const C = 0xaab2b8, CD = 0x8d979e, GL = 0x232e38, DK = 0x39434c;
+  // the Hoover: fat little sub-hunter, high wing, twin turbofan pods
+  const fus = cyl(1.18, 1.05, 11.6, C, 12); g.add(fus);
+  const nose = cone(1.18, 2.8, C, 10); nose.position.set(0, 0, 7.2); g.add(nose);
+  // big four-pane office up front
+  const ck = box(1.55, 0.85, 1.7, GL); ck.position.set(0, 0.72, 5.7); ck.rotation.x = 0.14; g.add(ck);
+  // MAD stinger tail
+  const st = cyl(0.3, 0.08, 3.4, CD, 8); st.position.set(0, 0.2, -7.4); g.add(st);
+  // high wing, slight sweep
+  const wG = wingGeo([[1.2, 1.9], [1.2, -2.0], [10.4, -3.7], [10.4, -2.5]], 0.26);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 1.05; g.add(w); }
+  // TF34 pods slung under the wing
+  for (const s of [1, -1]) {
+    const nac = cyl(0.64, 0.56, 3.6, C, 10); nac.position.set(s * 3.7, 0.25, 0.8); g.add(nac);
+    const face = cyl(0.52, 0.52, 0.14, 0x0c0e10, 10); face.position.set(s * 3.7, 0.25, 2.62); g.add(face);
+    const spinner = cone(0.16, 0.4, CD, 8); spinner.position.set(s * 3.7, 0.25, 2.68); g.add(spinner);
+    const pipe = cyl(0.44, 0.44, 0.16, 0x0a0a0c, 8); pipe.position.set(s * 3.7, 0.25, -1.05); g.add(pipe);
+  }
+  // tall single fin (it folds on the real jet) + low all-moving stabilators
+  const fin = new THREE.Mesh(wingGeo([[0, 2.6], [0, -2.9], [4.3, -3.9], [4.3, -2.8]], 0.26), M(C));
+  fin.rotation.z = Math.PI / 2; fin.position.set(0, 0.9, -4.7); g.add(fin);
+  const sG = wingGeo([[0.4, 0.5], [0.4, -1.4], [3.9, -1.9], [3.9, -1.0]], 0.17);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.45, 0.35, -5.1); g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.45, 0.35, -5.1); g.add(stabR);
+  // sonobuoy chute dots along the belly
+  for (let i = 0; i < 4; i++) {
+    const chute = cyl(0.09, 0.09, 0.1, 0x3c444c, 6); chute.position.set((i % 2) * 0.5 - 0.25, -1.12, 1.5 - Math.floor(i / 2) * 0.8); g.add(chute);
+  }
+  // gear + hook
+  const gear = _gearSet([[0, -1.95, 5.2], [1.15, -1.95, -0.1], [-1.15, -1.95, -0.1]]);
+  g.add(gear);
+  const hook = box(0.1, 0.1, 2.4, 0xcccccc); hook.position.set(0, -0.5, -6.6);
+  hook.rotation.x = -0.5; hook.visible = false; g.add(hook);
+  // VS-37 Sawbucks, last cruise 1994: NAVY aft, NL 700 on the fin
+  const navy = _nameTex('U.S. NAVY', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(3.4, 0.44), new THREE.MeshBasicMaterial({ map: navy, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.22, 0.3, -3.4); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const code = _nameTex('NL 700', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.5), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.15, 2.9, -6.2); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const modex = _nameTex('700', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.34), new THREE.MeshBasicMaterial({ map: modex, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.8, 0.05, 6.9); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear, hook, stabL, stabR, stores: {}, type: 's3' };
+  addNavLights(g, 10.5, -8.6, 1.2);
+  return g;
+}
+
+// ---------------- F-15C Eagle — U.S. Air Force, 1994 ----------------
+export function buildF15() {
+  const g = new THREE.Group();
+  const C = 0x9aa6b2, CD = 0x7f8b97, GL = 0x6a7a80, DK = 0x4c565e;
+  // big air-superiority bruiser: wide flat body, twin tails, huge wing
+  const fus = box(2.1, 1.35, 9.0, C); fus.position.z = -0.5; g.add(fus);
+  const spine = box(1.5, 0.42, 6.6, CD); spine.position.set(0, 0.9, -2.6); g.add(spine);
+  const nose = cone(0.98, 4.8, C); nose.scale.set(1.12, 0.88, 1); nose.position.z = 6.4; g.add(nose);
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.88, 10, 8), M(GL));
+  canopy.scale.set(0.85, 0.68, 2.1); canopy.position.set(0, 0.98, 2.9); g.add(canopy);
+  // the canted, angled intake boxes under the wing roots
+  for (const s of [1, -1]) {
+    const it = box(0.95, 1.15, 3.4, CD); it.position.set(s * 1.5, -0.3, 1.0); it.rotation.z = -s * 0.1; g.add(it);
+    const mouth = box(0.75, 0.85, 0.14, 0x0c0e10); mouth.position.set(s * 1.62, -0.25, 2.74); mouth.rotation.z = -s * 0.1; g.add(mouth);
+  }
+  // shoulder wing, big chord, raked tips
+  const wG = wingGeo([[1.1, 1.3], [1.1, -2.9], [6.5, -4.5], [6.5, -3.3]], 0.22);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 0.55; g.add(w); }
+  // twin tails canted OUT, riding the engine humps
+  const tG = wingGeo([[0, 0.5], [0, -2.4], [3.0, -3.3], [3.0, -2.3]], 0.18);
+  for (const s of [1, -1]) {
+    const t = new THREE.Mesh(tG, M(C));
+    t.rotation.z = Math.PI / 2 + s * 0.2;
+    t.position.set(s * 1.55, 0.75, -4.4); g.add(t);
+  }
+  // twin F100s: humps, nozzles, burner cans
+  const ab = [];
+  for (const s of [1, -1]) {
+    const e = cyl(0.7, 0.62, 5.0, CD); e.position.set(s * 0.95, -0.2, -5.6); g.add(e);
+    const nz = cyl(0.54, 0.44, 1.1, 0x33383e); nz.position.set(s * 0.95, -0.2, -8.3); g.add(nz);
+    const ni = cyl(0.38, 0.38, 0.18, 0x0a0a0c); ni.position.set(s * 0.95, -0.2, -8.78); g.add(ni);
+    const f = abFlame(4.2, 0.52); f.position.set(s * 0.95, -0.2, -9.8); g.add(f); ab.push(f);
+  }
+  // all-moving stabilators, low at the tail
+  const sG = wingGeo([[0.3, 0.3], [0.3, -1.7], [3.7, -1.5], [3.7, -0.3]], 0.15);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, -0.3, -5.9); g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, -0.3, -5.9); g.add(stabR);
+  // gear — land-based only, no hook, no catapult bridle
+  const gear = _gearSet([[0, -2.0, 4.0], [1.1, -2.0, -1.0], [-1.1, -2.0, -1.0]]);
+  g.add(gear);
+  // air-to-air load: AMRAAMs on the fuselage corners, Sidewinders on the wings
+  const stores = { aim9: [], aim120: [] };
+  for (const s of [1, -1]) {
+    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 5.6, -0.3, -3.4); g.add(m9); stores.aim9.push(m9);
+    for (const pz of [0.2, -2.2]) {
+      const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * 1.75, -1.05, pz); g.add(m120); stores.aim120.push(m120);
+    }
+  }
+  // subdued USAF: titles aft, tail codes on the fins
+  const usaf = _nameTex('U.S. AIR FORCE', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 0.5), new THREE.MeshBasicMaterial({ map: usaf, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.1, 0.25, -3.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  const code = _nameTex('FF', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.5), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 1.66, 2.6, -5.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab, gear, hook: null, stabL, stabR, stores, type: 'f15' };
+  addNavLights(g, 6.6, -8.6, 0.9);
+  return g;
+}
+
+// ---------------- A-10A Thunderbolt II — U.S. Air Force, 1994 ----------------
+export function buildA10() {
+  const g = new THREE.Group();
+  const C = 0x5f666e, CD = 0x4c535a, GL = 0x1c262e, DK = 0x2e343a;
+  // the Hawg: straight wing, gun nose, engines on the shoulders, twin tails
+  const fus = box(1.85, 1.6, 9.6, C); fus.position.z = -0.3; g.add(fus);
+  const nose = cone(0.95, 2.8, C); nose.scale.set(1.05, 0.92, 1); nose.position.set(0, -0.1, 5.6); g.add(nose);
+  // the GAU-8's muzzle, low and offset like the real gun install
+  const gun = cyl(0.16, 0.16, 0.9, 0x1c2024, 8); gun.position.set(0.22, -0.62, 6.4); g.add(gun);
+  // bubble canopy in its raised tub
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.8, 10, 8), M(0x54646e));
+  canopy.scale.set(0.85, 0.7, 1.7); canopy.position.set(0, 0.95, 3.3); g.add(canopy);
+  // long straight wing with the hint of a droop at the tips
+  const wG = wingGeo([[0.9, 1.2], [0.9, -1.4], [8.7, -2.3], [8.7, -1.2]], 0.3);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = -0.15; g.add(w); }
+  // station pylons — the Hog never flies clean
+  for (const s of [1, -1]) for (const px of [2.6, 4.6, 6.6]) {
+    const py = box(0.22, 0.5, 1.3, CD); py.position.set(s * px, -0.55, -0.4); g.add(py);
+  }
+  // TF34 pods on the aft shoulders
+  for (const s of [1, -1]) {
+    const nac = cyl(0.74, 0.68, 3.8, C, 10); nac.position.set(s * 1.8, 1.15, -3.2); g.add(nac);
+    const face = cyl(0.58, 0.58, 0.14, 0x0c0e10, 10); face.position.set(s * 1.8, 1.15, -1.28); g.add(face);
+    const pipe = cyl(0.5, 0.5, 0.16, 0x0a0a0c, 8); pipe.position.set(s * 1.8, 1.15, -5.14); g.add(pipe);
+  }
+  // wide stabilator carrying a fin at each tip
+  const sG = wingGeo([[0.4, 0.4], [0.4, -1.4], [4.5, -1.7], [4.5, -0.7]], 0.17);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.45, 0.4, -5.4); g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.45, 0.4, -5.4); g.add(stabR);
+  for (const s of [1, -1]) {
+    const fin = new THREE.Mesh(wingGeo([[0, 1.0], [0, -1.6], [2.0, -2.1], [2.0, -1.3]], 0.15), M(C));
+    fin.rotation.z = Math.PI / 2; fin.position.set(s * 4.3, 0.55, -5.5); g.add(fin);
+    // DM tail code on both fins
+    const code = _nameTex('DM', 0x1c222a);
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.48), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 4.42, 1.6, -6.2); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  // gear — mains hang half-out of their fairings, Hawg style; nose strut offset
+  const gear = _gearSet([[0.35, -1.95, 4.2], [2.3, -1.95, -0.7], [-2.3, -1.95, -0.7]], 0.38, 1.3);
+  g.add(gear);
+  // a pair of Sidewinders on the outboard rails — self-escort only
+  const stores = { aim9: [] };
+  for (const s of [1, -1]) {
+    const m9 = missileMesh(0xd8d8d8, 2.9, 0.13); m9.position.set(s * 7.4, -0.75, -0.6); g.add(m9); stores.aim9.push(m9);
+  }
+  // subdued USAF titles aft
+  const usaf = _nameTex('U.S. AIR FORCE', DK);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 0.46), new THREE.MeshBasicMaterial({ map: usaf, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.96, 0.15, -3.9); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab: [], gear, hook: null, stabL, stabR, stores, type: 'a10' };
+  addNavLights(g, 8.8, -6.9, 0.9);
+  return g;
+}
+
+// ---------------- Su-27 Flanker — Soviet-era markings ----------------
+export function buildSU27() {
+  const g = new THREE.Group();
+  const C = 0x8294a8, CD = 0x6b7d92, GL = 0x1e2a34, DK = 0x3c4a58;
+  // long, elegant bruiser: drooped nose, tunnel body, tail stinger
+  const fus = box(2.0, 1.25, 9.8, C); fus.position.z = -0.9; g.add(fus);
+  const spine = box(1.3, 0.4, 7.0, CD); spine.position.set(0, 0.8, -2.6); g.add(spine);
+  const nose = cone(0.92, 5.6, C); nose.scale.set(1.08, 0.85, 1); nose.position.set(0, -0.08, 7.2); nose.rotation.x = 0.05; g.add(nose);
+  // big bubble canopy + the IRST ball ahead of the windscreen
+  const canopy = new THREE.Mesh(new THREE.SphereGeometry(0.9, 10, 8), M(0x3c4a56));
+  canopy.scale.set(0.85, 0.66, 2.2); canopy.position.set(0, 0.9, 3.2); g.add(canopy);
+  const irst = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 6), M(GL)); irst.position.set(0.18, 0.72, 5.2); g.add(irst);
+  // rectangular intakes under the LERX, wedge-profiled
+  for (const s of [1, -1]) {
+    const it = box(0.9, 0.95, 3.6, CD); it.position.set(s * 1.3, -0.6, 0.7); g.add(it);
+    const mouth = box(0.72, 0.68, 0.14, 0x0c0e10); mouth.position.set(s * 1.3, -0.6, 2.54); g.add(mouth);
+  }
+  // LERX blending into the big swept wing
+  const lexG = wingGeo([[0.5, 4.8], [2.1, 0.4], [0.5, 0.4]], 0.12);
+  for (const s of [1, -1]) {
+    const lex = new THREE.Mesh(lexG, M(CD)); lex.scale.x = s; lex.position.set(0, 0.25, 0.6); g.add(lex);
+  }
+  const wG = wingGeo([[1.1, 1.0], [1.1, -3.0], [7.3, -4.7], [7.3, -3.4]], 0.2);
+  for (const s of [1, -1]) { const w = new THREE.Mesh(wG, M(C)); w.scale.x = s; w.position.y = 0.3; g.add(w); }
+  // twin canted tails on the nacelles + small ventrals
+  const tG = wingGeo([[0, 0.6], [0, -2.5], [3.1, -3.4], [3.1, -2.4]], 0.18);
+  for (const s of [1, -1]) {
+    const t = new THREE.Mesh(tG, M(C));
+    t.rotation.z = Math.PI / 2 + s * 0.22;
+    t.position.set(s * 1.75, 0.8, -4.7); g.add(t);
+    const vf = box(0.12, 0.85, 1.4, CD); vf.position.set(s * 1.3, -0.95, -5.9); vf.rotation.z = -s * 0.12; g.add(vf);
+  }
+  // widely spaced AL-31s + the stinger boom between the nozzles
+  const ab = [];
+  for (const s of [1, -1]) {
+    const e = cyl(0.64, 0.56, 5.6, CD); e.position.set(s * 1.2, -0.4, -6.1); g.add(e);
+    const nz = cyl(0.5, 0.4, 1.2, 0x33383e); nz.position.set(s * 1.2, -0.4, -9.1); g.add(nz);
+    const ni = cyl(0.34, 0.34, 0.18, 0x0a0a0c); ni.position.set(s * 1.2, -0.4, -9.62); g.add(ni);
+    const f = abFlame(4.0, 0.48); f.position.set(s * 1.2, -0.4, -10.5); g.add(f); ab.push(f);
+  }
+  const stinger = cyl(0.24, 0.1, 3.2, C, 8); stinger.position.set(0, -0.15, -9.9); g.add(stinger);
+  // all-moving stabilators
+  const sG = wingGeo([[0.3, 0.3], [0.3, -1.7], [3.9, -1.6], [3.9, -0.4]], 0.15);
+  const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, -0.2, -6.5); g.add(stabL);
+  const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, -0.2, -6.5); g.add(stabR);
+  // gear
+  const gear = _gearSet([[0, -2.0, 4.4], [1.25, -2.0, -1.2], [-1.25, -2.0, -1.2]]);
+  g.add(gear);
+  // soviet stars on the fins and rear fuselage, blue bort 38 on the nose
+  for (const s of [1, -1]) {
+    const p = starDecal(1.3); p.position.set(s * 1.86, 2.5, -5.9); p.rotation.y = s * Math.PI / 2; g.add(p);
+    const p2 = starDecal(1.1); p2.position.set(s * 1.06, 0.1, -3.4); p2.rotation.y = s * Math.PI / 2; g.add(p2);
+  }
+  const bort = _nameTex('38', 0x2a5fd0);
+  for (const s of [1, -1]) {
+    const p = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), new THREE.MeshBasicMaterial({ map: bort, transparent: true, side: THREE.FrontSide }));
+    p.position.set(s * 0.72, 0.15, 5.6); p.rotation.y = s * Math.PI / 2; g.add(p);
+  }
+  g.userData = { ab, gear, hook: null, stabL, stabR, stores: {}, type: 'su27' };
+  addNavLights(g, 7.4, -9.6, 0.9);
+  return g;
+}
+
 export function buildModel(type, livery = 0) {
   switch (type) {
     case 'f18': return buildFA18();
     case 'f16': return buildF16();
     case 'f14': return buildF14();
+    case 'f15': return buildF15();
+    case 'a10': return buildA10();
+    case 'su27': return buildSU27();
+    case 'a6': return buildA6();
+    case 'c2': return buildC2();
+    case 's3': return buildS3();
     case 'mig29': return buildMiG29();
     case 'seahawk': return buildSeahawk();
     case 'apache': return buildApache();

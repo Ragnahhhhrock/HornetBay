@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { clamp, lerp, damp, KTS, FT, NM, wrapAngle, flightQuat, rand } from './util.js';
 import { World, groundHeight } from './world.js';
 import { Player, PLANES, Chute } from './flight.js';
+import { AirWing } from './airwing.js';
 import { AIAircraft } from './ai.js';
 import { FXPool, Missile, GunSystem } from './weapons.js';
 import { HUD } from './hud.js';
@@ -414,6 +415,13 @@ window.addEventListener('keydown', (e) => {
       if (save.tomcat) { G.player.type = 'f14'; stats.planeSelect('f14'); launchWithZoom(pendingMission); }
       else { openTomcatUnlock(); }
     }
+    else if (e.code === 'Digit4' || e.code === 'Digit5') {
+      // the USAF jets: F-15 (4) and A-10 (5) — no tailhooks, no boat
+      const t = e.code === 'Digit4' ? 'f15' : 'a10';
+      const carrierStart = pendingMission.id === 'free' ? G.freeFlightStart === 'carrier' : pendingMission.id !== 'm1';
+      if (carrierStart) { G.intro.blockMsg = PLANES[t].label + ' CANNOT OPERATE FROM THE CARRIER'; G.intro.blockT = G.time; G.audio.radioClick(); }
+      else { G.player.type = t; stats.planeSelect(t); launchWithZoom(pendingMission); }
+    }
   } else if (G.state === 'mapselect') {
     const spot = FF_SPOTS.find(s => s.key === (e.code.startsWith('Digit') ? e.code.slice(5) : ''));
     if (spot) { G.freeFlightStart = spot.id; stats.startPoint(spot.id); enterPlaneSelect(MISSIONS.find(m => m.id === 'free')); }
@@ -464,8 +472,8 @@ function launchMission(def, opts = {}) {
   if (def.id !== 'free') stats.missionFlown(def.id);
   G._menuResume = false;   // a fresh sortie replaces the one the menu remembered
   wakeLockTry();   // keep the screen awake for the sortie
-  // safety net: the F-16 never goes to the boat, whatever path got us here
-  if (G.player.type === 'f16') {
+  // safety net: noBoat types never go to the boat, whatever path got us here
+  if (PLANES[G.player.type] && PLANES[G.player.type].noBoat) {
     const carrierStart = def.id === 'free' ? G.freeFlightStart === 'carrier' : def.id !== 'm1';
     if (carrierStart) G.player.type = 'f18';
   }
@@ -487,6 +495,7 @@ function launchMission(def, opts = {}) {
   G.p3 = new P3Patrol(G);       // the Orion holds its oval west of the group
   if (G.awacs) G.awacs.dispose();
   G.awacs = new Awacs(G);       // VAW-123 keeps the big picture from on high
+  G.airWing = new AirWing(G);   // VA-52 / VS-37 / VRC-30 work the deck cycle
   if (G.wingman) { G.wingman.dispose(); G.wingman = null; }
   if (def.id !== 'free') G.wingman = new Wingman(G);   // VIPER TWO rides every mission
   for (const m of G.missiles) m._die();
@@ -637,8 +646,8 @@ G.onTrapped = () => {
   // rearm & refuel
   const P = G.player;
   P.fuel = P.cfg.fuel;
-  P.stores.aim9 = 2; P.stores.gun = P.type === 'f14' ? 675 : 500;
-  if (P.type === 'f14') P.stores.aim54 = 4; else P.stores.aim120 = 4;
+  P.stores.aim9 = 2; P.stores.gun = P.type === 'f14' ? 675 : P.type === 'a10' ? 1150 : 500;
+  if (P.type === 'f14') P.stores.aim54 = 4; else if (P.type !== 'a10') P.stores.aim120 = 4;
   P.stores.chaff = 14; P.stores.flares = 14; P.damage = Math.min(P.damage, 20);
 };
 // sonic boom: crossing Mach 1 shakes the world and cracks the air
@@ -1070,7 +1079,9 @@ function handleDiscreteInput(dt) {
   // weapon select: ENTER cycles (the Amiga original's key), TAB as an alias,
   // 1/2/3 jump straight to a weapon; the voice callout says what's live
   const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
-  const wOrder = P.type === 'f14' ? ['aim54', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'];
+  // cycle order skips anything the jet doesn't carry (the A-10 has no AMRAAM)
+  const wOrder = (P.type === 'f14' ? ['aim54', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'])
+    .filter(w => w === 'gun' || (P.stores[w] || 0) > 0);
   if (I.pressed('Enter') || I.pressed('Tab')) selW(wOrder[(wOrder.indexOf(P.weapon) + 1) % wOrder.length]);
   if (!wingOrdersOpen()) {
     if (I.pressed('Digit1')) selW(wOrder[0]);
@@ -1104,7 +1115,7 @@ function handleDiscreteInput(dt) {
     }
   }
   if (I.pressed('KeyH') || I.pressed('KeyA')) {
-    if (P.type === 'f16') G.msg('THE F-16 HAS NO TAILHOOK', 'warn');
+    if (P.cfg.noBoat) G.msg('THE ' + P.cfg.label + ' HAS NO TAILHOOK', 'warn');
     else { P.hookDown = !P.hookDown; G.audio.hook(); }
   }
   if (I.pressed('KeyB')) { P.brakes = !P.brakes; }
