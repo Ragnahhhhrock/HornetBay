@@ -6,6 +6,7 @@ import { groundHeight } from './world.js';
 import { buildModel } from './models.js';
 
 const _v = new THREE.Vector3();
+const _v2 = new THREE.Vector3();
 
 // kinematic rotor-wing: spool, liftoff, transit, approach, land, parked
 export class Helicopter {
@@ -67,9 +68,10 @@ export class Helicopter {
         break;
       }
       case 'liftoff': {
+        // vertical climb straight to cruise altitude, tracking the deck
         const base = this.anchor ? this.anchor.getPos(_v) : _v.set(this.pos.x, groundHeight(this.pos.x, this.pos.z), this.pos.z);
-        const wantY = base.y + this.hoverAlt;
-        this.vy = damp(this.vy, clamp((wantY - this.pos.y) * 0.8, 0.5, 4), 2, dt);
+        const wantY = Math.max(this.cruiseAlt, base.y + this.hoverAlt);
+        this.vy = damp(this.vy, clamp((wantY - this.pos.y) * 0.6, 0.8, 6), 2, dt);
         this.pos.y += this.vy * dt;
         if (this.anchor) {  // rise straight off the deck, tracking it
           this.pos.x = damp(this.pos.x, base.x, 1.2, dt);
@@ -87,11 +89,16 @@ export class Helicopter {
         const dh = wrapAngle(wantHdg - this.heading);
         const turnRate = clamp(2.2 * 9.81 / Math.max(this.speed, 20), 0.35, 1.4);
         this.heading += clamp(dh, -turnRate * dt, turnRate * dt);
-        this.bank = damp(this.bank, clamp(-dh * 1.6, -0.55, 0.55), 3, dt);
+        this.bank = damp(this.bank, clamp(dh * 1.6, -0.55, 0.55), 3, dt);   // roll into the turn
         const wantSpeed = dist > 400 ? this.cruiseSpeed : clamp(dist * 0.12, 8, this.cruiseSpeed);
         this.speed = damp(this.speed, wantSpeed, 0.6, dt);
-        const ty = t.y ?? this.cruiseAlt;
-        this.vy = damp(this.vy, clamp((ty - this.pos.y) * 0.5, -6, 6), 1.5, dt);
+        // hold level altitude; on the final leg glide down toward the landing
+        let ty = t.y ?? this.cruiseAlt;
+        if (this.target) {
+          const gy = this.target.anchor ? this.target.anchor.getPos(_v2).y : (this.target.y ?? 0);
+          ty = Math.min(ty, gy + 12 + Math.max(dist - 120, 0) * 0.35);
+        }
+        this.vy = damp(this.vy, clamp((ty - this.pos.y) * 0.5, -6, 4), 1.5, dt);
         this.pitchA = damp(this.pitchA, this.speed > 10 ? -0.12 : 0, 2, dt);
         this.pos.x += Math.sin(this.heading) * this.speed * dt;
         this.pos.z += -Math.cos(this.heading) * this.speed * dt;
@@ -117,13 +124,13 @@ export class Helicopter {
         const wantHdg = Math.atan2(dx, -dz);
         const dh = wrapAngle(wantHdg - this.heading);
         this.heading += clamp(dh, -1.2 * dt, 1.2 * dt);
-        this.bank = damp(this.bank, clamp(-dh * 1.2, -0.4, 0.4), 3, dt);
+        this.bank = damp(this.bank, clamp(dh * 1.2, -0.4, 0.4), 3, dt);   // roll into the turn
         if (dist > 60 || above > 15) {
           // velocity-control phase: fly to a hover over the spot, with
           // feed-forward for the moving deck
           const wantSpeed = clamp(dist * 0.25 + Math.hypot(svx, svz), 0, 26);
           this.speed = damp(this.speed, wantSpeed, 0.8, dt);
-          const vyWant = above > 15 ? clamp((spot.y + 12 - this.pos.y) * 0.4, -3.5, 0)
+          const vyWant = above > 15 ? clamp((spot.y + 12 - this.pos.y) * 0.3, -6, 0)
                                     : clamp(-above * 0.45, -1.5, 2.2);
           this.vy = damp(this.vy, vyWant, 1.5, dt);
           this.pos.x += Math.sin(this.heading) * this.speed * dt + svx * dt;

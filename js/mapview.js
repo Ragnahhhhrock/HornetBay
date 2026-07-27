@@ -11,8 +11,43 @@ export class MapView {
   constructor() {
     this.on = false;
     this.base = null;   // prerendered land/sea/runways backdrop
+    // pan & zoom view window: centre (world m) + zoom factor (1 = whole chart)
+    this.cx = (X0 + X1) / 2; this.cz = (Z0 + Z1) / 2;
+    this.zoom = 1;
+    this.grabbing = false;   // left-drag in progress (main.js mutes the gun)
+    this._drag = null;
+    this._rect = null;       // last drawn chart rect, for hit tests
   }
   toggle() { this.on = !this.on; return this.on; }
+
+  // drag on the chart pans, the wheel zooms, backspace reframes — called each
+  // frame from handleDiscreteInput while the map is up. mouse coords are
+  // normalized to the window; the HUD canvas has its own size, kept from draw()
+  interact(I) {
+    const r = this._rect, cw = this._cw, ch = this._ch;
+    if (!r || !cw) return;
+    const px = (I.mx + 1) / 2 * cw, py = (I.my + 1) / 2 * ch;
+    const inside = px >= r.bx && px <= r.bx + r.dw && py >= r.by && py <= r.by + r.dh;
+    if (inside && I.wheel) {
+      this.zoom = Math.min(12, Math.max(1, this.zoom * Math.pow(1.25, -I.wheel)));
+      I.wheel = 0;   // the chart takes the wheel over the spectate camera
+    }
+    if (I.pressed('Backspace')) { this.zoom = 1; }
+    if (this.zoom === 1) { this.cx = (X0 + X1) / 2; this.cz = (Z0 + Z1) / 2; }
+    if (I.mb0 && inside && !this._drag) this._drag = { px, py };
+    if (!I.mb0) this._drag = null;
+    this.grabbing = !!this._drag;
+    if (this._drag) {
+      const spanX = (X1 - X0) / this.zoom, spanZ = (Z1 - Z0) / this.zoom;
+      this.cx -= (px - this._drag.px) / r.dw * spanX;
+      this.cz -= (py - this._drag.py) / r.dh * spanZ;
+      this._drag = { px, py };
+      // keep the window on the chart
+      const hx = spanX / 2, hz = spanZ / 2;
+      this.cx = Math.min(X1 - hx, Math.max(X0 + hx, this.cx));
+      this.cz = Math.min(Z1 - hz, Math.max(Z0 + hz, this.cz));
+    }
+  }
 
   _buildBase(world) {
     const px = 220, py = Math.round(px * (Z1 - Z0) / (X1 - X0));
@@ -74,13 +109,22 @@ export class MapView {
     const dh = Math.floor(h * 0.46);
     const sc = dh / this.base.height, dw = this.base.width * sc;
     const bx = 12, by = 12;
-    const mx = (x) => bx + (x - X0) / (X1 - X0) * dw;
-    const my = (z) => by + (z - Z0) / (Z1 - Z0) * dh;
+    this._rect = { bx, by, dw, dh };
+    this._cw = w; this._ch = h;
+    // the visible world window: full chart at zoom 1, closing on the centre
+    const spanX = (X1 - X0) / this.zoom, spanZ = (Z1 - Z0) / this.zoom;
+    const vx0 = this.cx - spanX / 2, vz0 = this.cz - spanZ / 2;
+    const mx = (x) => bx + (x - vx0) / spanX * dw;
+    const my = (z) => by + (z - vz0) / spanZ * dh;
+    // matching source rect on the prerendered backdrop
+    const sx = (vx0 - X0) / (X1 - X0) * this.base.width, sw = spanX / (X1 - X0) * this.base.width;
+    const sy = (vz0 - Z0) / (Z1 - Z0) * this.base.height, sh = spanZ / (Z1 - Z0) * this.base.height;
 
     c.save();
-    c.globalAlpha = 0.88;
-    c.drawImage(this.base, bx, by, dw, dh);
-    c.globalAlpha = 1;
+    c.globalAlpha = 1;   // fully opaque — the sea behind never shows through
+    c.drawImage(this.base, sx, sy, sw, sh, bx, by, dw, dh);
+    c.save();
+    c.beginPath(); c.rect(bx, by, dw, dh); c.clip();   // markers stay on the chart
     c.strokeStyle = 'rgba(223,227,230,0.9)'; c.lineWidth = 2;
     c.strokeRect(bx, by, dw, dh);
 
@@ -144,6 +188,11 @@ export class MapView {
     c.font = 'bold 12px "Courier New", monospace';
     c.textAlign = 'left';
     c.fillText('MAP', bx + 6, by + 15);
+    if (this.zoom > 1) c.fillText(`x${this.zoom.toFixed(1)}`, bx + 48, by + 15);
+    c.restore();   // unclip
+    c.fillStyle = 'rgba(223,227,230,0.75)';
+    c.font = 'bold 9px "Courier New", monospace';
+    c.fillText('DRAG PAN · WHEEL ZOOM · BKSP RESET', bx + 6, by + dh - 6);
     c.restore();
   }
 }

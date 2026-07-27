@@ -63,8 +63,9 @@ export class HUD {
       return;
     }
     if (G.specTarget) {
-      // spectate: riding another aircraft — no cockpit, no own-ship symbology
-      this._messages(c, G, s);
+      // spectate: riding another aircraft — no cockpit, no own-ship symbology.
+      // notifications print on-screen like the contact titles, below the banner
+      this._messages(c, G, s, this.h * 0.165);
       const slabel = (G.specTarget.cfg ? 'MISSILE VIEW — ' : 'SPECTATE — ') + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
       c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105);
@@ -84,7 +85,9 @@ export class HUD {
       this._waypoint(c, G, s);
       this._warnings(c, G, P, s);
       c.restore();
-      this._panel(c, st);   // messages print in the panel's centre-bottom strip
+      this._panel(c, st);   // the panel strip still prints the latest line
+      this._messages(c, G, s);   // …but notifications also ride on-screen, not
+                                 // just in the in-cockpit bar
     } else {
       this._flightPathMarker(c, G, P);
       this._gunReticle(c, st);
@@ -370,9 +373,8 @@ export class HUD {
     c.fillText(`WPT ${(G.player.pos.distanceTo(G.waypoint) / NM).toFixed(1)}`, pr.x + r + 4 * s, pr.y + 4 * s);
   }
 
-  _messages(c, G, s) {
+  _messages(c, G, s, y0 = this.h * 0.05) {
     const x = this.cxw;
-    let y0 = this.h * 0.05;
     c.textAlign = 'center';
     let i = 0;
     for (const m of G.messages) {

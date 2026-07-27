@@ -1045,6 +1045,12 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyN') && (G.state === 'flying' || G.state === 'paused')) {
     G.msg(G.mapview.toggle() ? 'MAP ON' : 'MAP OFF', 'info');
   }
+  // map pan/zoom: drag the chart, wheel to zoom — the gun stays quiet while
+  // the drag is on the chart
+  if (G.mapview.on && (G.state === 'flying' || G.state === 'paused')) {
+    G.mapview.interact(I);
+    if (G.mapview.grabbing) I.trigger = false;
+  }
   if (G.state !== 'flying') {
     G.audio.setGatling(false);   // cut the burst on pause/death/quit
     if (I.pressed('Slash')) { $('controls').classList.contains('hidden') ? G.openManual() : G.closeManual(); }
@@ -1612,6 +1618,21 @@ function frame() {
   }
 }
 
+// spectate audio: what engine does the ridden contact have?
+function specSoundKind(s) {
+  if (s.kind === 'heli') return 'prop';         // rotor whirr (checked first — helos carry a len for the camera)
+  const ty = s.type || '';
+  if (/^(e2c|c2|p3)$/.test(ty)) return 'prop';
+  if (s.kind === 'airliner' || /^(b747|b744|b737|dc10|md90|b707|cruise)$/.test(ty)) return 'turbofan';
+  if (s.cfg) return null;                       // missiles
+  if (s.len && !s.model) return null;           // vessels & the carrier (aircraft all carry a model)
+  return 'jet';
+}
+function specSoundRpm(s) {
+  const ref = s.kind === 'heli' ? 55 : s.kind === 'airliner' ? 240 : 260;
+  return clamp((s.speed || 0) / ref, 0.18, 1);
+}
+
 function stepGame(dt) {
   G.input.poll();
   if (SCRIPT) runScript(dt);
@@ -1717,7 +1738,14 @@ function stepGame(dt) {
     updateRadarContacts();
     // audio — once the pilot is out, the jet's engine stays silent for good
     G.audio.updateFlight(P.ejected ? 0 : P.throttle, !P.ejected && P.ab, P.ejected ? 0 : P.speed);
-    if (_sub === _subs - 1) hud.draw(G, dt);
+    if (_sub === _subs - 1) {
+      hud.draw(G, dt);
+      // spectate voice: play the engine of the aircraft the camera rides —
+      // jets reuse the recorded loops, airliners a turbofan whine, E-2/C-2/
+      // P-3 and the helos a prop whirr; ships and missiles stay silent
+      const sp = G.specTarget && !G.specTarget.dead && !G.specTarget.removeMe ? G.specTarget : null;
+      G.audio.specTick(sp ? specSoundKind(sp) : null, sp ? specSoundRpm(sp) : 0);
+    }
     }
   } else if (G.state === 'paused') {
     hud.draw(G, 0);

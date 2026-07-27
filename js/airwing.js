@@ -232,7 +232,7 @@ class Airframe {
           const dhA = wrapAngle(want - this.heading);
           const turnRate = clamp(2.0 * 9.81 / Math.max(this.speed, 40), 0.3, 1.0) * 1.6;
           this.heading = wrapAngle(this.heading + clamp(dhA, -turnRate * dt, turnRate * dt));
-          this.bank = damp(this.bank, clamp(-dhA * 1.5, -0.5, 0.5), 3, dt);
+          this.bank = damp(this.bank, clamp(dhA * 1.5, -0.5, 0.5), 3, dt);   // roll into the turn
           this.speed = damp(this.speed, 62, 0.5, dt);
           const vyT = D > 320
             ? clamp((aim.y + D * 0.0616 - this.pos.y) * 0.6, -14, 14)
@@ -288,7 +288,7 @@ class Airframe {
     const dh = wrapAngle(want - this.heading);
     const turnRate = clamp(2.0 * 9.81 / Math.max(this.speed, 40), 0.3, 1.0) * gain;
     this.heading = wrapAngle(this.heading + clamp(dh, -turnRate * dt, turnRate * dt));
-    this.bank = damp(this.bank, clamp(-dh * 1.5, -0.6, 0.6), 3, dt);
+    this.bank = damp(this.bank, clamp(dh * 1.5, -0.6, 0.6), 3, dt);   // roll into the turn
     this.speed = damp(this.speed, speed, 0.5, dt);
     this.vy = damp(this.vy, clamp((y - this.pos.y) * 0.6, -14, 14), 1.6, dt);
     this.pitchA = damp(this.pitchA, clamp(-this.vy * 0.012, -0.3, 0.14), 2, dt);

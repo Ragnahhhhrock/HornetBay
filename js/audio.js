@@ -285,6 +285,96 @@ export class AudioEngine {
     const g = c.createGain(); g.gain.value = 0.17;
     s.connect(f); f.connect(g); g.connect(this.sfx); s.start();
   }
+  // ---------- spectate voice: the engine of the aircraft the camera rides ----------
+  // three voices crossfaded by type: jets reuse the recorded Amiga loops,
+  // airliners get a synthesized turbofan whine, prop planes (E-2/C-2/P-3,
+  // and the helicopters' rotor whirr) get a blade-pass whirr
+  _buildSpec() {
+    const c = this.ctx, sp = this._spec = { kind: undefined, v: {} };
+    const voice = () => { const out = c.createGain(); out.gain.value = 0; out.connect(this.sfx); return out; };
+    // jets: a second crossfade pair off the recorded idle/mil loops
+    if (this.buf.eng_idle && this.buf.eng_mil) {
+      const out = voice();
+      const mk = (b) => {
+        const s = c.createBufferSource(); s.buffer = b; s.loop = true;
+        const g = c.createGain(); g.gain.value = 0;
+        s.connect(g); g.connect(out); s.start();
+        return { s, g };
+      };
+      const a = mk(this.buf.eng_idle), b = mk(this.buf.eng_mil);
+      sp.v.jet = { out, set: (r, t) => {
+        const rr = clamp(r, 0, 1);
+        a.g.gain.setTargetAtTime(0.30 * (1 - rr), t, 0.15);
+        b.g.gain.setTargetAtTime(0.10 + 0.28 * rr, t, 0.15);
+        const rate = 0.92 + rr * 0.24;
+        a.s.playbackRate.setTargetAtTime(rate, t, 0.15);
+        b.s.playbackRate.setTargetAtTime(rate, t, 0.15);
+      } };
+    }
+    // airliners: turbofan whine — two detuned high sines over compressor hiss
+    {
+      const out = voice();
+      const n = c.createBufferSource(); n.buffer = this._noiseBuffer(2); n.loop = true;
+      const nf = c.createBiquadFilter(); nf.type = 'bandpass'; nf.frequency.value = 950; nf.Q.value = 1.2;
+      const ng = c.createGain(); ng.gain.value = 0;
+      n.connect(nf); nf.connect(ng); ng.connect(out); n.start();
+      const mk = (f) => {
+        const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = f;
+        const g = c.createGain(); g.gain.value = 0;
+        o.connect(g); g.connect(out); o.start();
+        return { o, g };
+      };
+      const w1 = mk(2350), w2 = mk(3120);
+      sp.v.turbofan = { out, set: (r, t) => {
+        const rr = clamp(r, 0, 1);
+        ng.gain.setTargetAtTime(0.05 + 0.10 * rr, t, 0.2);
+        nf.frequency.setTargetAtTime(700 + 900 * rr, t, 0.2);
+        w1.o.frequency.setTargetAtTime(1900 + 900 * rr, t, 0.25);
+        w2.o.frequency.setTargetAtTime(2500 + 1200 * rr, t, 0.25);
+        w1.g.gain.setTargetAtTime(0.016 + 0.030 * rr, t, 0.2);
+        w2.g.gain.setTargetAtTime(0.012 + 0.024 * rr, t, 0.2);
+      } };
+    }
+    // props: blade-pass whirr — beating low twins (two engines) + first
+    // harmonic over low-passed noise
+    {
+      const out = voice();
+      const n = c.createBufferSource(); n.buffer = this._noiseBuffer(2); n.loop = true;
+      const nf = c.createBiquadFilter(); nf.type = 'lowpass'; nf.frequency.value = 620; nf.Q.value = 0.7;
+      const ng = c.createGain(); ng.gain.value = 0;
+      n.connect(nf); nf.connect(ng); ng.connect(out); n.start();
+      const mk = (type, f) => {
+        const o = c.createOscillator(); o.type = type; o.frequency.value = f;
+        const g = c.createGain(); g.gain.value = 0;
+        o.connect(g); g.connect(out); o.start();
+        return { o, g };
+      };
+      const p1 = mk('sawtooth', 76), p2 = mk('sawtooth', 78.5), p3 = mk('square', 154);
+      sp.v.prop = { out, set: (r, t) => {
+        const rr = clamp(r, 0, 1);
+        ng.gain.setTargetAtTime(0.05 + 0.08 * rr, t, 0.2);
+        const bf = 62 + 26 * rr;   // blade-pass frequency follows speed
+        p1.o.frequency.setTargetAtTime(bf, t, 0.25);
+        p2.o.frequency.setTargetAtTime(bf * 1.03, t, 0.25);   // twin-engine beat
+        p3.o.frequency.setTargetAtTime(bf * 2.02, t, 0.25);
+        p1.g.gain.setTargetAtTime(0.030 + 0.040 * rr, t, 0.2);
+        p2.g.gain.setTargetAtTime(0.024 + 0.034 * rr, t, 0.2);
+        p3.g.gain.setTargetAtTime(0.010 + 0.016 * rr, t, 0.2);
+      } };
+    }
+  }
+  // call every frame: kind = 'jet' | 'turbofan' | 'prop' | null (not spectating)
+  specTick(kind, rpm = 0.6) {
+    if (!this.ctx) return;
+    if (!this._spec) this._buildSpec();
+    const sp = this._spec, t = this.ctx.currentTime;
+    if (sp.kind !== kind) {
+      sp.kind = kind;
+      for (const k of Object.keys(sp.v)) sp.v[k].out.gain.setTargetAtTime(k === kind ? 1 : 0, t, 0.25);
+    }
+    if (kind && sp.v[kind]) sp.v[kind].set(rpm, t);
+  }
+
   kill() { this._tone(520, 0.12, 0.25, 'square'); setTimeout(() => this._tone(780, 0.18, 0.25, 'square'), 120); }
   fail() { this._tone(300, 0.5, 0.3, 'sawtooth', 90); }
   podDrop() { this._tone(500, 0.3, 0.2, 'sine', 200); }

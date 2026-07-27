@@ -18,8 +18,9 @@ function angels(altM) { return Math.max(1, Math.round(altM * 3.28084 / 1000)); }
 export class Awacs {
   constructor(G) {
     this.G = G;
+    this.legT = 0.2;
     this.ai = new AIAircraft(G.scene, G.world, 'e2c', {
-      pos: new THREE.Vector3(5000, 7010, -8000),
+      pos: this._orbitPoint(this.legT, new THREE.Vector3()),
       heading: 0, speed: 140,
       name: 'SCREWTOPS 601', label: 'E-2C HAWKEYE', hp: 300,
       mode: 'route', noEvade: true,
@@ -27,17 +28,17 @@ export class Awacs {
     this.ai.kind = 'awacs';
     this.ai.identified = true;
     this.ai.targetSpeed = 140;
-    this.legT = 0.2;
     this.greeted = false;
     this.cool = { bogie: 0, traffic: 0, picture: 20, friendly: 30 };
     this._lastBogie = null;
     G.bandits.push(this.ai);
   }
 
-  // a 28 km wheel over the bay at 23,000 ft, ~9 min a lap
+  // a 20 NM x 20 NM oval around the map centre (-10500, 12000) at 23,000 ft
+  // — 20 NM = 37,040 m across, so an 18,520 m radius (~14 min a lap)
   _orbitPoint(t, out) {
     const a = t * Math.PI * 2;
-    return out.set(5000 + Math.cos(a) * 14000, 7010, 10000 + Math.sin(a) * 14000);
+    return out.set(-10500 + Math.cos(a) * 18520, 7010, 12000 + Math.sin(a) * 18520);
   }
 
   _call(text) {
@@ -48,8 +49,8 @@ export class Awacs {
   update(dt) {
     const G = this.G, ai = this.ai;
     if (ai.dead || ai.removeMe) return;
-    // fly the wheel
-    this.legT = (this.legT + dt * 0.00175) % 1;   // ~9.5 min per lap
+    // fly the oval — 140 m/s around a 2*pi*18520 m lap
+    this.legT = (this.legT + dt * 140 / (2 * Math.PI * 18520)) % 1;
     this._orbitPoint(this.legT, _d);
     ai._steerToward(_d.sub(ai.pos).normalize(), dt, 0.5);
     ai.targetSpeed = 140;

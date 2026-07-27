@@ -62,7 +62,7 @@ export class AIAircraft {
       this.pitch = Math.asin(clamp(f.y, -1, 1));
       // bank into the turn (visual)
       const cross = _d.set(f.x, 0, f.z).cross(dir).y;
-      this.bank = damp(this.bank, clamp(-angle * Math.sign(cross || 1) * 1.2, -1.2, 1.2), 3, dt);
+      this.bank = damp(this.bank, clamp(angle * Math.sign(cross || 1) * 1.2, -1.2, 1.2), 3, dt);   // roll into the turn (right turn: cross<0, and flightQuat banks right for b<0)
     } else {
       this.bank = damp(this.bank, 0, 3, dt);
     }
