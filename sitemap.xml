@@ -6,6 +6,7 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/share-and-share-alike</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/clarry-g</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/ah64-apache</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/contact-report</loc><priority>0.7</priority></url>
@@ -90,6 +91,7 @@
   <url><loc>https://hornetbay.com/blog/hornet-bay-name</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/aircraft</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/specs</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/graphics</loc><priority>0.6</priority></url>
@@ -97,7 +99,6 @@
   <url><loc>https://hornetbay.com/blog/tag/controls</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/ai</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/audio</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/bug-fix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/content</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/brand</loc><priority>0.6</priority></url>

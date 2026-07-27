@@ -93,6 +93,14 @@
     max-width: 860px; margin: 28px auto 0; font-size: 12px; color: var(--ink-dim);
     letter-spacing: 1px;
   }
+
+  /* share bar under every entry */
+  .sharebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .share-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .share-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .share-btn:hover { color: var(--amber); border-color: var(--amber); }
+  .share-copy { color: var(--ink-dim); }
+  .share-copy:hover { color: var(--amber-hi); }
 </style>
 <script type="application/ld+json">
 {
@@ -102,6 +110,19 @@
   "url": "https://hornetbay.com/blog",
   "description": "Every new feature in the Hornet Bay rebuild, logged with a screenshot.",
   "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "Share and share alike: buttons on every journal entry PENDING",
+      "datePublished": "2026-07-27",
+      "url": "https://hornetbay.com/blog/share-and-share-alike",
+      "wordCount": 50,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/share-and-share-alike.jpg"
+    },
     {
       "@type": "BlogPosting",
       "headline": "The Hawkeye gets her tail back, and K-MAN gets his gunner: meet Clarry G 3e5442b",
@@ -1215,6 +1236,17 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+  <article id="share-and-share-alike">
+    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <h2><a class="title-link" href="/blog/share-and-share-alike">Share and share alike: buttons on every journal entry</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/share-and-share-alike.jpg"><img src="/shots/share-and-share-alike.jpg" alt="The new share bar under a Hornet Bay journal entry — X, Facebook, Reddit, Hacker News, Email and Copy Link buttons" loading="lazy"></a>
+    <p>The journal turned eighty-three entries this week, and it finally occurred to us: if you like a story, you shouldn&rsquo;t have to copy the address bar like it&rsquo;s 1988 too. Every entry &mdash; all eighty-three of them, plus every future one &mdash; now carries a share bar at the bottom:</p>
+    <ol>
+      <li><b>Six ways to pass it on:</b> X, Facebook, Reddit, Hacker News, plain old email &mdash; and a COPY LINK button that drops the permalink on your clipboard and says so. Each one opens the network&rsquo;s own share dialog with the entry&rsquo;s title and link already filled in.</li>
+      <li><b>Every page, old and new:</b> the bar builds itself from the entry&rsquo;s own permalink, so it works identically on the journal index, on each entry&rsquo;s own page, and on the tag shelves &mdash; no per-post wiring, nothing to forget next time.</li>
+      <li><b>Same voice, same look:</b> monospace, bordered, amber on hover &mdash; it wouldn&rsquo;t do for the buttons to look like they came from a website that respects itself.</li>
+    </ol>
+  </article>
   <article id="clarry-g">
     <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a></span></div>
     <h2><a class="title-link" href="/blog/clarry-g">The Hawkeye gets her tail back, and K-MAN gets his gunner: meet Clarry G</a> <span class="hash">3e5442b</span></h2>
@@ -1491,7 +1523,7 @@
     </ol>
     <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
   </article>
-<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-46">FEATURE&nbsp;&middot;&nbsp;46</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-13">SITE&nbsp;&middot;&nbsp;13</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-8">AIRCRAFT&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-7">CONTROLS&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-7">MERCH&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-4">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-4">SPECS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-3">AUDIO&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-3">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-2">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-2">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-1">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
+<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-47">FEATURE&nbsp;&middot;&nbsp;47</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-14">SITE&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-8">AIRCRAFT&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-7">CONTROLS&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-7">MERCH&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-4">CARRIER&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-4">SPECS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-3">AUDIO&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-3">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-2">FIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-2">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-1">SHIPS&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
   <article id="time-acceleration">
     <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/time-acceleration">Time acceleration: 2x, 4x, 8x</a> <span class="hash">885dc92</span></h2>
@@ -1949,5 +1981,49 @@
 <footer>
   HORNET BAY &mdash; a tribute rebuild of the 1988 Amiga classic F/A-18 INTERCEPTOR &middot; <a href="/">FLY NOW</a> &middot; <a href="https://x.com/hornetbay" target="_blank" rel="noopener">@hornetbay</a>
 </footer>
+<script>
+// share bar under every journal entry: X, Facebook, Reddit, Hacker News,
+// email, and copy-link. Reads the entry's own permalink + title.
+(function () {
+  var NETS = [
+    { n: 'X', u: 'https://twitter.com/intent/tweet?url={U}&text={T}' },
+    { n: 'FACEBOOK', u: 'https://www.facebook.com/sharer/sharer.php?u={U}' },
+    { n: 'REDDIT', u: 'https://www.reddit.com/submit?url={U}&title={T}' },
+    { n: 'HACKER NEWS', u: 'https://news.ycombinator.com/submitlink?u={U}&t={T}' },
+    { n: 'EMAIL', u: 'mailto:?subject={T}&body={U}' }
+  ];
+  function buildBar(a) {
+    var link = a.querySelector('a.title-link');
+    if (!link) return null;
+    var url = new URL(link.getAttribute('href'), location.origin).href;
+    var title = link.textContent.trim() + ' — HORNET BAY';
+    var d = document.createElement('div'); d.className = 'sharebar';
+    var lab = document.createElement('span'); lab.className = 'share-label'; lab.textContent = 'SHARE';
+    d.appendChild(lab);
+    NETS.forEach(function (net) {
+      var el = document.createElement('a');
+      el.className = 'share-btn';
+      el.href = net.u.replace('{U}', encodeURIComponent(url)).replace('{T}', encodeURIComponent(title));
+      el.textContent = net.n;
+      if (el.href.indexOf('mailto:') !== 0) { el.target = '_blank'; el.rel = 'noopener'; }
+      d.appendChild(el);
+    });
+    var cp = document.createElement('button');
+    cp.className = 'share-btn share-copy'; cp.type = 'button'; cp.textContent = 'COPY LINK';
+    cp.addEventListener('click', function () {
+      function done() { cp.textContent = 'COPIED'; setTimeout(function () { cp.textContent = 'COPY LINK'; }, 1400); }
+      if (navigator.clipboard && navigator.clipboard.writeText) { navigator.clipboard.writeText(url).then(done, done); }
+      else {
+        var t = document.createElement('textarea'); t.value = url; document.body.appendChild(t);
+        t.select(); try { document.execCommand('copy'); } catch (e) {} t.remove(); done();
+      }
+    });
+    d.appendChild(cp);
+    return d;
+  }
+  var arts = document.querySelectorAll('article[id]');
+  for (var i = 0; i < arts.length; i++) { var b = buildBar(arts[i]); if (b) arts[i].appendChild(b); }
+})();
+</script>
 </body>
 </html>
