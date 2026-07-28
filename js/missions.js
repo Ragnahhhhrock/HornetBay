@@ -1388,3 +1388,20 @@ export const MISSION_TAGS = {
   m12: ['CARRIER LAUNCH', 'ESCORT', 'FLEET DEFENSE'],    // the hunters must all survive
   m13: ['CARRIER LAUNCH', 'SWEEP', 'DOGFIGHT'],          // four bandits between you and even
 };
+
+// one-line hooks under the chips — the pitch that makes you press the key
+export const MISSION_HOOKS = {
+  m1: "Two bogeys won't squawk. Scramble out of SFO and put your nose on them before the morning gets worse.",
+  m2: 'Air Force One is on final and bandits are in the sector. Nothing — nothing — gets past you.',
+  m3: 'Two F-16s just vanished off the Moffett ramp with terrorists at the stick. Run them down over the Pacific.',
+  m4: 'One of ours is bobbing in a raft out there. Find him, cover the pickup, bring everyone home.',
+  m5: 'A cruise missile is running for Moffett at full tilt. You are the only thing in the sky that is faster.',
+  m6: 'Enemy aircraft keep coming out of the sea itself. Find the shadow under the bay — and sink it.',
+  m7: 'He is defecting after dark with everything he knows. Fly the wing that brings him in alive.',
+  m8: 'Angels 34: sixty-one metres of spy camera drifting the coast. Climb high and pop the most famous balloon on Earth.',
+  m9: 'The President is flying out to end the war — and Tehran wants one last headline. Sweep the sky clean.',
+  m10: 'Night. A nuclear cruise missile at 800 knots. One pass — or one million souls.',
+  m11: 'Gunboats hold a liner in the strait. Twenty seconds of hover between the SEALs and disaster — cover them.',
+  m12: 'A Kilo is creeping the shelf. Keep every hunter alive and let the torpedoes do the talking.',
+  m13: 'They killed your wingman. Four bandits between you and even. You know what to do.',
+};

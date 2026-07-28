@@ -10,7 +10,7 @@ import { HUD } from './hud.js';
 import { Input } from './input.js';
 import { setupTouch } from './touch.js';
 import { AudioEngine } from './audio.js';
-import { MISSIONS, DIFFICULTY, MISSION_TAGS } from './missions.js';
+import { MISSIONS, DIFFICULTY, MISSION_TAGS, MISSION_HOOKS } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
@@ -221,8 +221,9 @@ function buildMenu(mode = 'main') {
       // chips under the title — carrier launch, intercept, visual ID, and so on
       const diff = `<span class="diff d-${(DIFFICULTY[id] || 'MEDIUM').toLowerCase()}">${DIFFICULTY[id] || 'MEDIUM'}</span>`;
       const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
-      if (locked) addBtn(`F${i + 1}`, def.title + diff + chips, 'LOCKED', null);
-      else addBtn(`F${i + 1}`, def.title + diff + chips, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
+      if (locked) addBtn(`F${i + 1}`, def.title + diff + chips + hook, 'LOCKED', null);
+      else addBtn(`F${i + 1}`, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
     });
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
     return;
