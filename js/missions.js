@@ -1353,3 +1353,20 @@ export const MISSIONS = [
   update(G, dt) {},
 },
 ];
+
+// campaign difficulty ladder — shown as a tag on the mission-select board
+export const DIFFICULTY = {
+  m1: 'EASY',    // VISUAL CONFIRMATION — first solo, a quiet look-see
+  m2: 'EASY',    // EMERGENCY DEFENSE — bounce drill over the fleet
+  m3: 'MEDIUM',  // STOLEN AIRCRAFT — runaway Hornet, force it down
+  m4: 'MEDIUM',  // SEARCH AND RESCUE — find the raft, cover the helo
+  m5: 'HARD',    // CRUISE MISSILE INBOUND — a very fast lawn-dart to kill
+  m6: 'MEDIUM',  // SHADOW SUB — trail quiet, stay unseen
+  m7: 'HARD',    // THE DEFECTOR — bring him down in one piece
+  m8: 'EASY',    // THE SPY BALLOON — a slow climb to a slow target
+  m9: 'HARD',    // NAVY ONE — Fulcrums and Flankers want the headline
+  m10: 'EXPERT', // THE LAST INTERCEPT — night, 400 m/s, no second pass
+  m11: 'HARD',   // CRUISE SHIP SIEGE — MANPADS, go-fasts, a 20-second hover
+  m12: 'MEDIUM', // SUB HUNTERS — keep three hunters alive through two waves
+  m13: 'MEDIUM', // AVENGE VIPER TWO — four bandits between you and even
+};

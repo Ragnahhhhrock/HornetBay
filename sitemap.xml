@@ -6,6 +6,8 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/deck-ballet</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/difficulty-board</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/the-campaign</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/aces-fight-back</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/deck-choreography</loc><priority>0.7</priority></url>
@@ -114,9 +116,9 @@
   <url><loc>https://hornetbay.com/blog/hornet-bay-name</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/combat</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/carrier</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/controls</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/combat</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/aircraft</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/specs</loc><priority>0.6</priority></url>

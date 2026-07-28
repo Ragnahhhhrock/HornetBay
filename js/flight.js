@@ -147,6 +147,10 @@ export class Player {
     // the shot with 90%+ thrust, then ~3 g of steam on top of the engines
     // throws it down the 250-ft stroke — 0 to 265 km/h in under two seconds
     if (og.cat && og.type === 'carrier') {
+      // the deck crew puts the blast deflector up as you spool toward the
+      // shot, drops it again the moment the shuttle fires
+      const jbd = carrier.jbd && carrier.jbd[1];
+      if (jbd) jbd.want = og.catFired ? 0 : (this.throttle > 0.6 ? 1 : (this.throttle < 0.3 ? 0 : jbd.want));
       if (!og.catFired) {
         if (!og.hinted) { og.hinted = true; G.msg('CAT 1 HOLDBACK — 90% THRUST FOR THE SHOT', 'info'); }
         acc = Math.min(acc, 0);              // straining against the holdback

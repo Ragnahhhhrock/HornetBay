@@ -1597,6 +1597,27 @@ export class Carrier {
         const sh = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.3, 2.5), dM);
         sh.position.set(cx, deckY + 0.18, 40); this.group.add(sh);
       }
+      // ---- jet blast deflectors behind the two bow cats -----------------
+      // flush with the deck until a jet tensions the cat, then the plate
+      // rises ~57° to turn the exhaust skyward; down again after the shot so
+      // the next jet can taxi over it into position
+      const jbdY = LM(0xc9971f);
+      this.jbd = {};
+      for (const [key, cx] of [[1, -13], [2, 11]]) {
+        const piv = new THREE.Group();
+        piv.position.set(cx, deckY + 0.06, 16);          // hinge line abaft the cat spot
+        const plate = new THREE.Mesh(new THREE.BoxGeometry(10, 4.6, 0.25), dM);
+        plate.position.y = 2.3; piv.add(plate);
+        const lip = new THREE.Mesh(new THREE.BoxGeometry(10, 0.5, 0.28), jbdY);
+        lip.position.y = 4.55; piv.add(lip);              // yellow top edge, like the real panels
+        for (const rx of [-2.5, 0, 2.5]) {                // panel ribs
+          const rib = new THREE.Mesh(new THREE.BoxGeometry(0.35, 4.6, 0.33), gM);
+          rib.position.set(rx, 2.3, -0.02); piv.add(rib);
+        }
+        piv.rotation.x = -Math.PI / 2;                    // stowed: lying flat on the deck
+        this.group.add(piv);
+        this.jbd[key] = { piv, ang: 0, want: 0 };
+      }
       // ---- IFLOLS "meatball" — functional optical landing system --------
       // port deck edge abeam the wires, facing down the approach; an amber
       // ball rides 5 cells against a green datum row (3.5° glideslope), and
@@ -1727,6 +1748,14 @@ export class Carrier {
     p.x += Math.sin(this.heading) * this.speed * dt;
     p.z += -Math.cos(this.heading) * this.speed * dt;
     this.group.rotation.y = Math.PI - this.heading;
+    // blast deflectors ride their targets — a couple of seconds up or down
+    if (this.jbd) {
+      for (const k in this.jbd) {
+        const j = this.jbd[k];
+        j.ang = Math.min(1, Math.max(0, j.ang + (j.want ? dt : -dt) / 2.2));
+        j.piv.rotation.x = -Math.PI / 2 + j.ang * (Math.PI / 2 - 0.58);
+      }
+    }
   }
   submerge() { this.submerged = true; }
   // drive the meatball from the player's position on approach: the ball shows
