@@ -10,7 +10,7 @@ import { HUD } from './hud.js';
 import { Input } from './input.js';
 import { setupTouch } from './touch.js';
 import { AudioEngine } from './audio.js';
-import { MISSIONS, DIFFICULTY } from './missions.js';
+import { MISSIONS, DIFFICULTY, MISSION_TAGS } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
@@ -217,10 +217,12 @@ function buildMenu(mode = 'main') {
       const def = MISSIONS.find(m => m.id === id);
       // campaign progression: each mission flown unlocks the next
       const locked = i > 0 && !save.done[MISSION_ORDER[i - 1]];
-      // every sortie carries its difficulty on the board, status beside it
+      // every sortie carries its difficulty on the board, plus type/maneuver
+      // chips under the title — carrier launch, intercept, visual ID, and so on
       const diff = `<span class="diff d-${(DIFFICULTY[id] || 'MEDIUM').toLowerCase()}">${DIFFICULTY[id] || 'MEDIUM'}</span>`;
-      if (locked) addBtn(`F${i + 1}`, def.title + diff, 'LOCKED', null);
-      else addBtn(`F${i + 1}`, def.title + diff, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
+      if (locked) addBtn(`F${i + 1}`, def.title + diff + chips, 'LOCKED', null);
+      else addBtn(`F${i + 1}`, def.title + diff + chips, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
     });
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
     return;

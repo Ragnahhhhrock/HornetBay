@@ -1370,3 +1370,21 @@ export const DIFFICULTY = {
   m12: 'MEDIUM', // SUB HUNTERS — keep three hunters alive through two waves
   m13: 'MEDIUM', // AVENGE VIPER TWO — four bandits between you and even
 };
+
+// what the sortie actually asks of you — type and maneuver tags, shown as
+// chips on the mission-select board under each title
+export const MISSION_TAGS = {
+  m1: ['RUNWAY START', 'INTERCEPT', 'VISUAL ID'],        // SFO scramble, eyeball the bogeys, RTB
+  m2: ['CARRIER LAUNCH', 'POINT DEFENSE', 'INTERCEPT'],  // bandits inbound on Air Force One's approach
+  m3: ['CARRIER LAUNCH', 'PURSUIT', 'DOGFIGHT'],         // run the stolen F-16s down
+  m4: ['CARRIER LAUNCH', 'SEARCH', 'SAR ESCORT'],        // find the raft, cover the pickup
+  m5: ['CARRIER LAUNCH', 'INTERCEPT', 'HIGH SPEED'],     // a very fast lawn-dart to kill
+  m6: ['CARRIER LAUNCH', 'SEARCH', 'MARITIME STRIKE'],   // find the shadow sub, sink it
+  m7: ['CARRIER LAUNCH', 'ESCORT', 'NIGHT'],             // bring the defector in after dark
+  m8: ['CARRIER LAUNCH', 'HIGH ALTITUDE', 'GUN ONLY'],   // Angels 34, cannon, one balloon
+  m9: ['CARRIER LAUNCH', 'ESCORT', 'DOGFIGHT'],          // keep the President's S-3 alive
+  m10: ['CARRIER LAUNCH', 'NIGHT', 'ONE PASS'],          // 400 m/s, no second run at it
+  m11: ['CARRIER LAUNCH', 'ESCORT', 'LOW LEVEL'],        // cover the SEAL helo in the strait
+  m12: ['CARRIER LAUNCH', 'ESCORT', 'FLEET DEFENSE'],    // the hunters must all survive
+  m13: ['CARRIER LAUNCH', 'SWEEP', 'DOGFIGHT'],          // four bandits between you and even
+};
