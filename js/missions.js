@@ -14,10 +14,10 @@ function near(a, b, r) { return a.distanceTo(b) < r; }
 export const MISSIONS = [
 // ------------------------------------------------ QUALIFICATION
 {
-  id: 'qual', num: 0, title: 'CARRIER QUALIFICATION', code: 'TRAINING COMMAND',
+  id: 't1', num: 101, title: 'T-1 FIRST SOLO', code: 'FLIGHT SCHOOL — BASIC',
   time: 'day', planeChoice: true,
   brief: [
-    'QUALIFICATION', '',
+    'BASIC FLIGHT MANEUVERS — SORTIE 1', '',
     'PERFORM A SUCCESSFUL CARRIER LANDING.', '',
     'FLY AROUND, RETURN, THEN LAND ON CARRIER.', '',
     'FULL POWER + AFTERBURNER, ROTATE AT 150 KTS.',
@@ -25,7 +25,7 @@ export const MISSIONS = [
     'AIM FOR THE WIRES.', '',
     '- ESC RE-POSITION ON CATAPULT -',
   ],
-  briefing: 'Carrier qualification.',
+  briefing: 'First solo: launch, pattern, carrier trap.',
   loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
@@ -41,6 +41,202 @@ export const MISSIONS = [
     if (this.phase === 1 && G.trappedThisSortie) {
       G.addScore(2000);
       G.completeMission('LANDING SUCCESSFUL', 'YOU ARE NOW QUALIFIED FOR MISSIONS.\n\nWelcome to the squadron, pilot.\n\nSCORE +2000 (QUAL + TRAP)');
+    }
+  },
+},
+// ------------------------------------------------ T-2 BAY TOUR
+{
+  id: 't2', num: 102, title: 'T-2 BAY TOUR', code: 'FLIGHT SCHOOL — BASIC',
+  time: 'day', planeChoice: true,
+  brief: [
+    'BASIC FLIGHT MANEUVERS — SORTIE 2', '',
+    'NAVIGATION: OVERFLY THREE BAY LANDMARKS IN ORDER.', '',
+    'GOLDEN GATE BRIDGE, DOWNTOWN, ANGEL ISLAND.', '',
+    'PASS WITHIN 500 M OF EACH CHECKPOINT.', '',
+    'MIND THE BRIDGE TOWERS. UNDER FIVE MINUTES FOR A BONUS.',
+  ],
+  briefing: 'Navigation run: Golden Gate, downtown, Angel Island.',
+  loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    this.legs = [
+      { name: 'GOLDEN GATE', p: V(0, 200, 0) },
+      { name: 'DOWNTOWN', p: V(7000, 400, 5000) },
+      { name: 'ANGEL ISLAND', p: V(16500, 500, -6000) },
+    ];
+    this.idx = 0; this.t0 = -1;
+    G.waypoint = this.legs[0].p;
+    G.radio('INSTRUCTOR: THREE CHECKPOINTS, ANY PROFILE YOU LIKE. CALL THEM AS YOU CROSS THEM.');
+  },
+  update(G, dt) {
+    if (this.t0 < 0 && !G.player.onGround) this.t0 = G.time;
+    const leg = this.legs[this.idx];
+    if (!leg) return;
+    if (G.player.pos.distanceTo(leg.p) < 500) {
+      this.idx++;
+      const next = this.legs[this.idx];
+      G.msg(leg.name + ' — CHECKPOINT DOWN', 'good');
+      if (next) {
+        G.waypoint = next.p;
+        G.radio('INSTRUCTOR: ' + leg.name + ' DOWN. NEXT, ' + next.name + '.');
+      } else {
+        const t = G.time - this.t0, bonus = t < 300 ? 400 : 0;
+        G.addScore(800 + bonus);
+        G.completeMission('TOUR COMPLETE', 'ALL THREE CHECKPOINTS DOWN IN ' + Math.round(t) + ' SECONDS.\n\nSCORE +800' + (bonus ? ' (+' + bonus + ' UNDER FIVE MINUTES)' : ''));
+      }
+    }
+  },
+},
+// ------------------------------------------------ T-3 CARRIER PATTERN
+{
+  id: 't3', num: 103, title: 'T-3 CARRIER PATTERN', code: 'FLIGHT SCHOOL — ADVANCED',
+  time: 'day', planeChoice: true,
+  brief: [
+    'ADVANCED FLIGHT MANEUVERS — SORTIE 3', '',
+    'TRAP ABOARD TWICE IN ONE SORTIE.', '',
+    'LAUNCH, PATTERN, TRAP. TAXI BACK, LAUNCH AGAIN,',
+    'PATTERN, TRAP. TWO ARRESTED LANDINGS TO PASS.', '',
+    'BOLTERS COUNT AS GO-AROUNDS, NOT TRAPS.',
+  ],
+  briefing: 'Two arrested landings in one sortie.',
+  loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    this.traps0 = G.trapCount || 0; this.said1 = false;
+    G.radio('LSO: TWO TRAPS TO PASS, VIPER. TAKE YOUR TIME IN THE GROOVE.');
+  },
+  update(G, dt) {
+    const traps = (G.trapCount || 0) - this.traps0;
+    if (traps >= 1 && !this.said1) {
+      this.said1 = true;
+      G.msg('TRAP ONE IN THE BOOK — ONE MORE', 'good');
+      G.radio('LSO: GOOD PASS. CHOCKS AND CHAINS, THEN DO IT AGAIN.');
+    }
+    if (traps >= 2) {
+      G.addScore(2500);
+      G.completeMission('PATTERN WORK PASSED', 'TWO ARRESTED LANDINGS IN ONE SORTIE.\n\nThe boat is your home now.\n\nSCORE +2500');
+    }
+  },
+},
+// ------------------------------------------------ T-4 JOIN UP
+{
+  id: 't4', num: 104, title: 'T-4 JOIN UP', code: 'FLIGHT SCHOOL — ADVANCED',
+  time: 'day', planeChoice: true,
+  brief: [
+    'ADVANCED FLIGHT MANEUVERS — SORTIE 4', '',
+    'JOIN ON YOUR INSTRUCTOR AND HOLD FORMATION.', '',
+    'HE FLIES A LAZY CIRCLE OVER THE BAY AT 2,500 M.', '',
+    'STAY INSIDE 130 M OF HIM FOR 45 SECONDS TOTAL.', '',
+    'SMOOTH HANDS. SMALL CORRECTIONS.',
+  ],
+  briefing: 'Join up and hold close formation for 45 seconds.',
+  loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    const wps = [];
+    for (let i = 0; i < 8; i++) {
+      const a = (i / 8) * Math.PI * 2;
+      wps.push(V(5000 + Math.cos(a) * 12000, 2500, 5000 + Math.sin(a) * 12000));
+    }
+    this.lead = G.spawnAI('fa18', {
+      pos: V(17000, 2500, 5000), heading: Math.PI / 2, speed: 180, hp: 9999,
+      name: 'F/A-18', label: 'INSTRUCTOR', mode: 'route', noEvade: true,
+      waypoints: wps, loop: true, hostile: false,
+    });
+    this.lead.kind = 'airliner'; this.lead.identified = true;
+    this.formT = 0; this.marks = [false, false];
+    G.waypoint = this.lead.pos;
+    G.radio('INSTRUCTOR: ON THE RENDEZVOUS CIRCLE, ANGELS 2.5. JOIN ON MY WING WHEN READY.');
+  },
+  update(G, dt) {
+    G.waypoint = this.lead.pos;
+    const d = G.player.pos.distanceTo(this.lead.pos);
+    if (d < 130) {
+      this.formT += dt;
+      if (!this.marks[0] && this.formT > 15) { this.marks[0] = true; G.msg('HOLDING — 15 OF 45 SECONDS', 'good'); G.radio('INSTRUCTOR: LOOKING GOOD. KEEP HER THERE.'); }
+      if (!this.marks[1] && this.formT > 30) { this.marks[1] = true; G.msg('HOLDING — 30 OF 45 SECONDS', 'good'); }
+    }
+    if (this.formT >= 45) {
+      G.addScore(1500);
+      G.completeMission('FORMATION PASSED', '45 SECONDS GLUED TO HIS WING.\n\nSCORE +1500');
+    }
+  },
+},
+// ------------------------------------------------ T-5 GUNNERY
+{
+  id: 't5', num: 105, title: 'T-5 GUNNERY', code: 'FLIGHT SCHOOL — COMBAT',
+  time: 'day', planeChoice: true,
+  brief: [
+    'AERIAL COMBAT — SORTIE 5', '',
+    'FOUR TARGET BALLOONS TETHERED OFF THE COAST.', '',
+    'SPLASH ALL FOUR. WORK THE GUN: SIGHT UP, TRACK,', '',
+    'SHORT BURSTS. THE SCORERS PREFER 20MM.', '',
+    'WATCH YOUR ALTITUDE ON THE RUN-OUT.',
+  ],
+  briefing: 'Splash four target balloons on the gunnery range.',
+  loadout: 'GUNS + 2× AIM-9 — GUNNERY RANGE',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    this.targets = [];
+    const spots = [[-26000, 1500, 9000], [-20000, 2000, 2000], [-14000, 1200, 11000], [-9000, 1800, 3000]];
+    for (const s of spots) {
+      const b = G.spawnAI('balloon', {
+        pos: V(s[0], s[1], s[2]), heading: Math.random() * 6.28, speed: 12, hp: 20,
+        name: 'TARGET BALLOON', label: 'TARGET', mode: 'straight', noEvade: true, hostile: true,
+      });
+      b.kind = 'bandit'; b.identified = true;
+      b.noAA = true;   // school rules: the fleet holds fire — these are the pilot's
+      this.targets.push(b);
+    }
+    G.waypoint = this.targets[0].pos;
+    G.radio('RANGE CONTROL: FOUR TARGETS TETHERED OFF THE COAST. THE RANGE IS YOURS.');
+  },
+  update(G, dt) {
+    if (this.done) return;
+    const alive = this.targets.filter(b => !b.dead);
+    if (alive.length) {
+      let best = alive[0], bd = 1e12;
+      for (const b of alive) { const d = b.pos.distanceToSquared(G.player.pos); if (d < bd) { bd = d; best = b; } }
+      G.waypoint = best.pos;
+    } else {
+      this.done = true;
+      G.addScore(1500);
+      G.completeMission('GUNNERY PASSED', 'ALL FOUR TARGETS DOWN.\n\nSCORE +1500');
+    }
+  },
+},
+// ------------------------------------------------ T-6 DOGFIGHT 1V1
+{
+  id: 't6', num: 106, title: 'T-6 DOGFIGHT 1V1', code: 'FLIGHT SCHOOL — COMBAT',
+  time: 'day', planeChoice: true,
+  brief: [
+    'AERIAL COMBAT — SORTIE 6', '',
+    'ONE AGGRESSOR, GUNS AND HEATERS, NO HELP COMING.', '',
+    'HE IS RATED BUT FAIR — LIKE A GOOD WINGMAN ON', '',
+    'THE OTHER SIDE. SPLASH HIM TO GRADUATE.', '',
+    'WATCH THE MERGE. FIGHT YOUR ANGLES.',
+  ],
+  briefing: 'One-versus-one against a rated aggressor. Splash him.',
+  loadout: '2× AIM-9 + 2× AIM-7 + GUNS',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    const c = G.world.carrier;
+    this.bandit = G.spawnAI('mig29', {
+      pos: c.pos.clone().add(V(-14000, 3000, 6000)), heading: Math.PI / 2 + 0.4, speed: 240, hp: 100,
+      hostile: true, name: 'MIG-29', label: 'AGGRESSOR', mode: 'attack', skill: 0.7, agility: 0.95,
+    });
+    this.bandit.target = G.player; this.bandit.kind = 'bandit'; this.bandit.identified = true;
+    this.bandit.noAA = true;   // school rules: the fleet holds fire — this one is the pilot's
+    this.done = false;
+    G.radio('AGGRESSOR CONTROL: BANDIT IS YOURS, VIPER. FIGHTS ON.');
+    G.msg('!! FIGHTS ON — AGGRESSOR INBOUND !!', 'bad');
+  },
+  update(G, dt) {
+    if (this.done) return;
+    if (this.bandit.dead || this.bandit.ejected) {
+      this.done = true;
+      G.addScore(2000);
+      G.completeMission('GRADUATED', 'AGGRESSOR SPLASHED.\n\nYou are cleared for the campaign, pilot.\n\nSCORE +2000');
     }
   },
 },
@@ -1405,3 +1601,24 @@ export const MISSION_HOOKS = {
   m12: 'A Kilo is creeping the shelf. Keep every hunter alive and let the torpedoes do the talking.',
   m13: 'They killed your wingman. Four bandits between you and even. You know what to do.',
 };
+
+// flight school display data — the same board treatment as the campaign
+Object.assign(DIFFICULTY, {
+  t1: 'EASY', t2: 'EASY', t3: 'MEDIUM', t4: 'MEDIUM', t5: 'MEDIUM', t6: 'HARD',
+});
+Object.assign(MISSION_TAGS, {
+  t1: ['CARRIER LAUNCH', 'CARRIER TRAP', 'SOLO'],
+  t2: ['CARRIER LAUNCH', 'NAVIGATION', 'CHECKPOINTS'],
+  t3: ['CARRIER LAUNCH', 'TWO TRAPS', 'PATTERN'],
+  t4: ['CARRIER LAUNCH', 'FORMATION', 'STATION-KEEPING'],
+  t5: ['CARRIER LAUNCH', 'GUNNERY', 'FOUR TARGETS'],
+  t6: ['CARRIER LAUNCH', 'BFM', '1V1'],
+});
+Object.assign(MISSION_HOOKS, {
+  t1: 'One launch, one pattern, one trap — the three things every naval aviator must own. Your first solo starts now.',
+  t2: 'Three checkpoints around the bay, any profile you like. Learn the neighbourhood you will be defending.',
+  t3: 'Two arrested landings in a single sortie. The LSO grades every pass — make both of them pretty.',
+  t4: 'Join on your instructor and glue yourself to his wing for 45 seconds. Smooth hands, small corrections.',
+  t5: 'Four target balloons off the coast and a gun full of 20mm. The range is yours, pilot.',
+  t6: 'One aggressor, no help, fights on. Splash him and you are cleared for the campaign.',
+});

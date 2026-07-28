@@ -228,6 +228,32 @@ function buildMenu(mode = 'main') {
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
     return;
   }
+  // flight school — the training program, three courses of two sorties each;
+  // open to every pilot from the first day, no campaign progress required
+  if (mode === 'school') {
+    $('menu-title').textContent = 'FLIGHT SCHOOL';
+    const addHead = (text) => {
+      const d = document.createElement('div');
+      d.className = 'mhead';
+      d.textContent = text;
+      $('menu-list').appendChild(d);
+    };
+    const row = (key, id) => {
+      const def = MISSIONS.find(m => m.id === id);
+      const diff = `<span class="diff d-${(DIFFICULTY[id] || 'EASY').toLowerCase()}">${DIFFICULTY[id] || 'EASY'}</span>`;
+      const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
+      const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
+      addBtn(key, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+    };
+    addHead('BASIC FLIGHT MANEUVERS');
+    row('1', 't1'); row('2', 't2');
+    addHead('ADVANCED FLIGHT MANEUVERS');
+    row('3', 't3'); row('4', 't4');
+    addHead('AERIAL COMBAT');
+    row('5', 't5'); row('6', 't6');
+    addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
+    return;
+  }
   if (mode === 'log') {
     $('menu-title').textContent = 'YOUR CURRENT FLIGHT LOG STATISTICS';
     const done = MISSION_ORDER.filter(id => save.done[id]).length;
@@ -250,6 +276,7 @@ function buildMenu(mode = 'main') {
   }
   $('menu-title').textContent = '';   // main mode: the logo block above says it
   if (G._menuResume) addBtn('Q', 'RESUME FLIGHT', 'BACK IN THE COCKPIT', () => resumeFlight());
+  addBtn('1', 'FLIGHT SCHOOL', 'BASIC · ADVANCED · COMBAT', () => buildMenu('school'));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
   addBtn('6', 'MISSIONS', '', () => buildMenu('missions'));
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
@@ -534,7 +561,7 @@ function launchMission(def, opts = {}) {
   G.missiles = [];
   G.time = 0; G.score = 0; G.kills = 0; G.gunHits = 0; G.shotsFired = 0;
   G.messages = []; G.playerTarget = null; G.lockLevel = 0; G.waypoint = null;
-  G.trappedThisSortie = false; G.landedThisSortie = false; G.over = false;
+  G.trappedThisSortie = false; G.landedThisSortie = false; G.over = false; G.trapCount = 0;
   G.missileWarning = false; G.podDropRequested = false;
   G.crashHandled = false;                        // arm the crash handler again
   G.fx.clearDebris();
@@ -675,6 +702,7 @@ G.onCrashed = (reason) => {
 G.onEmptyPlaneDown = () => { G.explode(G.player.pos, 1.2); G.fx.shatter(G.player.pos, G.player.vel, 1.1); G.player.model.visible = false; };
 G.onTrapped = () => {
   G.trappedThisSortie = true;
+  G.trapCount = (G.trapCount || 0) + 1;   // the school counts arrested landings
   G.addScore(500);
   G.msg('TRAPPED! +500 — DECK CREW: REARMING', 'good');
   G.audio.trap();
@@ -704,7 +732,7 @@ G.completeMission = (title, text) => {
   G.over = true;
   stats.flushGA();
   const id = G.missionDef.id;
-  if (id === 'qual') { save.qualified = true; }
+  if (id === 'qual' || id === 't1') { save.qualified = true; save.done[id] = true; }
   else if (id !== 'free') { save.done[id] = true; }
   save.best = Math.max(save.best, G.score);
   persist();
@@ -1114,10 +1142,10 @@ function handleDiscreteInput(dt) {
   }
   if (I.pressed('KeyQ')) { quitToMenu(); return; }
   if (I.pressed('Escape')) {
-    // original behavior: ESC re-positions on the catapult during qual / free flight
-    if ((G.missionDef.id === 'qual' || G.missionDef.id === 'free') && !I.ab) {
+    // original behavior: ESC re-positions on the catapult during school / free flight
+    if ((G.missionDef.id === 'qual' || G.missionDef.id === 'free' || G.missionDef.id[0] === 't') && !I.ab) {
       const id = G.missionDef.id, s = G.freeFlightStart;
-      if (id === 'qual' || s === 'carrier' || !s) G.setPlayerStart({ onCarrier: true });
+      if (id === 'qual' || id[0] === 't' || s === 'carrier' || !s) G.setPlayerStart({ onCarrier: true });
       else if (s === 'sfo') G.setPlayerStart({ runway: G.world.runwayById('sfo') });
       else if (s === 'oakland') G.setPlayerStart({ runway: G.world.runwayById('oakland') });
       else if (s === 'moffett') G.setPlayerStart({ runway: G.world.runwayById('moffett') });
@@ -1851,6 +1879,9 @@ function routeHash() {
     else startBriefing(h);
   }
   else if (h === 'log') buildMenu('log');
+  else if (h === 'school') buildMenu('school');
+  else if (h === 'qual') startBriefing('t1');          // legacy link — the old qual is school T-1 now
+  else if (/^t[1-6]$/.test(h)) startBriefing(h);       // school sorties are never gated
   else if (h.startsWith('gallery/')) {
     const type = h.slice(8);
     $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter();
@@ -1910,7 +1941,9 @@ else if (auto && auto.startsWith('planesel:')) {
   G.intro.typed = 1e9; G.intro.afterBrief = null; enterPlaneSelect(def);
 }
 else if (auto && auto.startsWith('zoom:')) {
-  const def = MISSIONS.find(m => m.id === auto.slice(5));
+  let zid = auto.slice(5);
+  if (zid === 'qual') zid = 't1';   // the old qualification sortie is now school T-1
+  const def = MISSIONS.find(m => m.id === zid);
   pendingMission = def; $('menu').classList.add('hidden'); stopDemo();
   // start the dive from the satellite-map camera, like the real menu flow
   G.camera.position.set(6000, 95000, 4000 + 95000 * 0.28);
