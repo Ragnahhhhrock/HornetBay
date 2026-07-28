@@ -4,6 +4,7 @@
 // world from a high top-down camera, like the 1988 original.
 import * as THREE from 'three';
 import { clamp, lerp } from './util.js';
+import { PILOT_RATING, pilotDescriptor } from './missions.js';
 
 const _v = new THREE.Vector3();
 
@@ -39,6 +40,10 @@ export class Intro {
     this.def = def; this.afterBrief = afterBrief;
     this.G.state = 'briefing';
     this.typed = 0;
+    // rated opposition gets its assessment typed into the brief itself
+    this.briefLines = [...(def.brief || [])];
+    const rating = PILOT_RATING[def.id];
+    if (rating != null) this.briefLines.push('', `ENEMY PILOT RATING: ${rating}/100 — ${pilotDescriptor(rating).toUpperCase()}`);
     this.G.world.setTimeOfDay('day');
   }
   planeSelect(after) {
@@ -88,14 +93,14 @@ export class Intro {
     G.camera.position.set(this.center.x, this.camH, this.center.z + this.camH * 0.28);
     G.camera.lookAt(this.center.x, 0, this.center.z);
     if (this.active === 'briefing') {
-      const total = (this.def?.brief || []).join('\n').length;
+      const total = (this.briefLines || []).join('\n').length;
       if (this.typed < total) {
         const before = Math.floor(this.typed);
-        this.typed = Math.min(total, this.typed + dt * 42);
+        this.typed = Math.min(total, this.typed + dt * 22);   // half speed — time to read the map
         // teletype chatter as each character hits the screen (original behavior)
         if (Math.floor(this.typed) > before) G.audio.teletype();
       }
-      else if (this.t > 2.5 && this.afterBrief && !this.hold) { const f = this.afterBrief; this.afterBrief = null; f(); }
+      // no auto-advance: the brief and map stay up until the pilot commits with ENTER
     }
   }
 
@@ -217,7 +222,7 @@ export class Intro {
     }
   }
   _briefText(c, w, h) {
-    const lines = (this.def?.brief || []).join('\n').slice(0, Math.floor(this.typed)).split('\n');
+    const lines = (this.briefLines || []).join('\n').slice(0, Math.floor(this.typed)).split('\n');
     c.textAlign = 'left';
     c.font = 'bold 15px "Courier New", monospace';
     let y = 26;

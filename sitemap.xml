@@ -6,6 +6,10 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/journal-rails</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/hook-annunciator</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/the-bear-comes-west</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/wings-before-war</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/earn-your-wings</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/flight-school</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/the-pitch</loc><priority>0.7</priority></url>
@@ -119,12 +123,13 @@
   <url><loc>https://hornetbay.com/blog/crash-shatter</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/hornet-bay-name</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/controls</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/missions</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/aircraft</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/carrier</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/combat</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/aircraft</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/specs</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/merch</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/fix</loc><priority>0.6</priority></url>
@@ -138,7 +143,6 @@
   <url><loc>https://hornetbay.com/blog/tag/brand</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/store</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/fleet</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/missions</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/bugfix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/world</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/art</loc><priority>0.6</priority></url>
@@ -177,6 +181,7 @@
   <url><loc>https://hornetbay.com/print/f15-eagle</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/a10-warthog</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/su27-flanker</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/print/tu95-bear</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/av8b-harrier</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/spy-balloon</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/print/gofast-boat</loc><priority>0.6</priority></url>

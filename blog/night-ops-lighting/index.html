@@ -130,14 +130,28 @@
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-  #blog-search { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 4px 10px; letter-spacing: 1px; width: min(230px, 42vw); }
+  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
   #blog-search-clear { visibility: hidden; }
   #blog-search-clear.show { visibility: visible; }
   #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
+  #blog-pager-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin: 4px 0 14px; }
+  #blog-pager-top:empty { display: none; }
   #blog-menu .bm-note { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; letter-spacing: 1px; margin-top: 2px; }
+  /* home: articles left, tag filters pinned in the right-hand rail */
+  body.home main { max-width: 1120px; }
+  #blog-cols { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 40px; align-items: start; }
+  #blog-side { position: sticky; top: 18px; border: 1px solid var(--line); background: var(--card); padding: 14px; }
+  #blog-side .side-head { color: var(--amber); font-size: 11px; letter-spacing: 3px; margin: 0 0 10px; }
+  #blog-side #blog-menu { flex-direction: column; align-items: stretch; gap: 6px; margin: 0; }
+  #blog-side #blog-menu .chip { text-align: left; }
+  @media (max-width: 900px) {
+    #blog-cols { grid-template-columns: 1fr; }
+    #blog-side { position: static; order: -1; }
+    #blog-side #blog-menu { flex-direction: row; flex-wrap: wrap; }
+  }
 </style>
 <script type="application/ld+json">
 {

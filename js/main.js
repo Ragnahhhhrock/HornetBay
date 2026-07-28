@@ -10,7 +10,7 @@ import { HUD } from './hud.js';
 import { Input } from './input.js';
 import { setupTouch } from './touch.js';
 import { AudioEngine } from './audio.js';
-import { MISSIONS, DIFFICULTY, MISSION_TAGS, MISSION_HOOKS } from './missions.js';
+import { MISSIONS, DIFFICULTY, MISSION_TAGS, MISSION_HOOKS, SCHOOL_ORDER } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
 import { Gallery } from './gallery.js';
@@ -182,7 +182,7 @@ G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen 
 G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION/CLEAR/RAIN
 
 // ---------------- menu (original 1-8 structure) ----------------
-const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13'];
+const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13', 'm14', 'm15'];
 let menuMode = 'main';
 // every menu screen carries a URL stub (#missions, #gallery, #m1 …) so any
 // item is a shareable link. setHash stays silent until the boot router has
@@ -194,6 +194,14 @@ function setHash(h) {
   const url = h ? '#' + h : location.pathname + location.search;
   if (location.hash !== '#' + h) history.replaceState(null, '', url);
 }
+// difficulty is a number out of 100, banded green to red like the old badges
+const diffBadge = (id) => {
+  const n = DIFFICULTY[id] ?? 50;
+  const band = n < 35 ? 'easy' : n < 55 ? 'medium' : n < 75 ? 'hard' : 'expert';
+  return `<span class="diff d-${band}">${n}/100</span>`;
+};
+// the campaign is for graduates — every school sortie passed, in order
+const schoolGrad = () => SCHOOL_ORDER.every(id => save.done[id]);
 function buildMenu(mode = 'main') {
   menuMode = mode;
   setHash(mode === 'missions' ? 'missions' : mode === 'log' ? 'log' : 'menu');
@@ -213,13 +221,22 @@ function buildMenu(mode = 'main') {
   };
   if (mode === 'missions') {
     $('menu-title').textContent = 'SELECTABLE MISSIONS';
+    // the fleet does not send students to war: the campaign board stays
+    // locked until every flight school sortie is in the logbook
+    const grad = schoolGrad();
+    if (!grad) {
+      const d = document.createElement('div');
+      d.className = 'msub';
+      d.textContent = 'GRADUATE FLIGHT SCHOOL TO UNLOCK THE CAMPAIGN';
+      list.appendChild(d);
+    }
     MISSION_ORDER.forEach((id, i) => {
       const def = MISSIONS.find(m => m.id === id);
-      // campaign progression: each mission flown unlocks the next
-      const locked = i > 0 && !save.done[MISSION_ORDER[i - 1]];
-      // every sortie carries its difficulty on the board, plus type/maneuver
-      // chips under the title — carrier launch, intercept, visual ID, and so on
-      const diff = `<span class="diff d-${(DIFFICULTY[id] || 'MEDIUM').toLowerCase()}">${DIFFICULTY[id] || 'MEDIUM'}</span>`;
+      // campaign progression: school first, then each mission flown unlocks the next
+      const locked = !grad || (i > 0 && !save.done[MISSION_ORDER[i - 1]]);
+      // every sortie carries its difficulty rating on the board, plus
+      // type/maneuver chips — carrier launch, intercept, visual ID, and so on
+      const diff = diffBadge(id);
       const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
       const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
       if (locked) addBtn(`F${i + 1}`, def.title + diff + chips + hook, 'LOCKED', null);
@@ -232,7 +249,6 @@ function buildMenu(mode = 'main') {
   // open to every pilot from the first day, no campaign progress required
   if (mode === 'school') {
     $('menu-title').textContent = 'FLIGHT SCHOOL';
-    const SCHOOL_ORDER = ['t1', 't2', 't3', 't4', 't5', 't6'];
     const addHead = (text, sub) => {
       const d = document.createElement('div');
       d.className = sub ? 'msub' : 'mhead';
@@ -245,7 +261,7 @@ function buildMenu(mode = 'main') {
       // progressive syllabus: each sortie passed chalks the lock off the next
       const i = SCHOOL_ORDER.indexOf(id);
       const locked = i > 0 && !save.done[SCHOOL_ORDER[i - 1]];
-      const diff = `<span class="diff d-${(DIFFICULTY[id] || 'EASY').toLowerCase()}">${DIFFICULTY[id] || 'EASY'}</span>`;
+      const diff = diffBadge(id);
       const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
       const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
       if (locked) addBtn(key, def.title + diff + chips + hook, 'LOCKED', null);
@@ -254,9 +270,9 @@ function buildMenu(mode = 'main') {
     addHead('BASIC FLIGHT MANEUVERS');
     row('1', 't1'); row('2', 't2');
     addHead('ADVANCED FLIGHT MANEUVERS');
-    row('3', 't3'); row('4', 't4');
+    row('3', 't3'); row('4', 't4'); row('5', 't7');
     addHead('AERIAL COMBAT');
-    row('5', 't5'); row('6', 't6');
+    row('6', 't5'); row('7', 't6');
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
     return;
   }
@@ -284,7 +300,7 @@ function buildMenu(mode = 'main') {
   if (G._menuResume) addBtn('Q', 'RESUME FLIGHT', 'BACK IN THE COCKPIT', () => resumeFlight());
   addBtn('1', 'FLIGHT SCHOOL', 'BASIC · ADVANCED · COMBAT', () => buildMenu('school'));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
-  addBtn('6', 'MISSIONS', '', () => buildMenu('missions'));
+  addBtn('6', 'MISSIONS', schoolGrad() ? '' : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
   addBtn('9', 'GALLERY', '', () => {
     setHash('gallery');
@@ -486,7 +502,11 @@ window.addEventListener('keydown', (e) => {
     const spot = FF_SPOTS.find(s => s.key === (e.code.startsWith('Digit') ? e.code.slice(5) : ''));
     if (spot) { G.freeFlightStart = spot.id; stats.startPoint(spot.id); enterPlaneSelect(MISSIONS.find(m => m.id === 'free')); }
   } else if (G.state === 'briefing') {
-    if (e.code === 'Enter' || e.code === 'Space') { G.intro.afterBrief && G.intro.afterBrief(); }
+    if (e.code === 'Enter' || e.code === 'Space') {
+      const intro = G.intro, total = (intro.briefLines || []).join('\n').length;
+      if (intro.typed < total) intro.typed = total;     // first key: finish the teletype
+      else if (intro.afterBrief) { const f = intro.afterBrief; intro.afterBrief = null; f(); }
+    }
     if (e.code === 'Escape') showMenu();
   } else if (G.state === 'debrief') {
     // any of the usual confirm/escape keys gets you back into the cockpit
@@ -524,6 +544,9 @@ $('gl').addEventListener('click', () => {
 $('controls').addEventListener('click', (e) => { if (e.target.id === 'controls') G.closeManual(); });
 $('pause-resume').onclick = () => togglePause();
 $('pause-restart').onclick = () => { $('pause').classList.add('hidden'); launchMission(G.missionDef); };
+// KEYS / CONTROLS rides the manual's own open/close path, so closing the keys
+// card drops you right back on the PAUSED screen
+$('pause-keys').onclick = () => G.openManual();
 $('pause-quit').onclick = () => { $('pause').classList.add('hidden'); showMenu(); };
 
 // ---------------- mission lifecycle ----------------
@@ -1878,19 +1901,19 @@ function routeHash() {
   if (!atMenu) return;   // mid-sortie: don't yank the controls for a link click
   if (h === 'freeflight') startFreeFlightMap();
   else if (h === 'missions') buildMenu('missions');
-  else if (/^m([1-9]|1[0-3])$/.test(h)) {
-    // deep links respect the campaign chain — a locked mission sends you to the list
+  else if (/^m([1-9]|1[0-5])$/.test(h)) {
+    // deep links respect the school gate and the campaign chain
     const i = MISSION_ORDER.indexOf(h);
-    if (i > 0 && !save.done[MISSION_ORDER[i - 1]]) buildMenu('missions');
+    if (!schoolGrad() || (i > 0 && !save.done[MISSION_ORDER[i - 1]])) buildMenu('missions');
     else startBriefing(h);
   }
   else if (h === 'log') buildMenu('log');
   else if (h === 'school') buildMenu('school');
   else if (h === 'qual') startBriefing('t1');          // legacy link — the old qual is school T-1 now
-  else if (/^t[1-6]$/.test(h)) {
+  else if (/^t[1-7]$/.test(h)) {
     // deep links honour the syllabus too — locked sortie links land on the board
-    const order = ['t1', 't2', 't3', 't4', 't5', 't6'], i = order.indexOf(h);
-    if (i > 0 && !save.done[order[i - 1]]) buildMenu('school');
+    const i = SCHOOL_ORDER.indexOf(h);
+    if (i > 0 && !save.done[SCHOOL_ORDER[i - 1]]) buildMenu('school');
     else startBriefing(h);
   }
   else if (h.startsWith('gallery/')) {

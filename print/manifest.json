@@ -339,6 +339,22 @@
   }
  },
  {
+  "id": "tu95-bear",
+  "name": "TU-95MS BEAR-H",
+  "real": 46.2,
+  "target": 200,
+  "price": 6,
+  "blurb": "The missile carrier — four NK-12 contra-props on a 35-degree swept wing, red stars on the fin. She carries the Kitchens; you carry the intercept.",
+  "file": "tu95-bear.stl",
+  "kb": 44,
+  "scale": 245,
+  "dims": {
+   "x": 175.6,
+   "y": 50.6,
+   "z": 200
+  }
+ },
+ {
   "id": "av8b-harrier",
   "name": "AV-8B HARRIER II",
   "real": 14.1,
@@ -394,7 +410,7 @@
   "price": 8,
   "blurb": "The Big E — your home plate. Angled deck, island, the works.",
   "file": "uss-enterprise-cvn65.stl",
-  "kb": 46,
+  "kb": 52,
   "scale": 1384,
   "dims": {
    "x": 70.9,

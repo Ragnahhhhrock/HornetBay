@@ -109,14 +109,28 @@
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-  #blog-search { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 4px 10px; letter-spacing: 1px; width: min(230px, 42vw); }
+  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
   #blog-search-clear { visibility: hidden; }
   #blog-search-clear.show { visibility: visible; }
   #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
+  #blog-pager-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin: 4px 0 14px; }
+  #blog-pager-top:empty { display: none; }
   #blog-menu .bm-note { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; letter-spacing: 1px; margin-top: 2px; }
+  /* home: articles left, tag filters pinned in the right-hand rail */
+  body.home main { max-width: 1120px; }
+  #blog-cols { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 40px; align-items: start; }
+  #blog-side { position: sticky; top: 18px; border: 1px solid var(--line); background: var(--card); padding: 14px; }
+  #blog-side .side-head { color: var(--amber); font-size: 11px; letter-spacing: 3px; margin: 0 0 10px; }
+  #blog-side #blog-menu { flex-direction: column; align-items: stretch; gap: 6px; margin: 0; }
+  #blog-side #blog-menu .chip { text-align: left; }
+  @media (max-width: 900px) {
+    #blog-cols { grid-template-columns: 1fr; }
+    #blog-side { position: static; order: -1; }
+    #blog-side #blog-menu { flex-direction: row; flex-wrap: wrap; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -126,6 +140,58 @@
   "url": "https://hornetbay.com/blog",
   "description": "Every new feature in the Hornet Bay rebuild, logged with a screenshot.",
   "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "The journal grows rails: paging at the top, a bigger search, tags on the right PENDING",
+      "datePublished": "2026-07-28",
+      "url": "https://hornetbay.com/blog/journal-rails",
+      "wordCount": 12,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/journal-rails.jpg"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "A lamp for the hook, and a door back to the keys PENDING",
+      "datePublished": "2026-07-28",
+      "url": "https://hornetbay.com/blog/hook-annunciator",
+      "wordCount": 8,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/hook-annunciator.jpg"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "The Bear comes west: Kitchens on the rails, Phalanx on the rails PENDING",
+      "datePublished": "2026-07-28",
+      "url": "https://hornetbay.com/blog/the-bear-comes-west",
+      "wordCount": 76,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/the-bear-comes-west.jpg"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Wings before war: the campaign wants a graduate, and the board rates everything PENDING",
+      "datePublished": "2026-07-28",
+      "url": "https://hornetbay.com/blog/wings-before-war",
+      "wordCount": 50,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/wings-before-war.jpg"
+    },
     {
       "@type": "BlogPosting",
       "headline": "Earn your wings: the school is a syllabus now 37a9400",
@@ -1620,7 +1686,7 @@
   })();
 </script>
 </head>
-<body>
+<body class="home">
 <header>
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="kicker">BLOG</div>
@@ -1629,6 +1695,51 @@
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
 </header>
 <main>
+<div id="blog-cols">
+<div id="blog-main">
+  <article id="journal-rails">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <h2><a class="title-link" href="/blog/journal-rails">The journal grows rails: paging at the top, a bigger search, tags on the right</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/journal-rails.jpg"><img src="/shots/journal-rails.jpg" alt="The blog with the larger search box pinned top-right, PAGE 1 of 12 with NEXT and LAST buttons at the head, and the tag filters railed down the right-hand side" loading="lazy"></a>
+    <p>A hundred and seventeen entries in, the journal needed better deck crew:</p>
+    <ol>
+      <li><b>Head navigation.</b> The pager now rides the top of the page too &mdash; <b>PAGE x/y, PREV, NEXT, and LAST</b> one tap away before you scroll, mirroring the full pager at the foot.</li>
+      <li><b>A search box you can see.</b> The journal search is larger and pinned to the <b>top right</b>, above the entries &mdash; type, and the whole archive filters live.</li>
+      <li><b>Tags move to the rail.</b> The tag filters leave the top strip for a sticky <b>right-hand sidebar</b>; on narrow screens the rail folds back above the entries. The wide two-column reading layout stays home-only &mdash; article pages keep their 860px measure.</li>
+    </ol>
+  </article>
+  <article id="hook-annunciator">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span></div>
+    <h2><a class="title-link" href="/blog/hook-annunciator">A lamp for the hook, and a door back to the keys</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/hook-annunciator.jpg"><img src="/shots/hook-annunciator.jpg" alt="Hornet cockpit in the merge with the new HOOK annunciator lit amber in the left-hand button stack" loading="lazy"></a>
+    <p>Two small fittings, both requested from the cockpit:</p>
+    <ol>
+      <li><b>HOOK annunciator.</b> The F/A-18 and the F-14 gain a fourth lamp in the left-hand stack &mdash; <b>HOOK</b>, amber when the tailhook is down, dim when stowed. On the ball you want to see it lit without thinking; USAF kit (F-16, F-15, A-10) keeps the honest three-button stack it always had.</li>
+      <li><b>KEYS / CONTROLS on the pause card.</b> The pause menu now carries a straight route to the flight manual: PAUSED &rarr; KEYS / CONTROLS, read what you need, close it, and you land right back on the PAUSED card &mdash; no fumbling for the ? key with cold hands.</li>
+    </ol>
+  </article>
+  <article id="the-bear-comes-west">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/missions">MISSIONS</a><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a></span></div>
+    <h2><a class="title-link" href="/blog/the-bear-comes-west">The Bear comes west: Kitchens on the rails, Phalanx on the rails</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/the-bear-comes-west.jpg"><img src="/shots/the-bear-comes-west.jpg" alt="Spectate view of the Tu-95MS Bear-H over the Pacific, swept wing and four contra-prop nacelles, a missile-launch warning on the ticker" loading="lazy"></a>
+    <p>A turboprop contact, bearing 270, a hundred ten miles out, Angels 27 &mdash; and she is not out there to take pictures. The <b>Tu-95MS Bear-H</b> joins the sim: four NK-12 contra-props on a 35&deg; swept wing, a glazed bombardier nose, twin guns in the tail barbette, red stars on the fin. She is in the gallery, the print bay, and the store &mdash; and she is the centerpiece of the two hardest sorties in the campaign:</p>
+    <ol>
+      <li><b>M14 BEAR HUNT (80/100).</b> One Bear, two Flankers riding shot &mdash; rated 75, aces, cleared for every maneuver in the library. She trucks for her launch point fifty miles off the boat; an expert pilot runs her down and kills the archer with the arrows still on the rails.</li>
+      <li><b>If the arrows fly.</b> Two AS-4 Kitchens, eighteen seconds apart, steering for the moving carrier the whole way in. You and Viper Two hunt them &mdash; and if one leaks past, the escorts&rsquo; <b>Phalanx CIWS</b> is the last wall of lead: mounts pick the closest missile inside 3.8&nbsp;km, walk tracers onto it, kill odds climbing steeply as the range closes. One Kitchen amidships and the sortie is over.</li>
+      <li><b>M15 BEAR PAK (95/100).</b> The demonstration team: two Bears on two axes, four Flankers rated 92, eight killers in the air at once. Bring everything the school taught you. This one is the final exam.</li>
+    </ol>
+  </article>
+  <article id="wings-before-war">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span></div>
+    <h2><a class="title-link" href="/blog/wings-before-war">Wings before war: the campaign wants a graduate, and the board rates everything</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/wings-before-war.jpg"><img src="/shots/wings-before-war.jpg" alt="The campaign board locked behind the flight-school gate, every mission wearing a numeric difficulty rating out of 100" loading="lazy"></a>
+    <p>The fleet does not send students to war. The campaign board now stays <b>locked until you graduate flight school</b> &mdash; all seven sorties, in order &mdash; and it says so in plain amber: <b>GRADUATE FLIGHT SCHOOL TO UNLOCK THE CAMPAIGN</b>. Around it, the board got honest about what everything costs:</p>
+    <ol>
+      <li><b>Difficulty, numbered.</b> Every campaign mission and school sortie carries a rating <b>out of 100</b>, banded green to red &mdash; the first intercept reads 20/100, the Bear PAK finale reads 95/100. No more guessing what EXPERT meant.</li>
+      <li><b>Enemy pilots, rated 0&ndash;100.</b> Early bandits fly like <b>GREEN</b> patrol pilots; by the late campaign you are meeting <b>VETERANS</b>, <b>ACES</b>, and finally <b>LEGENDS</b> &mdash; and the rating is not a label, it drives the AI directly. Higher-rated pilots fly faster, shoot sooner, and only they are cleared for the advanced maneuver library: split-S escapes, barrel-roll spoils, loops to force the overshoot. The briefing now prints the assessment before you commit: <b>ENEMY PILOT RATING: 75/100 &mdash; ACES</b>.</li>
+      <li><b>New school sortie: T-5 AEROBATICS.</b> Rolls, loops and split-S, graded by the instruments &mdash; upright to inverted to upright for the roll, over the top for the loop, inverted then pull through for the split-S, all above 1,800&nbsp;m or the figure doesn&rsquo;t count. GUNNERY and DOGFIGHT renumber to T-6 and T-7; the dogfight remains your graduation.</li>
+    </ol>
+  </article>
   <article id="earn-your-wings">
     <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span></div>
     <h2><a class="title-link" href="/blog/earn-your-wings">Earn your wings: the school is a syllabus now</a> <span class="hash">37a9400</span></h2>
@@ -2272,7 +2383,7 @@
     </ol>
     <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
   </article>
-<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-67">FEATURE&nbsp;&middot;&nbsp;67</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-17">AIRCRAFT&nbsp;&middot;&nbsp;17</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-17">SITE&nbsp;&middot;&nbsp;17</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-14">CONTROLS&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-6">CARRIER&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-3">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-3">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-2">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
+<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-70">FEATURE&nbsp;&middot;&nbsp;70</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-18">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-18">SITE&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-15">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-6">CARRIER&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-4">MISSIONS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-3">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-3">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
   <article id="time-acceleration">
     <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/time-acceleration">Time acceleration: 2x, 4x, 8x</a> <span class="hash">885dc92</span></h2>
@@ -2726,6 +2837,9 @@
     <p>The flight model grew up: bank the wings and lift pulls you around the turn, guns and missiles are free to fire outside missions, and there&rsquo;s a working ejection seat for when the math stops working.</p>
   </article>
 
+</div>
+<aside id="blog-side" aria-label="Tag filters"><div class="side-head">FILTER BY TAG</div></aside>
+</div>
 </main>
 <footer>
   HORNET BAY &mdash; a tribute rebuild of the 1988 Amiga classic F/A-18 INTERCEPTOR &middot; <a href="/">FLY NOW</a> &middot; <a href="https://x.com/hornetbay" target="_blank" rel="noopener">@hornetbay</a>
@@ -2817,8 +2931,6 @@
     history.replaceState(null, '', location.pathname + (str ? '#' + str : ''));
   }
   var menu = document.createElement('div'); menu.id = 'blog-menu';
-  var lab = document.createElement('span'); lab.className = 'bm-label'; lab.textContent = 'FILTER';
-  menu.appendChild(lab);
   function chip(text, value) {
     var b = document.createElement('button');
     b.className = 'chip'; b.type = 'button'; b.textContent = text; b.dataset.tag = value || '';
@@ -2837,14 +2949,20 @@
   clr.title = 'Clear search';
   clr.addEventListener('click', function () { box.value = ''; state.q = ''; state.page = 1; apply(); box.focus(); });
   wrap.appendChild(box); wrap.appendChild(clr);
-  menu.appendChild(wrap);
   var deb = null;
   box.addEventListener('input', function () {
     clearTimeout(deb);
     deb = setTimeout(function () { state.q = box.value.trim(); state.page = 1; apply(); }, 180);
   });
   var first = arts[0];
-  first.parentNode.insertBefore(menu, first);
+  // tag filters live in the right-hand rail; the top strip keeps search + paging
+  var side = document.getElementById('blog-side');
+  if (side) side.appendChild(menu);
+  else first.parentNode.insertBefore(menu, first);
+  first.parentNode.insertBefore(wrap, first);
+  // head navigation: page steps live at the top too — NEXT and LAST one tap away
+  var pagerTop = document.createElement('div'); pagerTop.id = 'blog-pager-top';
+  first.parentNode.insertBefore(pagerTop, first);
   var pager = document.createElement('div'); pager.id = 'blog-pager';
   var last = arts[arts.length - 1];
   if (last.nextSibling) last.parentNode.insertBefore(pager, last.nextSibling);
@@ -2868,20 +2986,27 @@
     vis.slice(lo, lo + PER).forEach(function (a) { a.style.display = ''; });
     var chips = menu.querySelectorAll('.chip');
     for (var i = 0; i < chips.length; i++) chips[i].classList.toggle('on', (chips[i].dataset.tag || null) === (state.tag || null));
-    pager.innerHTML = '';
+    pager.innerHTML = ''; pagerTop.innerHTML = '';
     if (pages > 1) {
-      var info = document.createElement('span'); info.className = 'bm-label';
-      info.textContent = 'PAGE ' + state.page + ' / ' + pages + ' — ' + vis.length + ' ENTRIES, NEWEST FIRST';
-      pager.appendChild(info);
       var mk = function (txt, pg) {
         var b = document.createElement('button');
         b.className = 'pg-btn' + (pg === state.page ? ' on' : ''); b.type = 'button'; b.textContent = txt;
         b.addEventListener('click', function () { state.page = pg; apply(); window.scrollTo(0, 0); });
         return b;
       };
+      var info = document.createElement('span'); info.className = 'bm-label';
+      info.textContent = 'PAGE ' + state.page + ' / ' + pages + ' — ' + vis.length + ' ENTRIES, NEWEST FIRST';
+      pager.appendChild(info);
       if (state.page > 1) pager.appendChild(mk('\u2190 PREV', state.page - 1));
       for (var i2 = 1; i2 <= pages; i2++) pager.appendChild(mk(String(i2), i2));
       if (state.page < pages) pager.appendChild(mk('NEXT \u2192', state.page + 1));
+      // the head strip: where you are, a page back, a page forward, the last page
+      var infoT = document.createElement('span'); infoT.className = 'bm-label';
+      infoT.textContent = 'PAGE ' + state.page + ' / ' + pages;
+      pagerTop.appendChild(infoT);
+      if (state.page > 1) pagerTop.appendChild(mk('\u2190 PREV', state.page - 1));
+      if (state.page < pages) pagerTop.appendChild(mk('NEXT \u2192', state.page + 1));
+      if (state.page < pages) pagerTop.appendChild(mk('LAST \u00bb', pages));
     }
     writeHash();
   }

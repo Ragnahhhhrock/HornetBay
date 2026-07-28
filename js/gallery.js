@@ -20,6 +20,7 @@ const ITEMS = [
   { cat: 'air', type: 'a10',   name: 'A-10 THUNDERBOLT II',        short: 'A-10 WARTHOG',      info: 'U.S. AIR FORCE CLOSE AIR SUPPORT — BUILT AROUND THE GUN — NO TAILHOOK' },
   { cat: 'air', type: 'mig29', name: 'MIG-29 FULCRUM',             info: 'ENEMY BOGEY — TWIN-TAIL AGILE FIGHTER' },
   { cat: 'air', type: 'su27',  name: 'SU-27 FLANKER',              info: 'SOVIET FRONT-LINE FIGHTER — RED STARS, BLUE 38 — WATCH THE MERGE' },
+  { cat: 'air', type: 'tu95',  name: 'TU-95MS BEAR-H',             short: 'TU-95 BEAR',        info: 'THE MISSILE CARRIER — FOUR NK-12 CONTRA-PROPS ON A 35° SWEPT WING — KILL THE ARCHER' },
   { cat: 'air', type: 'b747',  name: 'AIR FORCE ONE (VC-25A)',     short: 'AIR FORCE ONE',     info: 'BOEING 747-200B — THE 1994 PRESIDENTIAL MOUNT — MIND THE PAINT' },
   { cat: 'air', type: 'b744',  name: 'ALLIED AIRLINES 747-400',    short: 'ALLIED 747-400',   info: 'SFO HEAVY — 388 SOULS ABOARD — FRIENDLY SKIES: CHECK YOUR FIRE', livery: 0 },
   { cat: 'air', type: 'b737',  name: 'LIBERTY AIR 737-400',        short: 'LIBERTY 737-400',   info: 'SHORT-HAUL SHUTTLE — 146 SOULS ABOARD — POLISHED SILVER: CHECK YOUR FIRE', livery: 1 },

@@ -128,14 +128,28 @@
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { margin-left: auto; display: flex; align-items: center; gap: 6px; }
-  #blog-search { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 4px 10px; letter-spacing: 1px; width: min(230px, 42vw); }
+  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
   #blog-search-clear { visibility: hidden; }
   #blog-search-clear.show { visibility: visible; }
   #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
+  #blog-pager-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; margin: 4px 0 14px; }
+  #blog-pager-top:empty { display: none; }
   #blog-menu .bm-note { flex-basis: 100%; color: var(--ink-dim); font-size: 10px; letter-spacing: 1px; margin-top: 2px; }
+  /* home: articles left, tag filters pinned in the right-hand rail */
+  body.home main { max-width: 1120px; }
+  #blog-cols { display: grid; grid-template-columns: minmax(0, 1fr) 232px; gap: 40px; align-items: start; }
+  #blog-side { position: sticky; top: 18px; border: 1px solid var(--line); background: var(--card); padding: 14px; }
+  #blog-side .side-head { color: var(--amber); font-size: 11px; letter-spacing: 3px; margin: 0 0 10px; }
+  #blog-side #blog-menu { flex-direction: column; align-items: stretch; gap: 6px; margin: 0; }
+  #blog-side #blog-menu .chip { text-align: left; }
+  @media (max-width: 900px) {
+    #blog-cols { grid-template-columns: 1fr; }
+    #blog-side { position: static; order: -1; }
+    #blog-side #blog-menu { flex-direction: row; flex-wrap: wrap; }
+  }
 </style>
 <script type="application/ld+json">
 {
@@ -153,8 +167,30 @@
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
 </header>
 <main>
-<div class="taghead">#MISSIONS &mdash; 2 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;67</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;17</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;17</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<div class="taghead">#MISSIONS &mdash; 4 ENTRIES</div>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;70</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<article id="the-bear-comes-west">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/missions">MISSIONS</a><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a></span></div>
+    <h2><a class="title-link" href="/blog/the-bear-comes-west">The Bear comes west: Kitchens on the rails, Phalanx on the rails</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/the-bear-comes-west.jpg"><img src="/shots/the-bear-comes-west.jpg" alt="Spectate view of the Tu-95MS Bear-H over the Pacific, swept wing and four contra-prop nacelles, a missile-launch warning on the ticker" loading="lazy"></a>
+    <p>A turboprop contact, bearing 270, a hundred ten miles out, Angels 27 &mdash; and she is not out there to take pictures. The <b>Tu-95MS Bear-H</b> joins the sim: four NK-12 contra-props on a 35&deg; swept wing, a glazed bombardier nose, twin guns in the tail barbette, red stars on the fin. She is in the gallery, the print bay, and the store &mdash; and she is the centerpiece of the two hardest sorties in the campaign:</p>
+    <ol>
+      <li><b>M14 BEAR HUNT (80/100).</b> One Bear, two Flankers riding shot &mdash; rated 75, aces, cleared for every maneuver in the library. She trucks for her launch point fifty miles off the boat; an expert pilot runs her down and kills the archer with the arrows still on the rails.</li>
+      <li><b>If the arrows fly.</b> Two AS-4 Kitchens, eighteen seconds apart, steering for the moving carrier the whole way in. You and Viper Two hunt them &mdash; and if one leaks past, the escorts&rsquo; <b>Phalanx CIWS</b> is the last wall of lead: mounts pick the closest missile inside 3.8&nbsp;km, walk tracers onto it, kill odds climbing steeply as the range closes. One Kitchen amidships and the sortie is over.</li>
+      <li><b>M15 BEAR PAK (95/100).</b> The demonstration team: two Bears on two axes, four Flankers rated 92, eight killers in the air at once. Bring everything the school taught you. This one is the final exam.</li>
+    </ol>
+  </article>
+<article id="wings-before-war">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span></div>
+    <h2><a class="title-link" href="/blog/wings-before-war">Wings before war: the campaign wants a graduate, and the board rates everything</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/wings-before-war.jpg"><img src="/shots/wings-before-war.jpg" alt="The campaign board locked behind the flight-school gate, every mission wearing a numeric difficulty rating out of 100" loading="lazy"></a>
+    <p>The fleet does not send students to war. The campaign board now stays <b>locked until you graduate flight school</b> &mdash; all seven sorties, in order &mdash; and it says so in plain amber: <b>GRADUATE FLIGHT SCHOOL TO UNLOCK THE CAMPAIGN</b>. Around it, the board got honest about what everything costs:</p>
+    <ol>
+      <li><b>Difficulty, numbered.</b> Every campaign mission and school sortie carries a rating <b>out of 100</b>, banded green to red &mdash; the first intercept reads 20/100, the Bear PAK finale reads 95/100. No more guessing what EXPERT meant.</li>
+      <li><b>Enemy pilots, rated 0&ndash;100.</b> Early bandits fly like <b>GREEN</b> patrol pilots; by the late campaign you are meeting <b>VETERANS</b>, <b>ACES</b>, and finally <b>LEGENDS</b> &mdash; and the rating is not a label, it drives the AI directly. Higher-rated pilots fly faster, shoot sooner, and only they are cleared for the advanced maneuver library: split-S escapes, barrel-roll spoils, loops to force the overshoot. The briefing now prints the assessment before you commit: <b>ENEMY PILOT RATING: 75/100 &mdash; ACES</b>.</li>
+      <li><b>New school sortie: T-5 AEROBATICS.</b> Rolls, loops and split-S, graded by the instruments &mdash; upright to inverted to upright for the roll, over the top for the loop, inverted then pull through for the split-S, all above 1,800&nbsp;m or the figure doesn&rsquo;t count. GUNNERY and DOGFIGHT renumber to T-6 and T-7; the dogfight remains your graduation.</li>
+    </ol>
+  </article>
 <article id="meet-the-fleet-pacific-empress-dc-10">
     <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-pacific-empress-dc-10">Meet the fleet: PACIFIC EMPRESS DC-10</a> <span class="hash">6ef1315</span></h2>

@@ -17,7 +17,7 @@ export class AIAircraft {
     this.heading = opts.heading ?? 0;
     this.speed = opts.speed ?? 220;
     this.targetSpeed = this.speed;
-    this.hp = opts.hp ?? ({ b747: 400, b744: 420, dc10: 300, b737: 200, md90: 180, cruise: 60 }[type] || 100);
+    this.hp = opts.hp ?? ({ b747: 400, b744: 420, dc10: 300, b737: 200, md90: 180, cruise: 60, tu95: 380 }[type] || 100);
     this.hostile = opts.hostile ?? false;
     this.identified = false;
     this.name = opts.name || type.toUpperCase();

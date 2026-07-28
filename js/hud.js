@@ -439,9 +439,19 @@ export class HUD {
       c.textAlign = 'center'; c.fillText(label, bx + bw / 2, y + bh * 0.70, bw - 4); c.textAlign = 'left';
       c.lineWidth = 1.2 * s;
     };
-    btn('EJECT', 0.758, 0.815, true, GREEN);
-    btn('BRAKE', 0.838, 0.888, P.brakes);
-    btn('GEAR',  0.908, 0.965, P.gearDown);
+    // hook birds (F/A-18, F-14) carry a fourth annunciator: amber HOOK when the
+    // tailhook is down, dim when stowed — the boat wants to see it lit
+    const hookBird = P.type === 'f18' || P.type === 'f14';
+    if (hookBird) {
+      btn('EJECT', 0.752, 0.799, true, GREEN);
+      btn('BRAKE', 0.805, 0.852, P.brakes);
+      btn('GEAR',  0.858, 0.905, P.gearDown);
+      btn('HOOK',  0.911, 0.958, P.hookDown, AMBER);
+    } else {
+      btn('EJECT', 0.758, 0.815, true, GREEN);
+      btn('BRAKE', 0.838, 0.888, P.brakes);
+      btn('GEAR',  0.908, 0.965, P.gearDown);
+    }
 
     // ---- weapons loadout display: bezel x .140-.312, screen x .155-.295
     bezel(0.140, 0.738, 0.312, 0.995);

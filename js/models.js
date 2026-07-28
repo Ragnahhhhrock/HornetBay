@@ -965,6 +965,62 @@ function _gearSet(pts, r = 0.34, strutLen = 1.35) {
 // (soviet red stars come from starDecal() up in the MiG-29 section)
 
 
+
+// ---------------- Tu-95MS BEAR-H — 182nd TBAP, Ukrayinka — the missile carrier ----------------
+// four NK-12 turboprops, contra-props, 35-degree swept wing: the fastest prop
+// airframe ever built, and the one that carries the Kitchens to launch range
+export function buildTu95() {
+  const g = new THREE.Group();
+  const MT = 0xb9bfc2, MD = 0x8f979c, GL = 0x1c262e, DK = 0x39414a;   // bare-metal over grey
+  // long slim fuselage with the slight nose-down sit the Bear is famous for
+  const fus = cyl(1.85, 1.55, 38, MD, 14); g.add(fus);
+  const crown = cyl(1.87, 1.6, 32, MT, 14); crown.scale.set(1, 0.6, 1); crown.position.set(0, 0.62, 1.5); g.add(crown);
+  // glazed bombardier nose under the flight deck
+  const nose = cone(1.85, 5.4, MT, 12); nose.position.set(0, 0, 21.6); g.add(nose);
+  const glass = cone(1.0, 2.6, GL, 10); glass.position.set(0, -0.5, 22.4); g.add(glass);
+  const ck = cyl(1.88, 1.88, 1.8, GL, 12); ck.scale.set(1, 0.5, 1); ck.position.set(0, 0.72, 18.6); g.add(ck);
+  // refuelling probe above the nose
+  const probe = cyl(0.05, 0.05, 3.4, DK, 6); probe.rotation.x = Math.PI / 2 - 0.12; probe.position.set(0, 1.7, 22.6); g.add(probe);
+  // tail: gun barbette with twin barrels, then the cone
+  const tail = cone(1.5, 4.2, MD, 10); tail.rotation.x = Math.PI; tail.position.set(0, 0.1, -21); g.add(tail);
+  const barb = cyl(0.5, 0.4, 1.4, DK, 8); barb.rotation.x = Math.PI / 2; barb.position.set(0, 0.15, -23.4); g.add(barb);
+  for (const s of [1, -1]) { const gun = cyl(0.07, 0.07, 1.6, 0x14181c, 6); gun.rotation.x = Math.PI / 2; gun.position.set(s * 0.2, 0.15, -24.6); g.add(gun); }
+  // 35-degree swept wing — the Bear's signature
+  const wG = wingGeo([[2.2, 4.4], [2.2, -4.4], [21.5, -11.6], [21.5, -8.6]], 0.55);
+  for (const sg of [1, -1]) { const w = new THREE.Mesh(wG, M(MT)); w.scale.x = sg; w.position.y = -0.9; g.add(w); }
+  // four NK-12 nacelles, main-gear fairings stretching behind the inner pair,
+  // each turning a contra-prop pair (two 4-blade groups read as the 8 blades)
+  const props = [];
+  for (const sg of [1, -1]) for (const [ex, ez, inner] of [[7.6, -1.2, true], [14.6, -5.2, false]]) {
+    const nac = cyl(0.95, 0.8, 7.4, MD, 10); nac.position.set(sg * ex, -1.7, ez + 1.2); g.add(nac);
+    if (inner) { const fair = box(1.3, 1.1, 9.5, MD); fair.position.set(sg * ex, -1.85, ez - 4.6); g.add(fair); }
+    for (const [off, dir] of [[0.15, 1], [-0.15, -1]]) {
+      const spin = new THREE.Group(); spin.position.set(sg * ex, -1.7, ez + 5.0 + off);
+      for (let i = 0; i < 2; i++) {
+        const b = box(0.16, 5.6, 0.08, 0x22262b); b.rotation.z = i * Math.PI / 2 + (dir < 0 ? Math.PI / 4 : 0); spin.add(b);
+      }
+      g.add(spin); props.push(spin);
+    }
+    const dome = cone(0.3, 0.8, DK, 8); dome.position.set(sg * ex, -1.7, ez + 5.3); g.add(dome);
+  }
+  // tall swept fin (star on it) + low stabilators with the Bear's anhedral droop... slight dihedral here for stance
+  const fG = wingGeo([[0, 2.6], [0, -4.2], [6.4, -6.2], [6.4, -4.2]], 0.5);
+  const fin = new THREE.Mesh(fG, M(MT)); fin.rotation.z = Math.PI / 2; fin.position.set(0, 1.5, -16.2); g.add(fin);
+  const sG = wingGeo([[1.0, 1.2], [1.0, -2.0], [7.8, -3.0], [7.8, -1.8]], 0.35);
+  for (const sg of [1, -1]) { const st = new THREE.Mesh(sG, M(MT)); st.scale.x = sg; st.position.set(0, 0.9, -15.4); g.add(st); }
+  // red stars: fin both sides + wingtops
+  const starF = starDecal(2.4);
+  for (const sg of [1, -1]) {
+    const sf = starF.clone(); sf.position.set(sg * 0.36, 4.6, -18.2); sf.rotation.y = sg * Math.PI / 2; g.add(sf);
+    const sw = starDecal(2.0); sw.rotation.x = -Math.PI / 2; sw.position.set(sg * 15.5, -0.6, -8.2); g.add(sw);
+  }
+  const gear = _gearSet([[1.2, -2.8, 4.2], [-1.2, -2.8, 4.2], [7.6, -3.4, -4.0], [-7.6, -3.4, -4.0]], 0.42, 1.5);
+  g.add(gear);
+  g.userData = { ab: [], gear, hook: null, stabL: null, stabR: null, stores: {}, props, type: 'tu95' };
+  addNavLights(g, 21.5, -22, 1.5);
+  return g;
+}
+
 // ---------------- A-6E Intruder — VA-52 Knight Riders, CVW-15 (NL), 1994 ----------------
 export function buildA6() {
   const g = new THREE.Group();
@@ -1522,6 +1578,7 @@ export function buildModel(type, livery = 0) {
     case 'seahawk': return buildSeahawk();
     case 'apache': return buildApache();
     case 'p3': return buildP3();
+    case 'tu95': return buildTu95();
     case 'e2c': return buildE2C();
     case 'av8b': return buildHarrier();
     case 'balloon': return buildBalloon();

@@ -6,11 +6,113 @@ import { buildBanner } from './models.js';
 import { groundHeight } from './world.js';
 
 const V = (x, y, z) => new THREE.Vector3(x, y, z);
+const _cv = new THREE.Vector3();
 
 // helpers
 function near(a, b, r) { return a.distanceTo(b) < r; }
 
 // ============================================================
+// ------- Bear-raid helpers: the missile carrier, her escorts, and the last-ditch guns -------
+// a Bear pack = one Tu-95MS + Flanker shotgun. she trucks straight for her
+// launch point, pumps out two Kitchens twenty seconds apart, then turns for home
+function _bearPack(G, opts) {
+  const c = G.world.carrier;
+  const bear = G.spawnAI('tu95', {
+    pos: opts.pos, heading: Math.atan2(c.pos.x - opts.pos.x, -(c.pos.z - opts.pos.z)),
+    speed: 235, hostile: true, name: 'TU-95MS BEAR-H', label: 'BEAR',
+    mode: 'route', waypoints: [c.pos.clone().add(V(0, 8200, 0))], noEvade: true,
+  });
+  bear.kind = 'bandit'; bear.identified = true;
+  const escorts = [];
+  for (let i = 0; i < opts.escorts; i++) {
+    const e = G.spawnAI('su27', {
+      pos: opts.pos.clone().add(V(-2500 - i * 1800, 600 + i * 400, 2000 - i * 3600)),
+      heading: bear.heading, speed: 240, hostile: true, name: 'SU-27', label: 'SU-27',
+      mode: 'orbit', skill: skillFor(opts.rating), agility: agilityFor(opts.rating),
+    });
+    e.kind = 'bandit'; e.identified = true; e.orbitCenter = bear.pos.clone();
+    e.orbitRadius = 3200 + i * 900; e.noAA = true;
+    escorts.push(e);
+  }
+  return { bear, escorts, missiles: [], launched: 0, launchT: 0, launchD: opts.launchD || 52000, egress: false, hot: false };
+}
+
+function _bearPackUpdate(G, dt, pack) {
+  const c = G.world.carrier;
+  const { bear } = pack;
+  if (!bear.dead) {
+    // escorts weave around their charge until the fight comes to them
+    for (const e of pack.escorts) {
+      if (e.dead || e.mode === 'attack') continue;
+      e.orbitCenter.copy(bear.pos);
+      if (!pack.hot && (G.player.pos.distanceTo(bear.pos) < 30000 || bear.hp < 380)) {
+        pack.hot = true;
+        G.msg('FLANKERS ARE COMMITTING', 'bad');
+        G.radio('SCREWTOPS 601: ESCORTS LEAVING THE BEAR — TWO NOSES ON YOU, VIPER. FIGHT\'S ON!');
+      }
+      if (pack.hot) for (const e2 of pack.escorts) {
+        if (e2.dead || e2.mode === 'attack') continue;
+        e2.mode = 'attack'; e2.target = Math.random() < 0.6 || !G.wingman ? G.player : G.wingman.ai; e2.fireCooldown = rand(6, 12);
+      }
+    }
+    // launch point reached: two Kitchens, eighteen seconds apart, then run for home
+    const d = bear.pos.distanceTo(c.pos);
+    if (pack.launched < 2 && d < pack.launchD) {
+      pack.launchT -= dt;
+      if (pack.launchT <= 0) {
+        pack.launchT = 18;
+        pack.launched++;
+        const m = G.spawnAI('cruise', {
+          pos: bear.pos.clone().add(V(0, -60, 0)), heading: bear.heading, speed: 235,
+          name: 'AS-4 KITCHEN', label: 'CRUISE MSL', mode: 'straight', noEvade: true, hp: 60,
+          terrainFollow: true, hostile: true,
+        });
+        m.kind = 'bandit'; m.identified = true; m.targetSpeed = 300;
+        pack.missiles.push(m);
+        G.msg(`MISSILE IN THE AIR — KITCHEN #${pack.launched} AWAY`, 'bad');
+        G.radio(`SCREWTOPS 601: VAMPIRE VAMPIRE! THE BEAR HAS LAUNCHED — MISSILE ${pack.launched} OF TWO, RUNNING FOR THE CARRIER!`);
+        if (pack.launched === 2) {
+          bear.waypoints = [bear.pos.clone().add(V(-220000, 800, 30000))];
+          G.radio('SCREWTOPS 601: BEAR IS TURNING FOR HOME — THE MISSILES ARE YOURS, VIPER.');
+        }
+      }
+    } else if (pack.launched === 0) pack.launchT = 1.2;   // inside the ring: first arrow nocks fast
+    // the missiles steer for the moving boat the whole way in
+    for (const m of pack.missiles) {
+      if (m.dead) continue;
+      const d = _cv.copy(c.pos).sub(m.pos);
+      m.heading = Math.atan2(d.x, -d.z);
+    }
+  }
+}
+
+// Phalanx CIWS aboard the escorts — the last wall of lead. each mount picks
+// the closest missile in its envelope, walks tracers onto it, kill odds
+// climbing steeply as the range closes
+function _ciwsUpdate(G, dt, missiles) {
+  if (!G.world.ships) return;
+  for (const e of G.world.ships.escorts) {
+    let tgt = null, bd = 3800;
+    for (const m of missiles) {
+      if (m.dead) continue;
+      const d = m.pos.distanceTo(e.pos);
+      if (d < bd) { bd = d; tgt = m; }
+    }
+    if (!tgt) continue;
+    const mount = _cv.copy(e.pos).setY(16);
+    if (!e._ciwsCalled) { e._ciwsCalled = true; G.msg('PHALANX IS FIRING', 'warn'); G.radio(`${e.name}: CIWS ENGAGING — ALL HANDS BRACE!`); }
+    if (Math.random() < dt * 26) G.fx.trail(mount.clone().lerp(tgt.pos, 0.06 + Math.random() * 0.25), 2.2, 0xffd080, 0.45);
+    if (Math.random() < dt * 5) G.fx.flash(mount.clone(), 9, 0xfff0b0, 0.12);
+    const pps = clamp(2.1 - bd / 2100, 0.3, 1.9);
+    if (Math.random() < pps * dt) {
+      G.explode(tgt.pos.clone(), 1.5);
+      tgt.kill(G, true, false);
+      G.msg(`PHALANX KILL — ${e.name} SAVED THE SHIP`, 'good');
+      G.radio(`${e.name}: SPLASH ONE! PHALANX GOT HIM!`);
+    }
+  }
+}
+
 export const MISSIONS = [
 // ------------------------------------------------ QUALIFICATION
 {
@@ -162,12 +264,94 @@ export const MISSIONS = [
     }
   },
 },
-// ------------------------------------------------ T-5 GUNNERY
+// ------------------------------------------------ T-5 AEROBATICS
 {
-  id: 't5', num: 105, title: 'T-5 GUNNERY', code: 'FLIGHT SCHOOL — COMBAT',
+  id: 't7', num: 105, title: 'T-5 AEROBATICS', code: 'FLIGHT SCHOOL — ADVANCED',
   time: 'day', planeChoice: true,
   brief: [
-    'AERIAL COMBAT — SORTIE 5', '',
+    'ADVANCED FLIGHT MANEUVERS — SORTIE 5', '',
+    'THREE FIGURES, GRADED BY THE INSTRUMENTS:', '',
+    '1. AILERON ROLL — FULL STICK, ALL THE WAY AROUND.',
+    '2. LOOP — PULL, OVER THE TOP, DOWN THE HILL.',
+    '3. SPLIT-S — ROLL INVERTED, PULL THROUGH.', '',
+    'GET ABOVE 1,800 M BEFORE EACH FIGURE. POWER ON.',
+  ],
+  briefing: 'Graded aerobatics: roll, loop, split-S, in order.',
+  loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    // one little state machine per figure, fed with the up/forward vectors
+    this.figs = [
+      { name: 'AILERON ROLL', state: 0, t: 0 },
+      { name: 'LOOP', state: 0, t: 0 },
+      { name: 'SPLIT-S', state: 0, t: 0 },
+    ];
+    this.idx = 0; this.lowWarned = false;
+    this._up = V(0, 1, 0); this._fw = V(0, 0, 1);
+    G.radio('INSTRUCTOR: WEST OVER THE WATER, CLIMB TO 3,000. ROLL FIRST — SMOOTH, ALL THE WAY ROUND.');
+  },
+  _vec(G) {
+    const q = G.player.quat;
+    const up = this._up.set(0, 1, 0).applyQuaternion(q);
+    const fw = this._fw.set(0, 0, 1).applyQuaternion(q);
+    return { upY: up.y, fwY: fw.y };
+  },
+  update(G, dt) {
+    const f = this.figs[this.idx];
+    if (!f) return;
+    const P = G.player;
+    if (P.onGround) return;
+    const { upY, fwY } = this._vec(G);
+    f.t += dt;
+    // height discipline: the figures must happen with sky underneath
+    if (P.pos.y < 1200 && f.state > 0) {
+      f.state = 0; f.t = 0;
+      G.msg('TOO LOW — CLIMB BACK ABOVE 1,800 M AND START THE FIGURE AGAIN', 'warn');
+      return;
+    }
+    if (P.pos.y < 800 && !this.lowWarned) { this.lowWarned = true; G.radio('INSTRUCTOR: HEIGHT! AEROBATICS WANT SKY UNDERNEATH YOU.'); }
+    if (P.pos.y > 1800) this.lowWarned = false;
+    let done = false;
+    if (this.idx === 0) {
+      // roll: upright -> inverted -> upright, never pitching hard
+      if (f.state === 0 && upY > 0.6) f.state = 1;
+      else if (f.state === 1 && upY < -0.5 && Math.abs(fwY) < 0.7) f.state = 2;
+      else if (f.state === 2 && upY > 0.6) done = true;
+      else if (f.state === 2 && Math.abs(fwY) > 0.8) f.state = 1;   // mushed out — try again
+      if (f.t > 12) { f.state = 0; f.t = 0; }
+    } else if (this.idx === 1) {
+      // loop: pull up -> inverted over the top -> diving -> recovered level
+      if (f.state === 0 && fwY > 0.55) f.state = 1;
+      else if (f.state === 1 && upY < -0.2) f.state = 2;
+      else if (f.state === 2 && fwY < -0.45) f.state = 3;
+      else if (f.state === 3 && upY > 0.5 && Math.abs(fwY) < 0.45) done = true;
+      if (f.t > 40) { f.state = 0; f.t = 0; }
+    } else {
+      // split-S: inverted first, then pull through into the dive, recover level
+      if (f.state === 0 && upY < -0.5) f.state = 1;
+      else if (f.state === 1 && fwY < -0.5) f.state = 2;
+      else if (f.state === 2 && upY > 0.5 && Math.abs(fwY) < 0.5) done = true;
+      if (f.t > 25) { f.state = 0; f.t = 0; }
+    }
+    if (done) {
+      G.msg(f.name + ' — GRADED PASS', 'good');
+      this.idx++;
+      const next = this.figs[this.idx];
+      if (next) {
+        G.radio('INSTRUCTOR: CLEAN ' + f.name + '. NEXT: ' + next.name + '.');
+      } else {
+        G.addScore(1500);
+        G.completeMission('AEROBATICS PASSED', 'ROLL, LOOP, SPLIT-S — ALL THREE GRADED.\n\nThe sky is yours to use now, not just to fly through.\n\nSCORE +1500');
+      }
+    }
+  },
+},
+// ------------------------------------------------ T-6 GUNNERY
+{
+  id: 't5', num: 106, title: 'T-6 GUNNERY', code: 'FLIGHT SCHOOL — COMBAT',
+  time: 'day', planeChoice: true,
+  brief: [
+    'AERIAL COMBAT — SORTIE 6', '',
     'FOUR TARGET BALLOONS TETHERED OFF THE COAST.', '',
     'SPLASH ALL FOUR. WORK THE GUN: SIGHT UP, TRACK,', '',
     'SHORT BURSTS. THE SCORERS PREFER 20MM.', '',
@@ -207,10 +391,10 @@ export const MISSIONS = [
 },
 // ------------------------------------------------ T-6 DOGFIGHT 1V1
 {
-  id: 't6', num: 106, title: 'T-6 DOGFIGHT 1V1', code: 'FLIGHT SCHOOL — COMBAT',
+  id: 't6', num: 107, title: 'T-7 DOGFIGHT 1V1', code: 'FLIGHT SCHOOL — COMBAT',
   time: 'day', planeChoice: true,
   brief: [
-    'AERIAL COMBAT — SORTIE 6', '',
+    'AERIAL COMBAT — SORTIE 7', '',
     'ONE AGGRESSOR, GUNS AND HEATERS, NO HELP COMING.', '',
     'HE IS RATED BUT FAIR — LIKE A GOOD WINGMAN ON', '',
     'THE OTHER SIDE. SPLASH HIM TO GRADUATE.', '',
@@ -223,7 +407,7 @@ export const MISSIONS = [
     const c = G.world.carrier;
     this.bandit = G.spawnAI('mig29', {
       pos: c.pos.clone().add(V(-14000, 3000, 6000)), heading: Math.PI / 2 + 0.4, speed: 240, hp: 100,
-      hostile: true, name: 'MIG-29', label: 'AGGRESSOR', mode: 'attack', skill: 0.7, agility: 0.95,
+      hostile: true, name: 'MIG-29', label: 'AGGRESSOR', mode: 'attack', skill: skillFor(PILOT_RATING.t6), agility: agilityFor(PILOT_RATING.t6),
     });
     this.bandit.target = G.player; this.bandit.kind = 'bandit'; this.bandit.identified = true;
     this.bandit.noAA = true;   // school rules: the fleet holds fire — this one is the pilot's
@@ -315,7 +499,7 @@ export const MISSIONS = [
         this.weaponsFree = true;
         for (const b of this.bogeys) {
           if (b.dead) continue;
-          b.mode = 'attack'; b.target = G.player; b.hostile = true; b.noEvade = false; b.firedFirst = true; b.skill = 0.9; b.targetSpeed = 280;
+          b.mode = 'attack'; b.target = G.player; b.hostile = true; b.noEvade = false; b.firedFirst = true; b.skill = skillFor(PILOT_RATING.m1); b.agility = agilityFor(PILOT_RATING.m1); b.targetSpeed = 280;
         }
         G.msg('THEY\'RE FIRING! WEAPONS FREE!', 'bad');
         G.radio('NORAD: WEAPONS FREE! SPLASH THE MIGS!');
@@ -367,7 +551,7 @@ export const MISSIONS = [
     for (let i = 0; i < 2; i++) {
       const m = G.spawnAI('mig29', {
         pos: V(-40000, 5000 + i * 800, -6000 + i * 6000), heading: Math.PI * 0.6, speed: 280,
-        hostile: true, name: 'MIG-29', label: 'MIG-29', mode: 'attack', skill: 0.85, agility: 1.1,
+        hostile: true, name: 'MIG-29', label: 'MIG-29', mode: 'attack', skill: skillFor(PILOT_RATING.m2), agility: agilityFor(PILOT_RATING.m2),
       });
       m.target = this.af1; m.kind = 'bandit'; m.identified = true; m.fireCooldown = 12 + i * 8;
       this.migs.push(m);
@@ -425,7 +609,7 @@ export const MISSIONS = [
     for (let i = 0; i < 2; i++) {
       const f = G.spawnAI('f16', {
         pos: V(26000 + i * 1500, 5200 + i * 400, 3000 + i * 1800), heading: -Math.PI / 2, speed: 265,
-        hostile: false, name: 'STOLEN F-16', label: 'F-16 ?', mode: 'route', noEvade: true, skill: 1.1,
+        hostile: false, name: 'STOLEN F-16', label: 'F-16 ?', mode: 'route', noEvade: true, skill: skillFor(PILOT_RATING.m3),
         waypoints: [V(-120000, 5200, -8000)],
       });
       f.kind = 'stolen'; f.contacted = false; f.refused = false;
@@ -434,7 +618,7 @@ export const MISSIONS = [
     for (let i = 0; i < 2; i++) {
       const m = G.spawnAI('mig29', {
         pos: V(22000, 8000 + i * 600, 6000 - i * 4000), heading: -Math.PI / 2, speed: 265,
-        hostile: false, name: 'MIG-29', label: 'MIG-29', mode: 'route', skill: 1.05, agility: 1.15,
+        hostile: false, name: 'MIG-29', label: 'MIG-29', mode: 'route', skill: skillFor(PILOT_RATING.m3), agility: agilityFor(PILOT_RATING.m3),
         waypoints: [V(-120000, 8000, -8000)], noEvade: true,
       });
       m.kind = 'bandit'; m.identified = true;
@@ -500,7 +684,7 @@ export const MISSIONS = [
     for (let i = 0; i < 2; i++) {
       const m = G.spawnAI('mig29', {
         pos: V(-46000 + i * 6000, 2200 + i * 900, 3900 - i * 5000), heading: rand(0, 6), speed: 230,
-        hostile: false, name: 'MIG-29', label: 'MIG-29', mode: 'orbit', skill: 1.0, agility: 1.1,
+        hostile: false, name: 'MIG-29', label: 'MIG-29', mode: 'orbit', skill: skillFor(PILOT_RATING.m4), agility: agilityFor(PILOT_RATING.m4),
       });
       m.orbitCenter = V(-46000, 2200 + i * 900, 3900); m.orbitRadius = 9000 + i * 4000;
       m.kind = 'bandit'; m.identified = true;
@@ -599,7 +783,7 @@ export const MISSIONS = [
         const m = G.spawnAI('mig29', {
           pos: this.cm.pos.clone().add(V(-1500 - i * 800, 800 + i * 400, 1200 + i * 900)),
           heading: Math.PI, speed: 280, hostile: true, name: 'MIG-29', label: 'MIG-29',
-          mode: 'attack', skill: 0.95, agility: 1.1,
+          mode: 'attack', skill: skillFor(PILOT_RATING.m5), agility: agilityFor(PILOT_RATING.m5),
         });
         m.target = G.player; m.kind = 'bandit'; m.identified = true;
         this.migs.push(m);
@@ -693,7 +877,7 @@ export const MISSIONS = [
           pos: this.sub.pos.clone().add(V(rand(-40, 40), 60, rand(-40, 40))),
           heading: Math.atan2(G.player.pos.x - this.sub.pos.x, -(G.player.pos.z - this.sub.pos.z)),
           speed: 240, hostile: true, name: 'MIG-29', label: 'MIG-29', mode: 'attack',
-          skill: 1.0, agility: 1.1,
+          skill: skillFor(PILOT_RATING.m6), agility: agilityFor(PILOT_RATING.m6),
         });
         m.target = G.player; m.kind = 'bandit'; m.identified = true;
         this.migs.push(m);
@@ -750,7 +934,7 @@ export const MISSIONS = [
         const m = G.spawnAI('mig29', {
           pos: V(sp.x + 3000 + i * 2500, 800 + i * 600, sp.z + base + i * 5000), heading: Math.PI / 2, speed: 300,
           hostile: true, name: 'MIG-29', label: 'MIG-29', mode: 'attack',
-          skill: 0.9, agility: 1.15,
+          skill: skillFor(PILOT_RATING.m7), agility: agilityFor(PILOT_RATING.m7),
         });
         m.target = this.sparrow; m.kind = 'bandit'; m.identified = true;
         m.fireCooldown = cd + i * 9;
@@ -939,13 +1123,13 @@ export const MISSIONS = [
     // which puts the fight on the player's terms with time to win it
     if (!this.wave1 && this.t > 40) {
       this.wave1 = true;
-      this._wave(G, 2, G.player, G.wingman && G.wingman.ai, 1.25);
+      this._wave(G, 2, G.player, G.wingman && G.wingman.ai, skillFor(PILOT_RATING.m9));
       G.msg('BANDITS SWEEPING FOR THE CAP!', 'bad');
       G.radio('NAVY ONE: WE HAVE COMPANY FORWARD OF US — VIPER, THEY ARE LOOKING FOR YOU. CLEAR US A PATH.');
     }
     if (!this.wave2 && this.navy1.pos.distanceTo(c.pos) < 24000) {
       this.wave2 = true;
-      this._wave(G, 2, this.navy1, G.player, 1.45);
+      this._wave(G, 2, this.navy1, G.player, skillFor(Math.min(100, PILOT_RATING.m9 + 15)));
       G.msg('SECOND WAVE — FLANKERS, AND ONE WANTS YOU', 'warn');
       G.radio('FLEET COM: LAST CARD FROM TEHRAN — TWO MORE BOGEYS. DO NOT LET THEM THROUGH.');
     }
@@ -1052,7 +1236,7 @@ export const MISSIONS = [
       const b = G.spawnAI('su27', {
         pos: this.cm.pos.clone().add(V(-3000 - i * 2200, 800 + i * 400, -2500 + i * 2600)),
         heading: Math.PI / 2, speed: 340, hostile: true, name: 'SU-27', label: 'SU-27',
-        mode: 'attack', skill: 1.5, agility: 1.2,
+        mode: 'attack', skill: skillFor(PILOT_RATING.m10), agility: agilityFor(PILOT_RATING.m10),
       });
       b.target = i === 2 && G.wingman ? (G.wingman.ai || G.player) : G.player;
       b.kind = 'bandit'; b.identified = true; b.noAA = true; b.fireCooldown = rand(8, 14) + i * 5;
@@ -1365,7 +1549,7 @@ export const MISSIONS = [
         const b = G.spawnAI(ty, {
           pos: V(sp.x - 24000 - i * 4000, 3000 + i * 800, sp.z - 8000 + i * 6000),
           heading: Math.PI / 2, speed: 300, hostile: true, name: 'MIG-29', label: 'MIG-29',
-          mode: 'attack', skill: 1.3, agility: 1.15,
+          mode: 'attack', skill: skillFor(PILOT_RATING.m12), agility: agilityFor(PILOT_RATING.m12),
         });
         b.target = tgt; b.kind = 'bandit'; b.identified = true; b.fireCooldown = 12 + i * 7;
         this.bandits.push(b);
@@ -1376,11 +1560,11 @@ export const MISSIONS = [
     if (!this.wave2 && this.wave1 && this.bandits.every(b => b.dead)) {
       this.wave2 = true;
       const sp = this.sub.pos;
-      [[this.helo, 1.5], [G.player, 1.5]].forEach(([tgt, sk], i) => {
+      [this.helo, G.player].forEach((tgt, i) => {
         const b = G.spawnAI('su27', {
           pos: V(sp.x - 20000 - i * 5000, 4000 + i * 1000, sp.z + 9000 - i * 4000),
           heading: Math.PI / 2, speed: 320, hostile: true, name: 'SU-27', label: 'SU-27',
-          mode: 'attack', skill: sk, agility: 1.2,
+          mode: 'attack', skill: skillFor(Math.min(100, PILOT_RATING.m12 + 15)), agility: agilityFor(Math.min(100, PILOT_RATING.m12 + 15)),
         });
         b.target = tgt; b.kind = 'bandit'; b.identified = true; b.fireCooldown = 10 + i * 6;
         this.bandits.push(b);
@@ -1479,7 +1663,7 @@ export const MISSIONS = [
         const b = G.spawnAI('su27', {
           pos: anchor.clone().add(V(-5000 - i * 1800, 900 + i * 300, 5000 + i * 1600)),
           heading: 0, speed: 330, hostile: true, name: 'SU-27', label: 'SU-27',
-          mode: 'attack', skill: 1.5, agility: 1.2,
+          mode: 'attack', skill: skillFor(PILOT_RATING.m10), agility: agilityFor(PILOT_RATING.m10),
         });
         b.target = (wm && wm.alive) ? wm.ai : G.player;
         b.kind = 'bandit'; b.identified = true; b.noAA = true; b.fireCooldown = 2.5 + i * 2.5;
@@ -1507,7 +1691,7 @@ export const MISSIONS = [
         const b = G.spawnAI('su27', {
           pos: G.player.pos.clone().add(V(7000 + i * 2000, 1200, -7000 - i * 2000)),
           heading: Math.PI, speed: 330, hostile: true, name: 'SU-27', label: 'SU-27',
-          mode: 'attack', skill: 1.45, agility: 1.2,
+          mode: 'attack', skill: skillFor(PILOT_RATING.m13), agility: agilityFor(PILOT_RATING.m13),
         });
         b.target = G.player; b.kind = 'bandit'; b.identified = true; b.noAA = true; b.fireCooldown = 6 + i * 4;
         this.bandits.push(b);
@@ -1520,6 +1704,155 @@ export const MISSIONS = [
       G.completeMission('MISSION COMPLETE',
         'FOUR FLANKERS IN THE SEA.\nVIPER TWO IS AVENGED.\n\nHE WOULD HAVE DONE THE SAME FOR YOU.\n\nSCORE +4000 + KILL BONUSES');
     }
+  },
+},
+// ------------------------------------------------ M14 BEAR HUNT
+{
+  id: 'm14', num: 14, title: 'BEAR HUNT', code: 'NOVEMBER 2, 1994 — 0750 HRS',
+  time: 'day', planeChoice: true,
+  brief: [
+    'VAW-123 SCREWTOPS — AIRBORNE EARLY WARNING', '',
+    '0750: SURFACE SEARCH PAINTS A TURBOPROP,',
+    'BEARING 270, ONE HUNDRED TEN MILES OUT,',
+    'ANGELS 27. CLASSIC BEAR PROFILE — AND SHE',
+    'IS NOT OUT HERE TO TAKE PICTURES.', '',
+    'ESM READS A BEAR-H: THE MISSILE CARRIER.',
+    'TWO KITCHENS UNDER HER WINGS, TWO FLANKERS',
+    'RIDING SHOT.', '',
+    'RUN HER DOWN WEST OF THE FLEET. KILL THE',
+    'ARCHER BEFORE THE ARROWS FLY.', '',
+    'IF THE ARROWS FLY ANYWAY — YOU, VIPER TWO,',
+    'AND THE PHALANX GUNS ARE ALL THAT STAND',
+    'BETWEEN THEM AND FIVE THOUSAND SAILORS.',
+  ],
+  briefing: 'Kill the Bear before she launches. Whatever flies — shoot it down.',
+  loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — FULL BURNER WEST',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    this.t = 0; this.carrierHits = 0; this.westCall = false;
+    const c = G.world.carrier;
+    this.pack = _bearPack(G, { pos: V(c.pos.x - 200000, 8200, c.pos.z - 8000), escorts: 2, rating: PILOT_RATING.m14, launchD: 52000 });
+    // the Screwtops' Hawkeye holds its orbit northeast of the boat
+    const eye = G.spawnAI('e2c', {
+      pos: c.pos.clone().add(V(14000, 7000, -14000)), heading: Math.PI, speed: 130,
+      name: 'SCREWTOPS 601', label: 'E-2C', mode: 'route', loop: true, noEvade: true,
+      waypoints: [c.pos.clone().add(V(14000, 7000, -14000)), c.pos.clone().add(V(-14000, 7000, -22000)), c.pos.clone().add(V(-22000, 7000, 8000)), c.pos.clone().add(V(8000, 7000, 14000))],
+    });
+    eye.kind = 'friendly';
+    G.radio('SCREWTOPS 601: VIPER, PICTURE WEST — ONE BEAR, TWO FLANKERS, ONE HUNDRED TEN MILES. SHE CARRIES KITCHENS, GENTLEMEN. GO GET HER.');
+  },
+  update(G, dt) {
+    this.t += dt;
+    const c = G.world.carrier, pack = this.pack;
+    _bearPackUpdate(G, dt, pack);
+    const allMissiles = pack.missiles;
+    _ciwsUpdate(G, dt, allMissiles);
+    // impact check — the fleet cannot take a Kitchen amidships
+    for (const m of allMissiles) {
+      if (m.dead || m._impacted) continue;
+      if (m.pos.distanceTo(c.pos) < 420) {
+        m._impacted = true; m.kill(G, true, false);
+        G.explode(c.pos.clone().setY(18), 4);
+        G.failMission('THE BIG E IS HIT', 'A KITCHEN TOOK THE ENTERPRISE AMIDSHIPS.\nFIRES ON THE HANGAR DECK, FIVE HUNDRED MEN\nIN THE WATER.\n\nTHE PHALANX WAS THE LAST CHANCE — AND IT\nWAS NOT ENOUGH.');
+        return;
+      }
+    }
+    // endings, graded by how early the archer died
+    const bearDead = pack.bear.dead;
+    const missilesResolved = allMissiles.every(m => m.dead);
+    if (bearDead && missilesResolved) {
+      if (pack.launched === 0) {
+        G.addScore(4000);
+        G.completeMission('TEXTBOOK INTERCEPT', 'THE BEAR WENT DOWN WITH HER MISSILES STILL\nON THE RAILS. THE FLEET NEVER HEARD A THING.\n\nTHAT IS HOW THE EXPERTS DO IT.\n\nSCORE +4000');
+      } else {
+        G.addScore(2500);
+        G.completeMission('MISSION COMPLETE', `THE ARCHER IS DOWN — AND ${pack.launched === 1 ? 'HER ONE ARROW' : 'BOTH HER ARROWS'} WITH HER.\n\nTHE FLEET SAILS ON.\n\nSCORE +2500`);
+      }
+      return;
+    }
+    // she got away clean — the missiles, at least, must not
+    if (!bearDead && pack.launched === 2 && missilesResolved) {
+      G.addScore(1200);
+      G.completeMission('THE FLEET SAILS ON', 'THE BEAR ESCAPED INTO THE WEST — BUT NOT ONE\nOF HER MISSILES FOUND THE SHIP.\n\nTHE CAPTAIN CALLS THAT A WIN. BARELY.\n\nSCORE +1200');
+      return;
+    }
+    G.waypoint = allMissiles.find(m => !m.dead)?.pos || (!bearDead ? pack.bear.pos : c.pos);
+    if (!this.westCall && this.t > 30) { this.westCall = true; G.msg('INTERCEPT 100 NM WEST', 'info'); }
+  },
+},
+// ------------------------------------------------ M15 BEAR PAK
+{
+  id: 'm15', num: 15, title: 'BEAR PAK', code: 'NOVEMBER 9, 1994 — 0540 HRS',
+  time: 'day', planeChoice: true,
+  brief: [
+    'NORAD STRATEGIC COMMAND — FLASH TRAFFIC', '',
+    'THE REGIMENT\'S DEMONSTRATION TEAM IS UP.',
+    'TWO BEAR-HS, FOUR FLANKERS, EACH BOMBER',
+    'CARRYING A PAIR OF KITCHENS. THE WHOLE',
+    'MISSILE REGIMENT, COMING AT THE FLEET',
+    'ON TWO AXES AT ONCE.', '',
+    'EIGHT KILLERS IN THE AIR. ONE OF YOU.', '',
+    'WELL — TWO, IF VIPER TWO IS THE PILOT',
+    'THE LOGBOOK SAYS.', '',
+    'THIS IS THE FINAL EXAM. NOTHING THE',
+    'SCHOOL TAUGHT YOU IS OPTIONAL TODAY.', '',
+    'KILL THE ARCHERS. KILL THE ARROWS.',
+    'COME HOME.',
+  ],
+  briefing: 'Two Bears, four escorts, four missiles. The final exam.',
+  loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — EVERYTHING THE DECK CAN GIVE YOU',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    this.t = 0;
+    const c = G.world.carrier;
+    this.packs = [
+      _bearPack(G, { pos: V(c.pos.x - 205000, 8400, c.pos.z - 26000), escorts: 2, rating: PILOT_RATING.m15, launchD: 52000 }),
+      _bearPack(G, { pos: V(c.pos.x - 215000, 7800, c.pos.z + 18000), escorts: 2, rating: PILOT_RATING.m15, launchD: 52000 }),
+    ];
+    const eye = G.spawnAI('e2c', {
+      pos: c.pos.clone().add(V(14000, 7000, -14000)), heading: Math.PI, speed: 130,
+      name: 'SCREWTOPS 601', label: 'E-2C', mode: 'route', loop: true, noEvade: true,
+      waypoints: [c.pos.clone().add(V(14000, 7000, -14000)), c.pos.clone().add(V(-14000, 7000, -22000)), c.pos.clone().add(V(-22000, 7000, 8000)), c.pos.clone().add(V(8000, 7000, 14000))],
+    });
+    eye.kind = 'friendly';
+    G.radio('SCREWTOPS 601: VIPER, PICTURE WEST — TWO BEARS, TWO AXES, FOUR FLANKERS TOTAL. THE DEMONSTRATION TEAM, VIPER. GOOD HUNTING — YOU WILL NEED IT.');
+  },
+  update(G, dt) {
+    this.t += dt;
+    const c = G.world.carrier;
+    for (const pack of this.packs) _bearPackUpdate(G, dt, pack);
+    const allMissiles = this.packs.flatMap(p => p.missiles);
+    _ciwsUpdate(G, dt, allMissiles);
+    for (const m of allMissiles) {
+      if (m.dead || m._impacted) continue;
+      if (m.pos.distanceTo(c.pos) < 420) {
+        m._impacted = true; m.kill(G, true, false);
+        G.explode(c.pos.clone().setY(18), 4);
+        G.failMission('THE BIG E IS HIT', 'THE REGIMENT\'S DEMONSTRATION TEAM GOT ONE\nTHROUGH. THE ENTERPRISE BURNS FROM BOW\nTO ISLAND.\n\nEIGHT KILLERS WAS ONE TOO MANY.');
+        return;
+      }
+    }
+    const bearsDead = this.packs.every(p => p.bear.dead);
+    const missilesResolved = allMissiles.every(m => m.dead);
+    if (bearsDead && missilesResolved) {
+      const launched = this.packs.reduce((n, p) => n + p.launched, 0);
+      if (launched === 0) {
+        G.addScore(8000);
+        G.completeMission('LEGEND STATUS', 'TWO BEARS DOWN WITH EVERY MISSILE ON THE\nRAILS. THE DEMONSTRATION TEAM WILL NOT BE\nDEMONSTRATING AGAIN.\n\nTHEY WILL FLY THIS ONE AT THE SCHOOL.\n\nSCORE +8000');
+      } else {
+        G.addScore(5000);
+        G.completeMission('MISSION COMPLETE', 'BOTH ARCHERS DOWN, EVERY ARROW ACCOUNTED\nFOR. THE FLEET SAILS ON.\n\nSCORE +5000');
+      }
+      return;
+    }
+    if (!bearsDead && this.packs.every(p => p.launched === 2 || p.bear.dead) && missilesResolved) {
+      G.addScore(2500);
+      G.completeMission('THE FLEET SAILS ON', 'A BEAR SLIPPED HOME WEST — BUT ALL FOUR\nKITCHENS ARE IN THE SEA.\n\nTHE CAPTAIN CALLS THAT A WIN.\n\nSCORE +2500');
+      return;
+    }
+    G.waypoint = allMissiles.find(m => !m.dead)?.pos
+      || this.packs.find(p => !p.bear.dead)?.bear.pos
+      || c.pos;
   },
 },
 // ------------------------------------------------ FREE FLIGHT
@@ -1552,19 +1885,9 @@ export const MISSIONS = [
 
 // campaign difficulty ladder — shown as a tag on the mission-select board
 export const DIFFICULTY = {
-  m1: 'EASY',    // VISUAL CONFIRMATION — first solo, a quiet look-see
-  m2: 'EASY',    // EMERGENCY DEFENSE — bounce drill over the fleet
-  m3: 'MEDIUM',  // STOLEN AIRCRAFT — runaway Hornet, force it down
-  m4: 'MEDIUM',  // SEARCH AND RESCUE — find the raft, cover the helo
-  m5: 'HARD',    // CRUISE MISSILE INBOUND — a very fast lawn-dart to kill
-  m6: 'MEDIUM',  // SHADOW SUB — trail quiet, stay unseen
-  m7: 'HARD',    // THE DEFECTOR — bring him down in one piece
-  m8: 'EASY',    // THE SPY BALLOON — a slow climb to a slow target
-  m9: 'HARD',    // NAVY ONE — Fulcrums and Flankers want the headline
-  m10: 'EXPERT', // THE LAST INTERCEPT — night, 400 m/s, no second pass
-  m11: 'HARD',   // CRUISE SHIP SIEGE — MANPADS, go-fasts, a 20-second hover
-  m12: 'MEDIUM', // SUB HUNTERS — keep three hunters alive through two waves
-  m13: 'MEDIUM', // AVENGE VIPER TWO — four bandits between you and even
+  m1: 20, m2: 25, m3: 40, m4: 45, m5: 60, m6: 45, m7: 60,
+  m8: 25, m9: 70, m10: 95, m11: 65, m12: 55, m13: 50,
+  m14: 80, m15: 95,
 };
 
 // what the sortie actually asks of you — type and maneuver tags, shown as
@@ -1583,6 +1906,8 @@ export const MISSION_TAGS = {
   m11: ['CARRIER LAUNCH', 'ESCORT', 'LOW LEVEL'],        // cover the SEAL helo in the strait
   m12: ['CARRIER LAUNCH', 'ESCORT', 'FLEET DEFENSE'],    // the hunters must all survive
   m13: ['CARRIER LAUNCH', 'SWEEP', 'DOGFIGHT'],          // four bandits between you and even
+  m14: ['CARRIER LAUNCH', 'INTERCEPT', 'FLEET DEFENSE'],   // run down the missile carrier
+  m15: ['CARRIER LAUNCH', 'INTERCEPT', 'EXPERT'],          // the whole regiment, two axes
 };
 
 // one-line hooks under the chips — the pitch that makes you press the key
@@ -1600,11 +1925,13 @@ export const MISSION_HOOKS = {
   m11: 'Gunboats hold a liner in the strait. Twenty seconds of hover between the SEALs and disaster — cover them.',
   m12: 'A Kilo is creeping the shelf. Keep every hunter alive and let the torpedoes do the talking.',
   m13: 'They killed your wingman. Four bandits between you and even. You know what to do.',
+  m14: 'A Bear-H is running at the fleet with two Kitchens on the rails. Kill the archer before the arrows fly.',
+  m15: 'Two Bears, four Flankers, eight killers on two axes. The final exam — pass it and become legend.',
 };
 
 // flight school display data — the same board treatment as the campaign
 Object.assign(DIFFICULTY, {
-  t1: 'EASY', t2: 'EASY', t3: 'MEDIUM', t4: 'MEDIUM', t5: 'MEDIUM', t6: 'HARD',
+  t1: 10, t2: 15, t3: 35, t4: 40, t7: 35, t5: 30, t6: 55,
 });
 Object.assign(MISSION_TAGS, {
   t1: ['CARRIER LAUNCH', 'CARRIER TRAP', 'SOLO'],
@@ -1622,3 +1949,37 @@ Object.assign(MISSION_HOOKS, {
   t5: 'Four target balloons off the coast and a gun full of 20mm. The range is yours, pilot.',
   t6: 'One aggressor, no help, fights on. Splash him and you are cleared for the campaign.',
 });
+
+// enemy pilot capability, 0-100 — drives skill/agility (and therefore how
+// aggressive they are and which maneuvers they pull: the library only opens
+// loop/split-S/barrel work to pilots rated ace or better). Green patrol
+// pilots early, their legends late.
+export const PILOT_RATING = {
+  m1: 25,    // startled patrol pilots, if it comes to that
+  m2: 30,    // raid wing — green, but there are many of them
+  m3: 35,    // terrorists in stolen jets: can fly, can't fight
+  m4: 40,    // MiGs prowling the rescue area
+  m5: 40,    // missile escorts — regulars, no better than they have to be
+  m6: 45,    // the shadow sub's air wing
+  m7: 50,    // night interceptors
+  m9: 65,    // loyalist Fulcrums and Flankers
+  m10: 85,   // the best stick-and-rudder men Iran has left
+  m11: 50,   // strait pirates
+  m12: 70,   // two waves, second one meaner
+  m13: 70,   // the pilots who killed your wingman
+  m14: 75,   // Bear escort veterans
+  m15: 92,   // legends — the regiment's demonstration team
+  t6: 55,    // your aggressor instructor: rated, but fair
+};
+// rating -> the AI's skill/agility (aces unlock the full maneuver library
+// at skill >= 1.25)
+export const skillFor = (r) => 0.5 + (r / 100) * 1.1;
+export const agilityFor = (r) => 0.85 + (r / 100) * 0.4;
+export const pilotDescriptor = (r) =>
+  r < 35 ? 'GREEN — patrol pilots' :
+  r < 55 ? 'RATED — squadron pilots' :
+  r < 75 ? 'VETERAN — experienced' :
+  r < 90 ? 'ACES — their very best' : 'LEGENDS — they invented the maneuvers';
+
+// the flight-school syllabus, in unlock order
+export const SCHOOL_ORDER = ['t1', 't2', 't3', 't4', 't7', 't5', 't6'];
