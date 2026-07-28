@@ -58,8 +58,18 @@
   a { color: var(--link); text-decoration: none; }
   a:hover { color: var(--amber); }
   header {
-    max-width: 860px; margin: 0 auto; padding: 36px 0 8px;
+    max-width: 1120px; margin: 0 auto; padding: 28px 0 12px;
     border-bottom: 2px solid var(--line);
+  }
+  .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
+  .headleft { flex: 1 1 auto; min-width: 0; }
+  #search-slot { flex: 0 0 auto; margin-left: auto; padding-top: 6px; }
+  @media (max-width: 900px) {
+    .headrow { flex-direction: column; gap: 14px; }
+    #search-slot { width: 100%; margin: 0; padding-top: 0; }
+    #search-slot #blog-search-wrap { width: 100%; }
+    #search-slot #blog-search { flex: 1 1 auto; width: auto; }
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
@@ -96,8 +106,8 @@
   }
 
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .meta time { font-size: 12px; letter-spacing: 2px; color: var(--ink-dim); }
-  .tags { display: inline-flex; gap: 6px; }
+  .meta time { font-size: 15px; font-weight: bold; letter-spacing: 2px; color: var(--ink); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 6px; }
   .tag {
     font-size: 14px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 4px 10px; border-radius: 3px;
@@ -111,7 +121,7 @@
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
   h2 a.title-link:hover::after { opacity: 0.8; }
   article:target { background: #101a30; outline: 1px solid #2a3a5f; padding: 18px 14px; margin: 0 -14px; }
-  .rss-link { float: right; font-size: 11px; letter-spacing: 2px; }
+  .rss-link { display: inline-block; margin-left: 18px; font-size: 11px; letter-spacing: 2px; }
   footer {
     max-width: 860px; margin: 28px auto 0; font-size: 12px; color: var(--ink-dim);
     letter-spacing: 1px;
@@ -127,12 +137,13 @@
 
   /* blog menu (tag filter) + pagination */
   #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
-  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .bm-label { color: var(--ink-dim); font-size: 14px; letter-spacing: 3px; }
   .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .pg-btn { font-size: 15px; padding: 7px 15px; }
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
   #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
@@ -166,23 +177,53 @@
 </head>
 <body>
 <header>
+  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
   <h1 class="rtb"><a href="https://hornetbay.com/blog/">RETURN TO BASE</a></h1>
 </header>
 <main>
-<div class="taghead">#SITE &mdash; 19 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;19</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<div class="taghead">#SITE &mdash; 21 ENTRIES</div>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;21</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<article id="flight-log-refit">
+    <div class="meta"><time datetime="2026-07-28T12:56Z">281256Z JUL 26</time></div>
+    <h2><a class="title-link" href="/blog/flight-log-refit">Flight Log refit: straight rails, Zulu time, search at the top right</a> <span class="hash">PENDING</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span>
+    <a class="shot" href="/shots/flight-log-refit.jpg"><img src="/shots/flight-log-refit.jpg" alt="A Flight Log entry showing the larger military date-time group above the title and the tag chips riding underneath it" loading="lazy"></a>
+    <p>Six carpentry jobs on the journal header and the entry card, all in one pass alongside the new banner:</p>
+    <ol>
+      <li><b>The header falls in with the column.</b> It used to float centered over a narrower measure; its left edge now dresses with the articles and the banner spans the full rail.</li>
+      <li><b>Dates you can read.</b> The post date steps up in size and weight &mdash; it is a logbook, the date is the entry.</li>
+      <li><b>Military date-time groups.</b> Every entry now stamps <b>DDHHMMZ MON YY</b> &mdash; this one reads <b>281256Z JUL 26</b>. New entries carry their real Zulu time; the hundred-and-twenty already on file default to 1200Z.</li>
+      <li><b>Search to the header's top right.</b> The journal search box leaves the entry stack and rides the header, level with the brand &mdash; full-width under the banner on a phone.</li>
+      <li><b>Pager text enlarged.</b> PAGE 1/12, PREV, NEXT and LAST grow to match the entries around them, top strip and footer both.</li>
+      <li><b>Tags under the title.</b> The chips drop off the date line and sit beneath the entry title, where a logbook keeps its keywords.</li>
+    </ol>
+  </article>
+<article id="banner-of-the-laurel">
+    <div class="meta"><time datetime="2026-07-28T12:54Z">281254Z JUL 26</time></div>
+    <h2><a class="title-link" href="/blog/banner-of-the-laurel">A banner of laurel and Hornet</a> <span class="hash">PENDING</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span>
+    <a class="shot" href="/shots/banner-of-the-laurel.jpg"><img src="/shots/banner-of-the-laurel.jpg" alt="The new Flight Log header banner: the golden laurel emblem at left, HORNET BAY FLIGHT LOG at center, and the game's F/A-18 in the emblem's rear-quarter orientation at right" loading="lazy"></a>
+    <p>The Flight Log gets its colors sewn on: a full-width header banner built to the style guide. The <b>golden laurel emblem</b> holds the left under a soft amber glow; the <b>HORNET BAY / FLIGHT LOG</b> wordmark and the tribute line hold the center; and off the right wing flies <b>the game's own F/A-18</b>, posed to match the emblem exactly &mdash; rear-above three-quarter, twin nozzles to the viewer, nose to the lower-left, Sidewinders on the rails.</p>
+    <ol>
+      <li><b>Same jet, same orientation.</b> The banner Hornet is the actual gallery model, studio-lit and shot offscreen, then pixel-echoed so its facets rhyme with the wreath's Amiga pixel art.</li>
+      <li><b>Style-guide palette throughout.</b> Deep navy field with faint stars, amber wordmark and rule, ink tagline &mdash; the same variables the journal and the game already wear.</li>
+      <li><b>Everywhere the log lives.</b> The banner heads the journal home and every permalink page, and it came with a small header refit: search to the top right, military date-time groups on every entry, and tags tucked under the titles.</li>
+    </ol>
+  </article>
 <article id="flight-log">
-    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-28T12:00Z">281200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/flight-log">The blog is the Flight Log now</a> <span class="hash">2e8ad0a</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/flight-log.jpg"><img src="/shots/flight-log.jpg" alt="The renamed Flight Log header with the large amber title and the RETURN TO BASE block link" loading="lazy"></a>
     <p>A name that fits: a carrier squadron keeps a flight log, and so do we. The blog is now the <b>FLIGHT LOG</b> &mdash; big amber letters under the Hornet Bay brand, and a large <b>RETURN TO BASE</b> block in the header that always takes you home to <a href="https://hornetbay.com/blog/">hornetbay.com/blog</a>. Same entries, same RSS, new stencil on the door.</p>
   </article>
 <article id="journal-rails">
-    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-28T12:00Z">281200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/journal-rails">The journal grows rails: paging at the top, a bigger search, tags on the right</a> <span class="hash">2d51c42</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/journal-rails.jpg"><img src="/shots/journal-rails.jpg" alt="The blog with the larger search box pinned top-right, PAGE 1 of 12 with NEXT and LAST buttons at the head, and the tag filters railed down the right-hand side" loading="lazy"></a>
     <p>A hundred and seventeen entries in, the journal needed better deck crew:</p>
     <ol>
@@ -192,8 +233,9 @@
     </ol>
   </article>
 <article id="cockpit-quality">
-    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/controls">CONTROLS</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-28T12:00Z">281200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/cockpit-quality">Quality of life: the brief on a key, a searchable journal, a link for every jet</a> <span class="hash">46c67d7</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/controls">CONTROLS</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/cockpit-quality.jpg"><img src="/shots/cockpit-quality.jpg" alt="The mission objectives card recalled mid-sortie over the carrier deck — the typed NAVY ONE brief with I to close" loading="lazy"></a>
     <p>Four small fittings, the kind you notice the first time you reach for them:</p>
     <ol>
@@ -204,8 +246,9 @@
     </ol>
   </article>
 <article id="url-stubs">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/url-stubs">Every menu item is now a link</a> <span class="hash">ae929f3</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/url-stubs.jpg"><img src="/shots/url-stubs.jpg" alt="The Hornet Bay main menu opened straight at SELECTABLE MISSIONS via the #missions link, night demo jet turning behind" loading="lazy"></a>
     <p>&ldquo;Meet me at the mission select&rdquo; used to mean a string of instructions &mdash; open the game, wait for the menu, press 6. Now it&rsquo;s a link you paste. Every row of the menu carries its own URL stub, and the address bar tracks you as you move, so wherever you are, what&rsquo;s in the bar is a link back to exactly here:</p>
     <ol>
@@ -218,8 +261,9 @@
     </ol>
   </article>
 <article id="blog-menu">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/blog-menu">Cards, filters and pages: the journal gets organized</a> <span class="hash">fb674cf</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/blog-menu.jpg"><img src="/shots/blog-menu.jpg" alt="The Hornet Bay blog menu — a row of tag filter chips above the journal entries" loading="lazy"></a>
     <p>Eighty-four entries in, the journal needed a filing system. Four upgrades this push, all about getting a story in front of you &mdash; and getting you to the story:</p>
     <ol>
@@ -230,8 +274,9 @@
     </ol>
   </article>
 <article id="share-and-share-alike">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/share-and-share-alike">Share and share alike: buttons on every journal entry</a> <span class="hash">dea8c80</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/share-and-share-alike.jpg"><img src="/shots/share-and-share-alike.jpg" alt="The new share bar under a Hornet Bay journal entry — X, Facebook, Reddit, Hacker News, Email and Copy Link buttons" loading="lazy"></a>
     <p>The journal turned eighty-three entries this week, and it finally occurred to us: if you like a story, you shouldn&rsquo;t have to copy the address bar like it&rsquo;s 1988 too. Every entry &mdash; all eighty-three of them, plus every future one &mdash; now carries a share bar at the bottom:</p>
     <ol>
@@ -241,8 +286,9 @@
     </ol>
   </article>
 <article id="print-bay-open-for-business">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/print-bay-open-for-business">The Print Bay is open for business</a> <span class="hash">d7f8f0d</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span>
     <a class="shot" href="/shots/print-bay-live.jpg"><img src="/shots/print-bay-live.jpg" alt="The 3D Print Bay shelf with every buy button lit up — ADD TO CART across the board" loading="lazy"></a>
     <p>The slipway is clear and the fleet is launched: all 23 printable STL products are live on the squadron&rsquo;s Fourthwall store, and every button in the <a href="/print">3D Print Bay</a> now says ADD TO CART:</p>
     <ol>
@@ -254,8 +300,9 @@
     </ol>
   </article>
 <article id="print-bay-studio-portraits">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/print-bay-studio-portraits">Studio portraits: bigger models, no background</a> <span class="hash">fe16a27</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span>
     <a class="shot" href="/shots/print-studio.jpg"><img src="/shots/print-studio.jpg" alt="The USS Enterprise printable-model page: the carrier rendered large on a clean studio backdrop" loading="lazy"></a>
     <p>All 154 photographs in the <a href="/print">3D Print Bay</a> have been re-shot in a proper studio:</p>
     <ol>
@@ -266,8 +313,9 @@
     </ol>
   </article>
 <article id="print-bay-model-pages">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/print-bay-model-pages">Every model gets its own page &mdash; from all angles</a> <span class="hash">508c4c1</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span>
     <a class="shot" href="/shots/print-stubs.jpg"><img src="/shots/print-stubs.jpg" alt="A 3D Print Bay model page: the supertanker from six angles in a large gallery viewer" loading="lazy"></a>
     <p>The <a href="/print">3D Print Bay</a> shelves get proper display cases:</p>
     <ol>
@@ -279,8 +327,9 @@
     </ol>
   </article>
 <article id="the-3d-print-bay">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/the-3d-print-bay">The 3D Print Bay: the fleet, on your desk</a> <span class="hash">38702a9</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/merch">MERCH</a></span>
     <a class="shot" href="/shots/print-bay.jpg"><img src="/shots/print-bay.jpg" alt="The Hornet Bay 3D Print Bay — twenty-two printable STL models of the fleet" loading="lazy"></a>
     <p>The models in the sim were too good to keep on the far side of the screen. The <a href="/print">3D Print Bay</a> is open:</p>
     <ol>
@@ -294,8 +343,9 @@
     <p>The shelves are being stocked as this goes to press &mdash; if a buy button still says ON THE SLIPWAY, the crabber is free while you wait.</p>
   </article>
 <article id="wheels-up-squadron-polish">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/wheels-up-squadron-polish">Wheels up: a squadron polish pass</a> <span class="hash">38702a9</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/wheels-down.jpg"><img src="/shots/wheels-down.jpg" alt="F/A-18 in the gallery with the landing gear toggled down" loading="lazy"></a>
     <p>A batch of details that were bugging the flight line &mdash; features first:</p>
     <ol>
@@ -312,8 +362,9 @@
     </ol>
   </article>
 <article id="analytics-dashboard">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/analytics-dashboard">An analytics dashboard joins the squadron</a> <span class="hash">b9d9b66</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span>
     <a class="shot" href="/shots/analytics-dashboard.jpg"><img src="/shots/analytics-dashboard.jpg" alt="The Hornet Bay analytics dashboard: sortie record, combat record and pilot choices in amber on navy" loading="lazy"></a>
     <p>The mission desk wants numbers, so numbers it gets &mdash; a proper <a href="/analytics">analytics dashboard</a>, plus the plumbing that feeds it:</p>
     <ol>
@@ -329,8 +380,9 @@
     </ol>
   </article>
 <article id="gallery-of-ships">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/content">CONTENT</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/gallery-of-ships">The gallery gains a navy, the menu gains a blog</a> <span class="hash">0c0242c</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/content">CONTENT</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/gallery-ships.jpg"><img src="/shots/gallery-ships.jpg" alt="The Big E herself, first exhibit of the new SHIPS gallery" loading="lazy"></a>
     <p>A big batch of small doors and corridors this time &mdash; plus one very big grey hull:</p>
     <ol>
@@ -344,41 +396,47 @@
     <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
   </article>
 <article id="social-channels-live">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-25T12:00Z">251200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/social-channels-live">The squadron is on Facebook and Instagram</a> <span class="hash">3b587ec</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/social-channels.png"><img src="/shots/social-channels.png" alt="The Hornet Bay home menu footer with the new Facebook and Instagram links alongside X and YouTube" loading="lazy"></a>
     <p>Two more channels report for duty: <b><a href="https://www.facebook.com/people/Hornet-Bay/61592078535997/">Hornet Bay on Facebook</a></b> and <b><a href="https://www.instagram.com/hornet_bay/">@hornet_bay on Instagram</a></b> are live, wearing the squadron badge and flying the launch post. They join <a href="https://x.com/hornetbay">X</a> and <a href="https://youtube.com/@hornetbay">YouTube</a> in the home-menu footer and at the bottom of every journal page &mdash; one look, one squadron, everywhere. Follow along for fleet videos, tutorial lessons, and the occasional court martial.</p>
   </article>
 <article id="social-kit">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-25T12:00Z">251200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/social-kit">The social kit: Hornet Bay is coming to Facebook and Instagram</a> <span class="hash">d941772</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/social-kit.png"><img src="/shots/social-kit.png" alt="The Hornet Bay square launch post — wordmark, head-on Hornet over the water, free in your browser" loading="lazy"></a>
     <p>The squadron is standing up its Facebook page and Instagram account, and <a href="/assets">the quartermaster</a> now issues the full kit: the <b>profile badge at a crisp 1000&times;1000</b> (the head-on Hornet roundel, safe in any circular crop), the <b>Facebook cover</b> with the URL tag, the existing X cover and YouTube banner, and a new <b>square launch post</b> (1080&times;1080) sized for the FB and IG feed &mdash; &ldquo;FREE IN YOUR BROWSER &mdash; HORNETBAY.COM.&rdquo; Same sky, same water, same Hornet: one look across every channel.</p>
   </article>
 <article id="the-exchange">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
+    <div class="meta"><time datetime="2026-07-24T12:00Z">241200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/the-exchange">The Exchange: a print-on-demand squadron store, built API-first</a> <span class="hash">7fb9f03</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span>
     <a class="shot" href="/shots/the-exchange.png"><img src="/shots/the-exchange.png" alt="The Hornet Bay Exchange store page in preview mode, showing the planned catalog with target prices" loading="lazy"></a>
     <p>Squadron stores are coming: <b><a href="/store">hornetbay.com/store</a></b> &mdash; The Exchange &mdash; is live today in preview mode with the planned catalog and target prices. The launch lineup: a navy <b>dad cap with the embroidered insignia</b>, all seven <b>embroidered iron-on patches</b> (Carrier Ops Certified plus the six reward badges &mdash; collect them all), an 11oz <b>insignia mug</b>, a <b>sticker sheet</b> with every badge, and a navy <b>wordmark tee</b>. Everything is printed on demand when ordered and shipped worldwide &mdash; nothing sits in a hangar; checkout, payment and sales taxes run through Fourthwall as merchant of record, so there&rsquo;s no Shopify and no stockroom.</p>
     <p>The whole store is built API-first. A new embroidery-safe variant of the insignia (five thread colors, flat grays) leads a production artwork pack; a product spec defines all eleven SKUs; and a setup script drives Fourthwall&rsquo;s Platform API &mdash; artwork upload, product-template matching, mockup rendering, pricing as base cost plus margin &mdash; so the catalog is created by code, not an afternoon of clicking. The storefront page itself is custom headless: it will pull the live catalog from the Storefront API and hand buyers to hosted checkout, all without leaving hornetbay.com. The only missing piece is the shop account itself &mdash; once it&rsquo;s connected, The Exchange flips from preview to open for business. Digital badges and wallpapers, as always, stay free at the <a href="/assets">quartermaster</a>.</p>
   </article>
 <article id="reward-badges">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
+    <div class="meta"><time datetime="2026-07-24T12:00Z">241200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/reward-badges">Reward badges: six squadron patches to earn and post</a> <span class="hash">1e42e34</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span>
     <a class="shot" href="/shots/reward-badges.png"><img src="/shots/reward-badges.png" alt="The six Hornet Bay reward badges: Cat Launch Qualified, First Carrier Landing, First Bogie Splashed, Moffett Defender, Night Owl and Five Kill Ace" loading="lazy"></a>
     <p>The Carrier Ops Certified insignia has company: a family of <b>six reward badges</b> has landed on the <b><a href="/assets">assets page</a></b>, one for each milestone that matters in a naval aviator&rsquo;s logbook. <b>CAT LAUNCH QUALIFIED</b> for your first ride on the cat. <b>FIRST CARRIER LANDING</b> for your first trap back aboard. <b>FIRST BOGIE SPLASHED</b> for your first confirmed kill &mdash; starring the enemy MiG-29 Fulcrum from the aircraft gallery, red stars and all. <b>MOFFETT DEFENDER</b> for splashing the cruise missile before it reaches the airfield, with a reticle on the roundel for good measure. <b>NIGHT OWL</b> for launching and recovering after dark, flown under a star-dotted cap. And <b>FIVE KILL ACE</b>, five amber stars under the Hornet, for the Bay&rsquo;s finest.</p>
     <p>Every patch follows the same design law as the insignia &mdash; amber ring, dusk-over-ocean roundel, arc text, and imagery captured from the game&rsquo;s own models (the Fulcrum posed in the aircraft gallery for its close-up). Each comes as a 1200&times;1200 transparent master plus a 400&times;400 avatar cut, free at <b><a href="/assets">hornetbay.com/assets</a></b>. Fly the sortie, earn the patch, post it.</p>
   </article>
 <article id="assets-quartermaster">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
+    <div class="meta"><time datetime="2026-07-24T12:00Z">241200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/assets-quartermaster">The quartermaster opens: free brand assets and the Carrier Ops Certified insignia</a> <span class="hash">f7b9db6</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span>
     <a class="shot" href="/shots/assets-quartermaster.png"><img src="/shots/assets-quartermaster.png" alt="The new Hornet Bay assets page, with the Carrier Ops Certified insignia feature card and the wallpaper section" loading="lazy"></a>
     <p>There&rsquo;s a new public page on the site: <b><a href="/assets">hornetbay.com/assets</a></b> &mdash; the quartermaster, where every official brand asset is a free download for your devices and social profiles. On the shelves at opening: the <b>desktop wallpaper</b> (4K, the head-on Hornet coming at you over the horizon) and the <b>iPhone wallpaper</b> (1206&times;2622, native for iPhone 17 with a clean top fifth for the lock-screen clock), the universal <b>profile badge</b> in 400 and 800, and the <b>X cover and YouTube banner</b> for your own pages. Every piece follows the style guide &mdash; flat dusk sky over ocean navy, and the Hornet always captured from the game itself.</p>
     <p>The headline item is brand new: the <b>CARRIER OPS CERTIFIED &mdash; HORNET BAY insignia</b>. A proper squadron patch &mdash; amber ring, dusk-cap-and-ocean roundel, the top-down Hornet with its fins in the cap, arc text up top and the wordmark split below. It comes as a transparent 1200&times;1200 master, a 400&times;400 avatar cut, and a navy-square version for platforms that insist on one. It&rsquo;s for celebrating a milestone: trap your first landing on the Big E, then post the patch. Earned, not given &mdash; but the download is free.</p>
   </article>
 <article id="enterprise-island-blog">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-23T12:00Z">231200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/enterprise-island-blog">The angle deck angles left, the island is a box, and the journal is /blog</a> <span class="hash">e737d54</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/carrier-enterprise.png"><img src="/shots/carrier-enterprise.png" alt="The Enterprise from astern: angle deck striping to port of the new box island, parked Hornet on the cat" loading="lazy"></a>
     <p>Three carrier truths restored. The painted angle deck ran to starboard — the deck texture was mirrored, so the strip drifted toward the island instead of away from it; it now angles to port, agreeing with the sponson, the wires and the meatball. The island itself is rebuilt as CVN-65's signature flat-roofed box with billboard radar panels and just a small mast, and it's moved aft of midships where the Enterprise carries it — from the catapult shuttle the bridge now sits 80 metres behind you, out of sight, instead of looming ahead-right. And the journal has a real home: <b>hornetbay.com/blog</b>, with every entry living at its own permalink (this one is <a href="/blog/enterprise-island-blog">/blog/enterprise-island-blog</a>). Old changelog.html links redirect; RSS and the search engines get a sitemap.xml and robots.txt for the asking.</p>
   </article>

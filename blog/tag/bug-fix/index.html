@@ -58,8 +58,18 @@
   a { color: var(--link); text-decoration: none; }
   a:hover { color: var(--amber); }
   header {
-    max-width: 860px; margin: 0 auto; padding: 36px 0 8px;
+    max-width: 1120px; margin: 0 auto; padding: 28px 0 12px;
     border-bottom: 2px solid var(--line);
+  }
+  .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
+  .headleft { flex: 1 1 auto; min-width: 0; }
+  #search-slot { flex: 0 0 auto; margin-left: auto; padding-top: 6px; }
+  @media (max-width: 900px) {
+    .headrow { flex-direction: column; gap: 14px; }
+    #search-slot { width: 100%; margin: 0; padding-top: 0; }
+    #search-slot #blog-search-wrap { width: 100%; }
+    #search-slot #blog-search { flex: 1 1 auto; width: auto; }
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
@@ -96,8 +106,8 @@
   }
 
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .meta time { font-size: 12px; letter-spacing: 2px; color: var(--ink-dim); }
-  .tags { display: inline-flex; gap: 6px; }
+  .meta time { font-size: 15px; font-weight: bold; letter-spacing: 2px; color: var(--ink); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 6px; }
   .tag {
     font-size: 14px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 4px 10px; border-radius: 3px;
@@ -111,7 +121,7 @@
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
   h2 a.title-link:hover::after { opacity: 0.8; }
   article:target { background: #101a30; outline: 1px solid #2a3a5f; padding: 18px 14px; margin: 0 -14px; }
-  .rss-link { float: right; font-size: 11px; letter-spacing: 2px; }
+  .rss-link { display: inline-block; margin-left: 18px; font-size: 11px; letter-spacing: 2px; }
   footer {
     max-width: 860px; margin: 28px auto 0; font-size: 12px; color: var(--ink-dim);
     letter-spacing: 1px;
@@ -127,12 +137,13 @@
 
   /* blog menu (tag filter) + pagination */
   #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
-  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .bm-label { color: var(--ink-dim); font-size: 14px; letter-spacing: 3px; }
   .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .pg-btn { font-size: 15px; padding: 7px 15px; }
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
   #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
@@ -166,6 +177,7 @@
 </head>
 <body>
 <header>
+  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
@@ -173,10 +185,11 @@
 </header>
 <main>
 <div class="taghead">#BUG FIX &mdash; 9 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;19</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;21</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
 <article id="stl-wheels-up-fix">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/stl-wheels-up-fix">Print files: wheels properly up</a> <span class="hash">78e7159</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/merch">MERCH</a></span>
     <a class="shot" href="/shots/stl-wheels-up.jpg"><img src="/shots/stl-wheels-up.jpg" alt="Wireframe side view of the printable F/A-18 — belly flush on the build plate, no landing gear" loading="lazy"></a>
     <p>A sharp-eyed inspection of the print files found stowaways: the Hornet and Falcon STLs were shipping with their landing gear still down. Fixed:</p>
     <ol>
@@ -187,8 +200,9 @@
     </ol>
   </article>
 <article id="wheels-up-squadron-polish">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/wheels-up-squadron-polish">Wheels up: a squadron polish pass</a> <span class="hash">38702a9</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/wheels-down.jpg"><img src="/shots/wheels-down.jpg" alt="F/A-18 in the gallery with the landing gear toggled down" loading="lazy"></a>
     <p>A batch of details that were bugging the flight line &mdash; features first:</p>
     <ol>
@@ -205,8 +219,9 @@
     </ol>
   </article>
 <article id="analytics-dashboard">
-    <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
+    <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/analytics-dashboard">An analytics dashboard joins the squadron</a> <span class="hash">b9d9b66</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span>
     <a class="shot" href="/shots/analytics-dashboard.jpg"><img src="/shots/analytics-dashboard.jpg" alt="The Hornet Bay analytics dashboard: sortie record, combat record and pilot choices in amber on navy" loading="lazy"></a>
     <p>The mission desk wants numbers, so numbers it gets &mdash; a proper <a href="/analytics">analytics dashboard</a>, plus the plumbing that feeds it:</p>
     <ol>
@@ -222,39 +237,45 @@
     </ol>
   </article>
 <article id="enter-select-space-fire">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/input">INPUT</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
+    <div class="meta"><time datetime="2026-07-23T12:00Z">231200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/enter-select-space-fire">ENTER selects, SPACE fires — and where the weapon voices went</a> <span class="hash">aa9e6a5</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/input">INPUT</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span>
     <a class="shot" href="/shots/enter-select-space-fire.png"><img src="/shots/enter-select-space-fire.png" alt="The flight manual's controls page with the corrected ENTER and SPACE rows" loading="lazy"></a>
     <p>A sharp-eared pilot report: <i>"Both ENTER and SPACE fire the weapons. Also, what happened to the audio when weapons selected?"</i> One regression, two symptoms. At some point ENTER had been wired up as a second fire key and weapon selection was shuffled off to TAB — which meant that anyone reaching for ENTER, the Amiga original's weapon key, got a missile in the face instead of a menu. And the selection voice callout ("GUNS" / "SIDEWINDER" / "AMRAAM")? Never broken — the samples are all there and the path works — but the select code only runs when you <i>select</i>, and ENTER users were busy accidentally firing instead. Restored to spec: <b>ENTER cycles weapons</b> (with the voice callout confirming what's live), <b>SPACE fires</b>, TAB kept as an alias and 1/2/3 still jump straight to a weapon. Menu hint line and flight manual updated to match, verified on the harness — ENTER cycles aim120 → aim9 → gun with zero missiles leaving the rails — and the full touch gate re-run at 51/51.</p>
   </article>
 <article id="rotation-lock-detective">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/ios">iOS</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
+    <div class="meta"><time datetime="2026-07-23T12:00Z">231200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/rotation-lock-detective">Rotation-lock detective: when ROTATE YOUR DEVICE never ends</a> <span class="hash">f4d11ff</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/ios">iOS</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span>
     <a class="shot" href="/shots/rotation-lock-hint.png"><img src="/shots/rotation-lock-hint.png" alt="The rotate overlay now shows rotation-lock guidance when a pilot is stuck" loading="lazy"></a>
     <p>Second field report from the iPhone: <i>"I selected free flight, rotated my device as instructed, and nothing changed — the animation continued to animate."</i> Two bugs in one sentence. <b>Bug one:</b> the pilot was able to select FREE FLIGHT <i>while the blocking overlay was up</i> — it turned out the overlay lived inside #touch-ui (z-index 12), which stacked it below the menu (z-index 20), so in menu state the "blocking" overlay ghosted underneath and taps fell straight through to the buttons. It's now a direct child of the body where its z-60 genuinely tops every gameplay layer, in every state — and the suite gained a regression check that pokes a menu button through the overlay to prove it. <b>Bug two is sneakier:</b> with iOS <b>Portrait Orientation Lock</b> on, rotating the phone never changes the browser viewport at all — the page stays portrait, the overlay keeps spinning, and the pilot is stuck with no idea why. The page can't see the lock switch, so the overlay now says it out loud: sit on the overlay for six seconds and a hint fades in — <i>"STUCK ON THIS SCREEN? YOUR ROTATION LOCK IS PROBABLY ON — Control Center → tap the lock icon"</i> — plus a TAP HERE affordance that requests motion-sensor permission; once the gyro is readable, physically rotating to landscape while the viewport stays portrait lights the hint up in pulsing amber. No sensors, no problem: the static hint still points at Control Center. Full gate: 43/43.</p>
   </article>
 <article id="ios-rotation-crash">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/ios">iOS</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
+    <div class="meta"><time datetime="2026-07-23T12:00Z">231200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/ios-rotation-crash">The iPhone rotation crash: taming WebKit's GPU</a> <span class="hash">41506d3</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/ios">iOS</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span>
     <a class="shot" href="/shots/gl-recovery.png"><img src="/shots/gl-recovery.png" alt="The GRAPHICS RESET — RECOVERING banner shown while the GL context is lost" loading="lazy"></a>
     <p>A field report from an iPhone: load the site, rotate as instructed, game crashed. We can't reproduce WebKit in the lab, but the failure shape is a known iOS classic — <b>rotating the device kills or starves the WebGL context</b>, and every iOS generation has its own flavor of it (the canvas-resize memory leak of iOS 14, the context-loss waves of 16.7/17/18). Our code made it worse in two ways: it resized the GL canvas on <i>every</i> resize event — and iOS fires a storm of them mid-rotation with stale geometry — and it had no handler for the context actually dying, so the canvas just went black and stayed dead. From the pilot's seat: crashed.</p>
     <p>Two fixes, both verified on the virtual device by forcibly killing the context with the WEBGL_lose_context extension. <b>One:</b> resizing is now debounced and rotation-safe — the geometry storm settles for 180ms (450ms after an orientation change, iOS lands its final dimensions late) before a single canvas re-allocation, degenerate zero-size frames are skipped, and the camera aspect is clamped so a NaN can never poison the projection matrix. <b>Two:</b> a proper context-loss handler — the browser is asked to restore, a GRAPHICS RESET — RECOVERING banner (above) keeps the pilot informed, and if the GPU doesn't come back within four seconds the page reloads itself cleanly instead of sitting dead. Full touch gate re-run after the surgery: 41/41. If you were the pilot who hit this — thanks for the report, and wheels up.</p>
   </article>
 <article id="touch-shakedown">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/mobile">MOBILE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span></div>
+    <div class="meta"><time datetime="2026-07-23T12:00Z">231200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/touch-shakedown">The mobile shakedown: a virtual phone, 35 checks, zero failures</a> <span class="hash">227a009</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/mobile">MOBILE</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a></span>
     <a class="shot" href="/shots/touch-shakedown.png"><img src="/shots/touch-shakedown.png" alt="The reworked touch flight deck on an emulated phone: throttle lever, thumb stick, action cluster" loading="lazy"></a>
     <p>Verdict on the first touch build: needs work — so it got a proper shakedown on an emulated phone (CDP touch emulation + real touch events, not just screenshots). The hunt found three real bugs and one ergonomic crime. <b>THR+/&minus; never worked:</b> the stick's grab zone painted over the throttle buttons and ate every touch — and even fixed, hold-buttons were the wrong idea anyway, so the throttle is now a proper <b>drag-to-set lever</b>: drag it to full, it stays, both thumbs free for the takeoff roll. <b>The DEMO attract ate your next tap:</b> the exit tap's leaked compatibility click landed on whatever menu button sat beneath it; the menu now re-shows a beat later so the stray click dies on the canvas. And the action cluster is tucked tight into the corner so it covers less of the radar display. The full loop — menu, attract, map, plane select, skip, quick-start, throttle, brakes, stick, weapons, gun burst, gear, views, pause, portrait nag, quit — now passes <b>35/35 scripted touch checks</b> before every deploy.</p>
   </article>
 <article id="enterprise-island-blog">
-    <div class="meta"><time datetime="2026-07-23">2026-07-23</time><span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <div class="meta"><time datetime="2026-07-23T12:00Z">231200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/enterprise-island-blog">The angle deck angles left, the island is a box, and the journal is /blog</a> <span class="hash">e737d54</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/carrier">CARRIER</a><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/site">SITE</a></span>
     <a class="shot" href="/shots/carrier-enterprise.png"><img src="/shots/carrier-enterprise.png" alt="The Enterprise from astern: angle deck striping to port of the new box island, parked Hornet on the cat" loading="lazy"></a>
     <p>Three carrier truths restored. The painted angle deck ran to starboard — the deck texture was mirrored, so the strip drifted toward the island instead of away from it; it now angles to port, agreeing with the sponson, the wires and the meatball. The island itself is rebuilt as CVN-65's signature flat-roofed box with billboard radar panels and just a small mast, and it's moved aft of midships where the Enterprise carries it — from the catapult shuttle the bridge now sits 80 metres behind you, out of sight, instead of looming ahead-right. And the journal has a real home: <b>hornetbay.com/blog</b>, with every entry living at its own permalink (this one is <a href="/blog/enterprise-island-blog">/blog/enterprise-island-blog</a>). Old changelog.html links redirect; RSS and the search engines get a sitemap.xml and robots.txt for the asking.</p>
   </article>
 <article id="gun-space-enter-tracers">
-    <div class="meta"><time datetime="2026-07-22">2026-07-22</time><span class="tags"><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span></div>
+    <div class="meta"><time datetime="2026-07-22T12:00Z">221200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/gun-space-enter-tracers">The gun answers SPACE and ENTER — with tracers you can see</a> <span class="hash">d0ee2a7</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/bug-fix">BUG FIX</a><a class="tag" href="/blog/tag/controls">CONTROLS</a></span>
     <a class="shot" href="/shots/space-gun-tracers.jpg"><img src="/shots/space-gun-tracers.jpg" alt="Night gun burst from the cockpit, tracers streaking ahead" loading="lazy"></a>
     <p>Three fixes in one pass. The gun simply ignored SPACE — only the mouse trigger worked, because the fire code never looked at the keyboard for the Vulcan. Now SPACE and ENTER both fire the selected weapon (hold either for a burst), so weapon select moves to TAB, with 1 / 2 / 3 jumping straight to AMRAAM, Sidewinder or gun. And the tracers themselves are rebuilt: the old bolts were pencil-thin and effectively invisible from the cockpit, so each round now flies as a fat glowing bolt that reads day or night.</p>
   </article>

@@ -58,8 +58,18 @@
   a { color: var(--link); text-decoration: none; }
   a:hover { color: var(--amber); }
   header {
-    max-width: 860px; margin: 0 auto; padding: 36px 0 8px;
+    max-width: 1120px; margin: 0 auto; padding: 28px 0 12px;
     border-bottom: 2px solid var(--line);
+  }
+  .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
+  .headleft { flex: 1 1 auto; min-width: 0; }
+  #search-slot { flex: 0 0 auto; margin-left: auto; padding-top: 6px; }
+  @media (max-width: 900px) {
+    .headrow { flex-direction: column; gap: 14px; }
+    #search-slot { width: 100%; margin: 0; padding-top: 0; }
+    #search-slot #blog-search-wrap { width: 100%; }
+    #search-slot #blog-search { flex: 1 1 auto; width: auto; }
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
@@ -96,8 +106,8 @@
   }
 
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .meta time { font-size: 12px; letter-spacing: 2px; color: var(--ink-dim); }
-  .tags { display: inline-flex; gap: 6px; }
+  .meta time { font-size: 15px; font-weight: bold; letter-spacing: 2px; color: var(--ink); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 6px; }
   .tag {
     font-size: 14px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 4px 10px; border-radius: 3px;
@@ -111,7 +121,7 @@
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
   h2 a.title-link:hover::after { opacity: 0.8; }
   article:target { background: #101a30; outline: 1px solid #2a3a5f; padding: 18px 14px; margin: 0 -14px; }
-  .rss-link { float: right; font-size: 11px; letter-spacing: 2px; }
+  .rss-link { display: inline-block; margin-left: 18px; font-size: 11px; letter-spacing: 2px; }
   footer {
     max-width: 860px; margin: 28px auto 0; font-size: 12px; color: var(--ink-dim);
     letter-spacing: 1px;
@@ -127,12 +137,13 @@
 
   /* blog menu (tag filter) + pagination */
   #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
-  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .bm-label { color: var(--ink-dim); font-size: 14px; letter-spacing: 3px; }
   .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .pg-btn { font-size: 15px; padding: 7px 15px; }
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
   #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
@@ -166,6 +177,7 @@
 </head>
 <body>
 <header>
+  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
@@ -173,10 +185,11 @@
 </header>
 <main>
 <div class="taghead">#SPECS &mdash; 12 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;19</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;21</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
 <article id="av8b-harrier">
-    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-28T12:00Z">281200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/av8b-harrier">AV-8B Harrier II: the jump jet joins the gallery</a> <span class="hash">46c67d7</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/av8b-harrier.jpg"><img src="/shots/av8b-harrier.jpg" alt="The Hornet Bay AV-8B Harrier II in the gallery — anhedral wing, bicycle gear with outriggers, big Pegasus intake" loading="lazy"></a>
     <p>McDonnell Douglas AV-8B Harrier II &mdash; the day-attack jump jet the Marines flew off Tarawa-class decks and tiny forward strips:</p>
     <ol>
@@ -186,8 +199,9 @@
     </ol>
   </article>
 <article id="spy-balloon">
-    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/specs">SPECS</a><a class="tag" href="/blog/tag/merch">MERCH</a></span></div>
+    <div class="meta"><time datetime="2026-07-28T12:00Z">281200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/spy-balloon">The spy balloon: 61 metres of famous, and a go-fast for the shelf</a> <span class="hash">46c67d7</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/specs">SPECS</a><a class="tag" href="/blog/tag/merch">MERCH</a></span>
     <a class="shot" href="/shots/spy-balloon.jpg"><img src="/shots/spy-balloon.jpg" alt="The Hornet Bay spy balloon in the gallery — white envelope with gore seams and the camera payload slung underneath" loading="lazy"></a>
     <p>Two of the campaign&rsquo;s most-requested shapes are in the gallery and the print bay:</p>
     <ol>
@@ -197,8 +211,9 @@
     </ol>
   </article>
 <article id="a6e-intruder">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/a6e-intruder">Meet the A-6E Intruder: Knight Rider, by the numbers</a> <span class="hash">86ef63b</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/a6e-intruder.jpg"><img src="/shots/a6e-intruder.jpg" alt="The Hornet Bay A-6E Intruder in the gallery — dark radome, refuelling probe, side-by-side greenhouse canopy, NL 501 on the fin" loading="lazy"></a>
     <p>The first of three shipmates reporting aboard this push is the fleet&rsquo;s all-weather truck: an A-6E Intruder of <b>VA-52, the Knight Riders</b> &mdash; tail code NL, modex 501, straight off the 1994 Pacific cruise. Ours answers to KNIGHT 501. Her card:</p>
     <ol>
@@ -211,8 +226,9 @@
     </ol>
   </article>
 <article id="c2-greyhound">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/c2-greyhound">Meet the C-2A Greyhound: the COD, by the numbers</a> <span class="hash">86ef63b</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/c2-greyhound.jpg"><img src="/shots/c2-greyhound.jpg" alt="The Hornet Bay C-2A Greyhound in the gallery — high wing, four-blade props, quad tail, RW 30 on the centre fin" loading="lazy"></a>
     <p>Second aboard is the hardest-working airframe in the battle group &mdash; the Carrier Onboard Delivery bird, a C-2A Greyhound of <b>VRC-30, the Providers</b>: tail code RW, modex 30, answering to PROVIDER 30. Mail, parts, passengers &mdash; if it matters, the COD brings it. The card:</p>
     <ol>
@@ -225,8 +241,9 @@
     </ol>
   </article>
 <article id="s3-viking">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/s3-viking">Meet the S-3B Viking: the Hoover, by the numbers</a> <span class="hash">86ef63b</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/s3-viking.jpg"><img src="/shots/s3-viking.jpg" alt="The Hornet Bay S-3B Viking in the gallery — high wing, twin underwing pods, tall fin with NL 700, MAD boom in the tail" loading="lazy"></a>
     <p>Third aboard is the submarine&rsquo;s worst day: an S-3B Viking of <b>VS-37, the Sawbucks</b> &mdash; NL 700 on the tall fin, answering to SAWBUCK 700. They call the real jet the Hoover for the sound of those two big fans. The card:</p>
     <ol>
@@ -239,8 +256,9 @@
     </ol>
   </article>
 <article id="f15-eagle">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/f15-eagle">Meet the F-15 Eagle: air superiority, USAF issue</a> <span class="hash">86ef63b</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/f15-eagle.jpg"><img src="/shots/f15-eagle.jpg" alt="The Hornet Bay F-15 Eagle in the gallery — twin tails canted out, shoulder wing, AMRAAMs on the fuselage corners" loading="lazy"></a>
     <p>The Air Force heard the Navy was having all the fun and sent over its champion: the F-15 Eagle is now on the flight line as a player mount &mdash; press <b>4</b> at the plane select. Two things to know up front: it has never lost an air-to-air fight in real life, and it has no tailhook. The card:</p>
     <ol>
@@ -253,8 +271,9 @@
     </ol>
   </article>
 <article id="a10-warthog">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/a10-warthog">Meet the A-10 Warthog: the Hawg, by the numbers</a> <span class="hash">86ef63b</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/a10-warthog.jpg"><img src="/shots/a10-warthog.jpg" alt="The Hornet Bay A-10 Thunderbolt II in the gallery — straight wing, twin tails, engine pods on the shoulders, gunship grey" loading="lazy"></a>
     <p>And the second Air Force arrival needs no introduction &mdash; only a long pause for effect. The A-10 Thunderbolt II, the Warthog, joins as a player mount on <b>5</b>. It is slow. It is honest. It is built around the largest gun ever bolted into an aeroplane. The card:</p>
     <ol>
@@ -267,8 +286,9 @@
     </ol>
   </article>
 <article id="su27-flanker">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/su27-flanker">Meet the Su-27 Flanker: the new bogey, by the numbers</a> <span class="hash">86ef63b</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/su27-flanker.jpg"><img src="/shots/su27-flanker.jpg" alt="The Hornet Bay Su-27 Flanker in the gallery — drooped nose, twin canted tails, red stars, blue bort 38" loading="lazy"></a>
     <p>The MiG-29 has been asking for backup, and the Soviets have answered: the Su-27 Flanker is in the game &mdash; red stars on the fins, blue <b>38</b> on the nose, and a very long memory for grudges. It has no missions yet. It is simply out there, waiting. The card:</p>
     <ol>
@@ -281,8 +301,9 @@
     </ol>
   </article>
 <article id="ah64-apache">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/ah64-apache">Meet the AH-64 Apache: K-MAN, by the numbers</a> <span class="hash">6b2429a</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/ah64-apache.jpg"><img src="/shots/ah64-apache.jpg" alt="The Hornet Bay AH-64 Apache in the gallery — olive drab, tandem cockpit, stub wings with Hellfire racks" loading="lazy"></a>
     <p>The bay&rsquo;s airspace just got a little more dangerous &mdash; and it isn&rsquo;t even Navy. An AH-64 Apache of the U.S. Army now holds a continuous orbit over the city, callsign K-MAN, olive drab against the dusk. If you see twin stub wings and a chin gun checking you over downtown, that&rsquo;s him. His card:</p>
     <ol>
@@ -295,8 +316,9 @@
     </ol>
   </article>
 <article id="e2c-hawkeye">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/e2c-hawkeye">Meet the E-2C Hawkeye: the Screwtops, by the numbers</a> <span class="hash">2e1b3aa</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/e2c-hawkeye.jpg"><img src="/shots/e2c-hawkeye.jpg" alt="The Hornet Bay E-2C Hawkeye in the gallery — black Screwtops corkscrew wrapping the edge of the horizontal rotodome" loading="lazy"></a>
     <p>She&rsquo;s the newest silhouette over the bay and the highest flier in the pattern: the Grumman E-2C Hawkeye of Airborne Command and Control Squadron 123 &mdash; VAW-123, the SCREWTOPS &mdash; now wears her squadron mark, the black corkscrew around the rotodome. The dome itself got its geometry sorted this push: a horizontal pancake on its twin struts, spinning about its vertical axis exactly as the real radar does. Her card:</p>
     <ol>
@@ -310,8 +332,9 @@
     </ol>
   </article>
 <article id="sh60-seahawk">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/sh60-seahawk">Meet the SH-60 Seahawk: the cruiserhref="/blog/sh60-seahawk">Meet the SH-60 Seahawk: the cruiser&rsquo;s rotor, by the numbers</a> <span class="hash">715f0f9</span>rsquo;s rotor, by the numbers</a> <span class="hash">2e1b3aa</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/sh60-seahawk.jpg"><img src="/shots/sh60-seahawk.jpg" alt="The Hornet Bay SH-60 Seahawk in the gallery — haze grey side profile, main rotor with yellow tips, tail rotor on the boom" loading="lazy"></a>
     <p>The thump you hear crossing the cruiser&rsquo;s wake is her: the Sikorsky SH-60 Seahawk, the fleet&rsquo;s shipboard helicopter, and the first rotor in Hornet Bay. She spools up on the guided-missile cruiser&rsquo;s aft deck, flies a four-leg circuit of the group, and puts it back down on a deck that&rsquo;s still making 15 knots &mdash; while two of her sisters shuttle the bay&rsquo;s five new helipads. Her card:</p>
     <ol>
@@ -324,8 +347,9 @@
     </ol>
   </article>
 <article id="p3-orion">
-    <div class="meta"><time datetime="2026-07-27">2026-07-27</time><span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span></div>
+    <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/p3-orion">Meet the P-3 Orion: the sub hunter, by the numbers</a> <span class="hash">2e1b3aa</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/p3-orion.jpg"><img src="/shots/p3-orion.jpg" alt="The Hornet Bay P-3 Orion in the gallery — white over gull grey, four turboprops, MAD boom in the tail stinger" loading="lazy"></a>
     <p>Out to the west of the carrier group, low and slow and endlessly patient, flies the Lockheed P-3 Orion &mdash; the Navy&rsquo;s maritime patrol workhorse since 1962, derived from the Electra airliner and hunting submarines for over sixty years. Ours works an 11&times;5&nbsp;km oval at 500 feet and breaks off now and then to eyeball a surface contact up close. Her card:</p>
     <ol>

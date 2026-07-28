@@ -58,8 +58,18 @@
   a { color: var(--link); text-decoration: none; }
   a:hover { color: var(--amber); }
   header {
-    max-width: 860px; margin: 0 auto; padding: 36px 0 8px;
+    max-width: 1120px; margin: 0 auto; padding: 28px 0 12px;
     border-bottom: 2px solid var(--line);
+  }
+  .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
+  .headleft { flex: 1 1 auto; min-width: 0; }
+  #search-slot { flex: 0 0 auto; margin-left: auto; padding-top: 6px; }
+  @media (max-width: 900px) {
+    .headrow { flex-direction: column; gap: 14px; }
+    #search-slot { width: 100%; margin: 0; padding-top: 0; }
+    #search-slot #blog-search-wrap { width: 100%; }
+    #search-slot #blog-search { flex: 1 1 auto; width: auto; }
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
@@ -96,8 +106,8 @@
   }
 
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .meta time { font-size: 12px; letter-spacing: 2px; color: var(--ink-dim); }
-  .tags { display: inline-flex; gap: 6px; }
+  .meta time { font-size: 15px; font-weight: bold; letter-spacing: 2px; color: var(--ink); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 6px; }
   .tag {
     font-size: 14px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 4px 10px; border-radius: 3px;
@@ -111,7 +121,7 @@
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
   h2 a.title-link:hover::after { opacity: 0.8; }
   article:target { background: #101a30; outline: 1px solid #2a3a5f; padding: 18px 14px; margin: 0 -14px; }
-  .rss-link { float: right; font-size: 11px; letter-spacing: 2px; }
+  .rss-link { display: inline-block; margin-left: 18px; font-size: 11px; letter-spacing: 2px; }
   footer {
     max-width: 860px; margin: 28px auto 0; font-size: 12px; color: var(--ink-dim);
     letter-spacing: 1px;
@@ -127,12 +137,13 @@
 
   /* blog menu (tag filter) + pagination */
   #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
-  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .bm-label { color: var(--ink-dim); font-size: 14px; letter-spacing: 3px; }
   .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .pg-btn { font-size: 15px; padding: 7px 15px; }
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
   #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
@@ -166,6 +177,7 @@
 </head>
 <body>
 <header>
+  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
@@ -173,41 +185,46 @@
 </header>
 <main>
 <div class="taghead">#FLEET &mdash; 5 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;19</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;21</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
 <article id="meet-the-fleet-video">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
+    <div class="meta"><time datetime="2026-07-25T12:00Z">251200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-video">Meet the Fleet, in motion: 360&deg; orbits and the Hornet Bay anthem</a> <span class="hash">040292e</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span>
     <a class="shot" href="/shots/meet-the-fleet-video.png"><img src="/shots/meet-the-fleet-video.png" alt="An ALLIED Airlines 747-400 at the hero angle of its 360-degree orbit, caption fading in, from the Meet the Fleet video" loading="lazy"></a>
     <p>The fleet profiles deserved more than stills. The new <b>MEET THE FLEET</b> video puts the camera in a slow 360&deg; orbit around every airliner in the Bay &mdash; all sides of the ALLIED 747-400, the LIBERTY AIR 737-400, the PACIFIC EMPRESS DC-10 and the CASCADE AIR MD-90, wheels up over open water. Each orbit opens with a hold on the hero angle while the airline&rsquo;s name and aircraft type fade in, then swings all the way around the airframe.</p>
     <p>The whole thing flies to the <b>Hornet Bay anthem</b>, opening with a genuine in-game flyby whoosh. It ships in two cuts: a 47-second widescreen cut for the <a href="https://youtube.com/@hornetbay">Hornet Bay YouTube channel</a>, and a vertical Shorts cut with the specs riding under every aircraft. The four fleet profiles &mdash; <a href="/blog/meet-the-fleet-allied-747-400">ALLIED</a>, <a href="/blog/meet-the-fleet-liberty-737-400">LIBERTY</a>, <a href="/blog/meet-the-fleet-pacific-empress-dc-10">PACIFIC EMPRESS</a>, <a href="/blog/meet-the-fleet-cascade-md-90">CASCADE</a> &mdash; have the full specifications.</p>
   </article>
 <article id="meet-the-fleet-allied-747-400">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
+    <div class="meta"><time datetime="2026-07-25T12:00Z">251200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-allied-747-400">Meet the fleet: ALLIED AIRLINES 747-400</a> <span class="hash">6ef1315</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span>
     <a class="shot" href="/shots/allied-747-400.png"><img src="/shots/allied-747-400.png" alt="An ALLIED Airlines Boeing 747-400 in flight over the Bay in Hornet Bay — white fuselage, blue cheatline, navy tail with an amber wedge" loading="lazy"></a>
     <p>The flag carrier of the Bay. ALLIED&rsquo;s 747-400s run the trans-Pacific trunk &mdash; Tokyo, Hong Kong, Sydney &mdash; every departure threading the Golden Gate on climb-out, every arrival letting down over the East Bay for SFO&rsquo;s 28s. <b>388 souls aboard</b>, four big fans at a rumble you can feel from your own cockpit. Navy pilots know her as the big friendly on the scope: ALLIED 412 HEAVY and her sisters, squawking their way in at all hours, in all weather.</p>
     <p><b>THE AIRCRAFT</b> &mdash; Boeing 747-400 &middot; length 231 ft 10 in &middot; wingspan 211 ft 5 in &middot; four engines (PW4000 / CF6 / RB211 family, about 63,000 lb of thrust apiece) &middot; cruise Mach 0.85 &middot; range 7,285 nautical miles &middot; 416 seats in a typical three-class cabin &middot; first flight 29 April 1988 &mdash; a contemporary of a certain Amiga simulator &mdash; in airline service since 1989.</p>
     <p><b>Where to meet her:</b> heavy departures off SFO climbing through 4,000 over the ocean, or arrivals on long finals to the 28s. Intercept her, formate on the wing, count the windows &mdash; then check your fire, because the court martial is quick and the debrief is unforgiving.</p>
   </article>
 <article id="meet-the-fleet-liberty-737-400">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
+    <div class="meta"><time datetime="2026-07-25T12:00Z">251200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-liberty-737-400">Meet the fleet: LIBERTY AIR 737-400</a> <span class="hash">6ef1315</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span>
     <a class="shot" href="/shots/liberty-737.png"><img src="/shots/liberty-737.png" alt="A LIBERTY AIR Boeing 737-400 in flight over the Bay — polished silver fuselage with a red cheatline" loading="lazy"></a>
     <p>The shuttle. LIBERTY AIR&rsquo;s polished-silver 737-400s with the red cheatline run the coast milk route &mdash; Los Angeles, San Diego, Seattle and back &mdash; a rotation every hour, <b>146 souls</b> a hop. If ALLIED is the flag carrier, LIBERTY is the bus service: always in the pattern, always on time, and always exactly in your way when you&rsquo;re boresighting a bogey over the Bay.</p>
     <p><b>THE AIRCRAFT</b> &mdash; Boeing 737-400 &middot; length 119 ft 7 in &middot; wingspan 94 ft 9 in &middot; two CFM56-3 turbofans &middot; cruise Mach 0.74 &middot; range about 2,060 nautical miles &middot; 146&ndash;168 seats &middot; first flight 19 February 1988, in service the same year &mdash; the stretch that kept the classic 737 line relevant into the nineties.</p>
     <p><b>Where to meet her:</b> low and slow over the Peninsula, gear down and flaps out on a long straight-in. The easiest intercept in the Bay &mdash; and the most expensive mistake if you get trigger-happy.</p>
   </article>
 <article id="meet-the-fleet-pacific-empress-dc-10">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span></div>
+    <div class="meta"><time datetime="2026-07-25T12:00Z">251200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-pacific-empress-dc-10">Meet the fleet: PACIFIC EMPRESS DC-10</a> <span class="hash">6ef1315</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span>
     <a class="shot" href="/shots/pacific-empress-dc-10.png"><img src="/shots/pacific-empress-dc-10.png" alt="A PACIFIC EMPRESS DC-10 in flight over the Bay — white fuselage with a gold cheatline and dark navy tail" loading="lazy"></a>
     <p>The old glamour line. Pacific Empress still flies the DC-10 the way it was meant to be flown &mdash; white gloves, gold cheatline, and three CF6s trailing that unmistakable trijet howl across the Pacific. <b>268 souls</b> in the back. And one of them, one night not so long ago, was a man half the intelligence services of the Pacific Rim were looking for.</p>
     <p><b>THE AIRCRAFT</b> &mdash; McDonnell Douglas DC-10 &middot; length 182 ft &middot; wingspan 165 ft 4 in &middot; three CF6 engines, the third buried in the tail and breathing through the S-duct above the fuselage &middot; cruise Mach 0.82 &middot; range about 5,200 nautical miles &middot; seats 270 and up &middot; first flight 29 August 1970 &mdash; the trijet era made flesh.</p>
     <p><b>Where to meet her:</b> Mission 7. When the call comes that an Empress heavy is inbound with a defector aboard, every bandit in the Bay will try to keep him from talking. Get there first, run the escort, and put the old trijet on the ground in one piece. The rest of the week she flies the line like any other transport &mdash; treat her accordingly.</p>
   </article>
 <article id="meet-the-fleet-cascade-md-90">
-    <div class="meta"><time datetime="2026-07-25">2026-07-25</time><span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
+    <div class="meta"><time datetime="2026-07-25T12:00Z">251200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/meet-the-fleet-cascade-md-90">Meet the fleet: CASCADE AIR MD-90</a> <span class="hash">6ef1315</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/fleet">FLEET</a><a class="tag" href="/blog/tag/feature">FEATURE</a></span>
     <a class="shot" href="/shots/cascade-md-90.png"><img src="/shots/cascade-md-90.png" alt="A CASCADE AIR MD-90 in flight over the Bay — T-tail and rear-mounted engines, dark tail over a dark cheatline" loading="lazy"></a>
     <p>Down from the Northwest. CASCADE AIR feeds SFO from Seattle, Portland and points north, and it does it with the quietest Mad Dog ever built: the MD-90, with its T-tail and rear-mounted V2500s whispering in over the hills where the older jets roar. <b>158 souls</b> aboard. Spot her by the long fuselage, the high tail, and engines exactly where the tail ought to be.</p>
     <p><b>THE AIRCRAFT</b> &mdash; McDonnell Douglas MD-90 &middot; length 152 ft 7 in &middot; wingspan 107 ft 10 in &middot; two IAE V2500s &mdash; the first airliner ever certified with them &middot; cruise Mach 0.76 &middot; range about 2,085 nautical miles &middot; 153&ndash;172 seats &middot; first flight 22 February 1993: the last and quietest of a line stretching straight back to the DC-9.</p>

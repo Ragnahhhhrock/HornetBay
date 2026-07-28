@@ -60,8 +60,18 @@
   a { color: var(--link); text-decoration: none; }
   a:hover { color: var(--amber); }
   header {
-    max-width: 860px; margin: 0 auto; padding: 36px 0 8px;
+    max-width: 1120px; margin: 0 auto; padding: 28px 0 12px;
     border-bottom: 2px solid var(--line);
+  }
+  .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+  .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
+  .headleft { flex: 1 1 auto; min-width: 0; }
+  #search-slot { flex: 0 0 auto; margin-left: auto; padding-top: 6px; }
+  @media (max-width: 900px) {
+    .headrow { flex-direction: column; gap: 14px; }
+    #search-slot { width: 100%; margin: 0; padding-top: 0; }
+    #search-slot #blog-search-wrap { width: 100%; }
+    #search-slot #blog-search { flex: 1 1 auto; width: auto; }
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
@@ -98,8 +108,8 @@
   }
 
   .meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .meta time { font-size: 12px; letter-spacing: 2px; color: var(--ink-dim); }
-  .tags { display: inline-flex; gap: 6px; }
+  .meta time { font-size: 15px; font-weight: bold; letter-spacing: 2px; color: var(--ink); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; margin: 2px 0 6px; }
   .tag {
     font-size: 14px; letter-spacing: 1px; color: var(--amber);
     border: 1px solid #7a5a20; padding: 4px 10px; border-radius: 3px;
@@ -113,7 +123,7 @@
   h2 a.title-link::after { content: " \1F517"; font-size: 12px; opacity: 0; transition: opacity .15s; }
   h2 a.title-link:hover::after { opacity: 0.8; }
   article:target { background: #101a30; outline: 1px solid #2a3a5f; padding: 18px 14px; margin: 0 -14px; }
-  .rss-link { float: right; font-size: 11px; letter-spacing: 2px; }
+  .rss-link { display: inline-block; margin-left: 18px; font-size: 11px; letter-spacing: 2px; }
   footer {
     max-width: 860px; margin: 28px auto 0; font-size: 12px; color: var(--ink-dim);
     letter-spacing: 1px;
@@ -129,12 +139,13 @@
 
   /* blog menu (tag filter) + pagination */
   #blog-menu { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 16px 0 6px; }
-  .bm-label { color: var(--ink-dim); font-size: 11px; letter-spacing: 3px; }
+  .bm-label { color: var(--ink-dim); font-size: 14px; letter-spacing: 3px; }
   .chip, .pg-btn { font: bold 11px "Courier New", ui-monospace, monospace; color: var(--link); background: none; border: 1px solid var(--line); padding: 4px 10px; cursor: pointer; letter-spacing: 1px; }
+  .pg-btn { font-size: 15px; padding: 7px 15px; }
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { flex-basis: 100%; display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0 0 10px; }
+  #blog-search-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
   #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
@@ -162,7 +173,7 @@
   "@context": "https://schema.org",
   "@type": "BlogPosting",
   "headline": "The quartermaster opens: free brand assets and the Carrier Ops Certified insignia f7b9db6",
-  "datePublished": "2026-07-24",
+  "datePublished": "2026-07-24T12:00Z",
   "url": "https://hornetbay.com/blog/assets-quartermaster",
   "wordCount": 104,
   "author": {
@@ -181,6 +192,7 @@
 </head>
 <body>
 <header>
+  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
@@ -188,8 +200,9 @@
 </header>
 <main>
 <article id="assets-quartermaster">
-    <div class="meta"><time datetime="2026-07-24">2026-07-24</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span></div>
+    <div class="meta"><time datetime="2026-07-24T12:00Z">241200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/assets-quartermaster">The quartermaster opens: free brand assets and the Carrier Ops Certified insignia</a> <span class="hash">f7b9db6</span></h2>
+    <span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/brand">BRAND</a></span>
     <a class="shot" href="/shots/assets-quartermaster.png"><img src="/shots/assets-quartermaster.png" alt="The new Hornet Bay assets page, with the Carrier Ops Certified insignia feature card and the wallpaper section" loading="lazy"></a>
     <p>There&rsquo;s a new public page on the site: <b><a href="/assets">hornetbay.com/assets</a></b> &mdash; the quartermaster, where every official brand asset is a free download for your devices and social profiles. On the shelves at opening: the <b>desktop wallpaper</b> (4K, the head-on Hornet coming at you over the horizon) and the <b>iPhone wallpaper</b> (1206&times;2622, native for iPhone 17 with a clean top fifth for the lock-screen clock), the universal <b>profile badge</b> in 400 and 800, and the <b>X cover and YouTube banner</b> for your own pages. Every piece follows the style guide &mdash; flat dusk sky over ocean navy, and the Hornet always captured from the game itself.</p>
     <p>The headline item is brand new: the <b>CARRIER OPS CERTIFIED &mdash; HORNET BAY insignia</b>. A proper squadron patch &mdash; amber ring, dusk-cap-and-ocean roundel, the top-down Hornet with its fins in the cap, arc text up top and the wordmark split below. It comes as a transparent 1200&times;1200 master, a 400&times;400 avatar cut, and a navy-square version for platforms that insist on one. It&rsquo;s for celebrating a milestone: trap your first landing on the Big E, then post the patch. Earned, not given &mdash; but the download is free.</p>
