@@ -1,0 +1,34 @@
+/* site.css — the Hornet Bay style guide, shared chrome
+   (single source: site_header.py — regenerate with site_sync.py) */
+:root {
+  --ink: #c8d4e8; --ink-dim: #7f90b0; --amber: #ffb437; --amber-hi: #ffd75e;
+  --link: #5f86b8; --line: #26355a; --card: #0d1428;
+}
+body { background: #070b18; color: var(--ink); font-family: "Courier New", ui-monospace, monospace; }
+a { color: var(--link); text-decoration: none; }
+a:hover { color: var(--amber); }
+
+/* header identity stack */
+.banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+.brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
+.brand span { color: var(--amber); }
+.logbrand { font-size: 24px; font-weight: bold; letter-spacing: 6px; color: var(--amber); margin-top: 6px; text-shadow: 0 0 10px #7a3800; }
+.blurb { font-size: 13px; color: var(--ink-dim); }
+.back { font-size: 12px; letter-spacing: 2px; }
+.rss-link { font-size: 11px; letter-spacing: 2px; }
+
+/* the site nav block — two same-size buttons with captions,
+   always the last element of the header, always in this order */
+.sitenav { display: flex; width: 100%; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; }
+.sitenav .nv { display: flex; flex-direction: column; gap: 5px; }
+.sitenav .nvbtn {
+  display: block; border: 1px solid var(--line); padding: 10px 22px;
+  font-size: 24px; font-weight: bold; letter-spacing: 3px; color: var(--ink);
+  text-align: center; background: none;
+}
+.sitenav .nvbtn:hover { border-color: var(--amber); color: var(--amber); }
+.sitenav .nvcap { font-size: 10px; letter-spacing: 2px; color: var(--ink-dim); text-align: center; }
+@media (max-width: 600px) {
+  .sitenav { flex-direction: column; }
+  .sitenav .nvbtn { font-size: 20px; }
+}

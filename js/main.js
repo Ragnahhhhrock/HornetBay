@@ -179,8 +179,13 @@ let save = { qualified: false, done: {}, best: 0, kills: 0 };
 try { Object.assign(save, JSON.parse(localStorage.getItem(SAVE_KEY) || '{}')); } catch (e) {}
 function persist() { localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
 G.save = save;                                  // intro screens read unlock flags (e.g. the Tomcat)
-G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen toggles MISSION/DAY/NIGHT
-G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION/CLEAR/RAIN
+// day/night and weather are straight switches now — no MISSION DEFAULT stop.
+// Untouched, a mission keeps its authored time (e.g. the night Bear intercept);
+// the moment the pilot toggles, the choice becomes an explicit override.
+G.dayNightSel = save.dayNight === 'night' ? 'night' : 'day';   // T toggles DAY/NIGHT
+G.weatherSel = ['clouds', 'rain', 'storm'].includes(save.weather) ? save.weather : 'clear';   // R cycles CLEAR/CLOUDS/RAIN/STORM
+// migrate pre-switch saves: an old day/night pick was already an override
+if (save.dayNightForced == null) save.dayNightForced = (save.dayNight === 'day' || save.dayNight === 'night');
 
 // ---------------- menu (original 1-8 structure) ----------------
 const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13', 'm14', 'm15', 'm16'];
@@ -327,8 +332,8 @@ function buildMenu(mode = 'main') {
   addBtn('S', 'HORNET BAY STORE', '↗', () => window.open('/store', '_blank'));
   addBtn('A', 'ANALYTICS DASHBOARD', '↗', () => window.open('/analytics', '_blank'));
   addBtn('P', '3D PRINT BAY', '↗', () => window.open('/print', '_blank'));
-  addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ mission: 'MISSION DEFAULT', day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
-  addBtn('R', 'TOGGLE WEATHER', `NOW: ${{ mission: 'MISSION DEFAULT', clear: 'CLEAR', clouds: 'CLOUDS', rain: 'RAIN', storm: 'STORM' }[G.weatherSel]}`, () => cycleMenuWeather());
+  addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
+  addBtn('R', 'TOGGLE WEATHER', `NOW: ${{ clear: 'CLEAR', clouds: 'CLOUDS', rain: 'RAIN', storm: 'STORM' }[G.weatherSel]}`, () => cycleMenuWeather());
   addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
   $('pilot-record').textContent =
     `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
@@ -346,24 +351,25 @@ window.addEventListener('keydown', (e) => {
   if (btn && btn.onclick) { e.stopImmediatePropagation(); G.audio.ensure(); btn.onclick(); }
 });
 
-// T on the main menu: cycle MISSION/DAY/NIGHT — the change is applied to the
-// demo scenery behind the menu immediately and saved for the next mission
+// T on the main menu: switch DAY/NIGHT — the change is applied to the
+// demo scenery behind the menu immediately and saved as an explicit override
 function cycleMenuDayNight() {
-  G.dayNightSel = { mission: 'day', day: 'night', night: 'mission' }[G.dayNightSel] || 'mission';
+  G.dayNightSel = G.dayNightSel === 'day' ? 'night' : 'day';
   save.dayNight = G.dayNightSel;
+  save.dayNightForced = true;
   persist();
   G.audio.radioClick();
   applyMenuTimeOfDay();
   buildMenu();   // refresh the row label
 }
 function applyMenuTimeOfDay() {
-  G.world.setTimeOfDay(G.dayNightSel === 'mission' ? 'day' : G.dayNightSel);
+  G.world.setTimeOfDay(G.dayNightSel);
 }
-// R on the main menu: cycle MISSION/CLEAR/CLOUDS/RAIN/STORM — the menu
+// R on the main menu: cycle CLEAR/CLOUDS/RAIN/STORM — the menu
 // backdrop gets the weather immediately and the choice is saved
-const WX_CYCLE = { mission: 'clear', clear: 'clouds', clouds: 'rain', rain: 'storm', storm: 'mission' };
+const WX_CYCLE = { clear: 'clouds', clouds: 'rain', rain: 'storm', storm: 'clear' };
 function cycleMenuWeather() {
-  G.weatherSel = WX_CYCLE[G.weatherSel] || 'mission';
+  G.weatherSel = WX_CYCLE[G.weatherSel] || 'clear';
   save.weather = G.weatherSel;
   persist();
   G.audio.radioClick();
@@ -371,7 +377,7 @@ function cycleMenuWeather() {
   buildMenu();   // refresh the row label
 }
 function applyMenuWeather() {
-  G.world.setWeather(G.weatherSel === 'mission' ? 'clear' : G.weatherSel);
+  G.world.setWeather(G.weatherSel);
 }
 
 function showMenu() {
@@ -488,12 +494,12 @@ window.addEventListener('keydown', (e) => {
   if (e.code === 'Backquote' && G.state === 'flying' && !G.player.dead) { openWingOrders(); return; }
   if (G.state === 'planesel') {
     if (e.code === 'KeyT') {
-      G.dayNightSel = G.dayNightSel === 'mission' ? 'day' : G.dayNightSel === 'day' ? 'night' : 'mission';
-      save.dayNight = G.dayNightSel; persist();
+      G.dayNightSel = G.dayNightSel === 'day' ? 'night' : 'day';
+      save.dayNight = G.dayNightSel; save.dayNightForced = true; persist();
       G.audio.radioClick();
     }
     else if (e.code === 'KeyR') {
-      G.weatherSel = WX_CYCLE[G.weatherSel] || 'mission';
+      G.weatherSel = WX_CYCLE[G.weatherSel] || 'clear';
       save.weather = G.weatherSel; persist();
       G.audio.radioClick();
     }
@@ -620,11 +626,11 @@ function launchMission(def, opts = {}) {
   G.world.setTimeOfDay(def.time || 'day');
   G.mission = Object.assign({}, def);
   G.mission.setup(G);
-  // day/night selection from the plane-select screen (overrides the authored time)
-  if (G.dayNightSel === 'day') G.world.setTimeOfDay('day');
-  else if (G.dayNightSel === 'night') G.world.setTimeOfDay('night');
+  // day/night: the authored time stands unless the pilot explicitly switched
+  // (no more MISSION DEFAULT stop — DAY or NIGHT is an override once toggled)
+  if (save.dayNightForced) G.world.setTimeOfDay(G.dayNightSel);
   // weather selection from the menu (missions are authored clear)
-  G.world.setWeather(G.weatherSel === 'mission' ? 'clear' : G.weatherSel);
+  G.world.setWeather(G.weatherSel || 'clear');
   scriptT = 0; runScript._gear = false;
   runScript._init = runScript._through = runScript._joined = runScript._bogey = false;
   runScript._phase = 0; runScript._pt = 0;
@@ -1947,7 +1953,7 @@ function routeHash() {
   else if (h === 'gallery') { setHash('gallery'); $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter(); }
   else if (h === 'manual') G.openManual();
   else if (h === 'resume') { if (G._menuResume) resumeFlight(); }
-  else if (h === 'day' || h === 'night') { G.dayNightSel = h; save.dayNight = h; persist(); applyMenuTimeOfDay(); buildMenu('main'); }
+  else if (h === 'day' || h === 'night') { G.dayNightSel = h; save.dayNight = h; save.dayNightForced = true; persist(); applyMenuTimeOfDay(); buildMenu('main'); }
   else if (['clear', 'clouds', 'rain', 'storm'].includes(h)) { G.weatherSel = h; save.weather = h; persist(); applyMenuWeather(); buildMenu('main'); }
   else if (['blog', 'store', 'analytics', 'print'].includes(h)) location.href = '/' + h;
 }
@@ -1957,12 +1963,12 @@ const params = new URLSearchParams(location.search);
 FIXDT = parseFloat(params.get('fixdt') || '0');
 SCRIPT = params.get('script');
 if (params.get('wlog')) window.__wlog = [];   // warp instrumentation hook
-if (params.get('night')) G.dayNightSel = 'night';   // test hook: force night
+if (params.get('night')) { G.dayNightSel = 'night'; save.dayNightForced = true; }   // test hook: force night
 if (params.get('rain')) G.weatherSel = 'rain';      // test hook: force rain
 if (params.get('storm')) G.weatherSel = 'storm';    // test hook: force storm
 if (params.get('clouds')) G.weatherSel = 'clouds';  // test hook: force clouds
 if (params.get('clean')) G.cleanShot = true;        // test hook: HUD-free captures
-if (params.get('day')) G.dayNightSel = 'day';
+if (params.get('day')) { G.dayNightSel = 'day'; save.dayNightForced = true; }
 showMenu();
 const auto = params.get('auto');
 const viewP = params.get('view');

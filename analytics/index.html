@@ -118,6 +118,7 @@
   .note b { color: var(--ink); }
   .zero { color: var(--ink-dim); }
 </style>
+  <link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
 <div class="wrap">
@@ -127,10 +128,22 @@
     <div class="logbrand">ANALYTICS DASHBOARD</div>
     <div class="sub">Every sortie this browser has flown, counted. The same events stream to Google Analytics for the fleet-wide picture.</div>
     <div class="backrow">
-      <a href="/">&larr; BACK TO THE COCKPIT</a>
-      <span><a href="/blog">FLIGHT LOG</a> &middot; <a href="/store">STORE</a> &middot; <a href="/assets">ASSETS</a> &middot; <a href="/print">3D PRINT BAY</a></span>
+      <span></span>
+      <span><a href="/store">STORE</a> &middot; <a href="/assets">ASSETS</a> &middot; <a href="/print">3D PRINT BAY</a></span>
     </div>
-  </header>
+  <!--SITENAV-->
+  <nav class="sitenav" aria-label="Site">
+    <span class="nv">
+      <a class="nvbtn" href="/">&larr; BACK TO THE COCKPIT</a>
+      <span class="nvcap">(MAIN MENU)</span>
+    </span>
+    <span class="nv">
+      <a class="nvbtn" href="https://hornetbay.com/blog/">RETURN TO BASE</a>
+      <span class="nvcap">(Newest Post)</span>
+    </span>
+  </nav>
+  <!--/SITENAV-->
+</header>
 
   <h2>SORTIE RECORD</h2>
   <div class="grid">

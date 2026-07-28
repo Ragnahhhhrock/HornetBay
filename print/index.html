@@ -91,6 +91,7 @@
   #checkout { width: 100%; margin-top: 16px; background: var(--amber); color: #201400; border: 0; font: inherit; font-weight: 700; letter-spacing: 1px; padding: 11px; border-radius: 3px; cursor: pointer; }
   footer { max-width: 1060px; margin: 40px auto 0; padding-top: 14px; border-top: 1px solid var(--line); color: var(--ink-dim); font-size: 12px; }
 </style>
+  <link rel="stylesheet" href="/css/site.css">
 </head>
 <body>
 <header>
@@ -99,9 +100,21 @@
   <div class="logbrand">3D PRINT BAY &mdash; THE FLEET, ON YOUR DESK</div>
   <p class="blurb">Every aircraft and ship in the sim, exported straight from the game code as printable STL files &mdash; gear up, weapons off, sliced and ready. Instant download after checkout. New to printing? Take the free crabber first and test your bed.</p>
   <div class="backrow">
-    <a href="/">&larr; BACK TO THE COCKPIT</a>
-    <span><a href="/blog">FLIGHT LOG</a> &middot; <a href="/store">HORNET BAY STORE</a> &middot; <a href="/assets">WALLPAPERS &amp; ASSETS</a></span>
+    <span></span>
+    <span><a href="/store">HORNET BAY STORE</a> &middot; <a href="/assets">WALLPAPERS &amp; ASSETS</a></span>
   </div>
+  <!--SITENAV-->
+  <nav class="sitenav" aria-label="Site">
+    <span class="nv">
+      <a class="nvbtn" href="/">&larr; BACK TO THE COCKPIT</a>
+      <span class="nvcap">(MAIN MENU)</span>
+    </span>
+    <span class="nv">
+      <a class="nvbtn" href="https://hornetbay.com/blog/">RETURN TO BASE</a>
+      <span class="nvcap">(Newest Post)</span>
+    </span>
+  </nav>
+  <!--/SITENAV-->
 </header>
 <main>
   <div id="notice"></div>

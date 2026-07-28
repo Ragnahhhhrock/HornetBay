@@ -128,7 +128,7 @@ export class Intro {
       const planeOpts = (this.carrierStart
         ? '1 ..... F/A-18 HORNET'
         : '1 ..... F/A-18 HORNET     2 ..... F-16 FALCON     4 ..... F-15 EAGLE     5 ..... A-10 WARTHOG') + `     ${tomcat}`;
-      c.fillText(`SELECT:  ${planeOpts}     T ..... TIME: ${(this.G.dayNightSel || 'mission').toUpperCase()}     R ..... WX: ${(this.G.weatherSel || 'mission').toUpperCase()}`, w / 2, h - 8);
+      c.fillText(`SELECT:  ${planeOpts}     T ..... TIME: ${(this.G.dayNightSel || 'day').toUpperCase()}     R ..... WX: ${(this.G.weatherSel || 'clear').toUpperCase()}`, w / 2, h - 8);
       if (this.carrierStart) {
         c.font = `bold 13px "Courier New", monospace`;
         c.fillStyle = '#9ab';
