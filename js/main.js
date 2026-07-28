@@ -167,6 +167,7 @@ G.gallery.onGrid = () => setHash('gallery');
 
 // world is heavy — build lazily on first load but before menu demo
 G.world = new World(scene);
+G.world.G = G;   // the deck crew reads the game through the world
 G.fx = new FXPool(scene);
 G.player = new Player(scene, G.world);
 G.player.isPlayer = true;
@@ -182,7 +183,7 @@ G.dayNightSel = save.dayNight || 'mission';     // T on the plane-select screen 
 G.weatherSel = save.weather || 'mission';       // R on the menu toggles MISSION/CLEAR/RAIN
 
 // ---------------- menu (original 1-8 structure) ----------------
-const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13', 'm14', 'm15'];
+const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13', 'm14', 'm15', 'm16'];
 let menuMode = 'main';
 // every menu screen carries a URL stub (#missions, #gallery, #m1 …) so any
 // item is a shareable link. setHash stays silent until the boot router has
@@ -1248,7 +1249,9 @@ function handleDiscreteInput(dt) {
   }
   // J — spectate: ride along with every other aircraft in the area, in turn.
   // airliners, MiGs, the defector, the wingman — everything on the scope.
-  if (I.pressed('KeyJ')) {
+  // J rides the next contact, SHIFT+J rides back to the previous one —
+  // same ring, both directions, your own cockpit at the seam
+  const cycleSpectate = (dir) => {
     // every rideable contact: bandits, traffic, and every hull in the bay —
     // nearest first, your own cockpit at the end of the cycle
     if (G.world && G.world.carrier && !G._carrierSpec) {
@@ -1269,12 +1272,14 @@ function handleDiscreteInput(dt) {
     ].sort((a, b) => a.pos.distanceTo(P.pos) - b.pos.distanceTo(P.pos));
     if (!others.length) { G.specTarget = null; G.msg('NO CONTACTS IN THE AREA', 'info'); }
     else {
-      const n = (others.indexOf(G.specTarget) + 1) % (others.length + 1);
+      const ring = others.length + 1;                       // contacts + your own cockpit
+      const n = (others.indexOf(G.specTarget) + dir + ring) % ring;
       G.specTarget = n === others.length ? null : others[n];
       if (!G.specTarget) G.specOrbit = null;   // back in your own cockpit — orbit resets
-      G.msg(G.specTarget ? 'SPECTATING \u2014 ' + (G.specTarget.name || G.specTarget.vtype || G.specTarget.type || 'CONTACT').toUpperCase() + '  (J FOR NEXT)' : 'BACK IN YOUR OWN COCKPIT', 'info');
+      G.msg(G.specTarget ? 'SPECTATING \u2014 ' + (G.specTarget.name || G.specTarget.vtype || G.specTarget.type || 'CONTACT').toUpperCase() + '  (J NEXT · SHIFT+J PREV)' : 'BACK IN YOUR OWN COCKPIT', 'info');
     }
-  }
+  };
+  if (I.pressed('KeyJ')) cycleSpectate((I.down('ShiftLeft') || I.down('ShiftRight')) ? -1 : 1);
   // O — missile view: ride the newest round in flight, with the full spectate
   // camera (SHIFT+arrows / right-drag pan, wheel / [ ] zoom, 0 reframe). O
   // again cycles the rounds in the air, then hands you back your cockpit.
@@ -1901,7 +1906,7 @@ function routeHash() {
   if (!atMenu) return;   // mid-sortie: don't yank the controls for a link click
   if (h === 'freeflight') startFreeFlightMap();
   else if (h === 'missions') buildMenu('missions');
-  else if (/^m([1-9]|1[0-5])$/.test(h)) {
+  else if (/^m([1-9]|1[0-6])$/.test(h)) {
     // deep links respect the school gate and the campaign chain
     const i = MISSION_ORDER.indexOf(h);
     if (!schoolGrad() || (i > 0 && !save.done[MISSION_ORDER[i - 1]])) buildMenu('missions');

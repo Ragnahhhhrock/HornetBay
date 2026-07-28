@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { clamp, lerp, fbm, noise2, rand } from './util.js';
 import { Ships } from './ships.js';
+import { DeckCrew } from './crew.js';
 
 const _gloomCol = new THREE.Color(0.32, 0.34, 0.38);   // overcast gray for rainy weather
 const _flashCol = new THREE.Color(0.82, 0.87, 1.0);   // lightning: cold blue-white sky flash
@@ -1392,6 +1393,7 @@ export class Carrier {
     this.deckY = 19.4; this.deckHalfLen = 166; this.deckHalfWid = 38;
     this.submerged = false; this.submergeT = 0;
     this._build(isSub);
+    if (!isSub) this.crew = new DeckCrew(this);   // the colored shirts work the flight deck
     this.group.position.copy(pos);
     this.group.rotation.y = Math.PI - heading;
     world.scene.add(this.group);
@@ -1756,6 +1758,7 @@ export class Carrier {
         j.piv.rotation.x = -Math.PI / 2 + j.ang * (Math.PI / 2 - 0.58);
       }
     }
+    if (this.crew && this.world.G) this.crew.update(dt, this.world.G);
   }
   submerge() { this.submerged = true; }
   // drive the meatball from the player's position on approach: the ball shows

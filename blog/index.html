@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>HORNET BAY — Blog</title>
+<title>HORNET BAY — Flight Log</title>
 <meta name="description" content="Hornet Bay development journal: every new feature, logged with a screenshot.">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
@@ -44,6 +44,10 @@
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
+  .logbrand { font-size: 24px; font-weight: bold; letter-spacing: 6px; color: var(--amber); margin-top: 6px; text-shadow: 0 0 10px #7a3800; }
+  h1.rtb { margin: 20px 0 8px; font-size: 24px; letter-spacing: 4px; }
+  h1.rtb a { display: inline-block; padding: 12px 26px; border: 1px solid var(--line); background: var(--card); color: #fff; }
+  h1.rtb a:hover { color: var(--amber); border-color: var(--amber); text-shadow: 0 0 8px #7a3800; }
   .kicker {
     margin-top: 6px; font-size: 12px; letter-spacing: 4px; color: var(--amber);
     text-shadow: 0 0 10px #7a3800;
@@ -140,6 +144,45 @@
   "url": "https://hornetbay.com/blog",
   "description": "Every new feature in the Hornet Bay rebuild, logged with a screenshot.",
   "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "The blog is the Flight Log now PENDING",
+      "datePublished": "2026-07-28",
+      "url": "https://hornetbay.com/blog/flight-log",
+      "wordCount": 57,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/flight-log.jpg"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "M16 SAR COVER: nothing touches the Angel PENDING",
+      "datePublished": "2026-07-28",
+      "url": "https://hornetbay.com/blog/sar-cover",
+      "wordCount": 47,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/sar-cover.jpg"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "Colored shirts on the roof: the deck crew comes to work PENDING",
+      "datePublished": "2026-07-28",
+      "url": "https://hornetbay.com/blog/colored-shirts",
+      "wordCount": 26,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/colored-shirts.jpg"
+    },
     {
       "@type": "BlogPosting",
       "headline": "The journal grows rails: paging at the top, a bigger search, tags on the right 2d51c42",
@@ -1689,14 +1732,44 @@
 <body class="home">
 <header>
   <div class="brand">HORNET <span>BAY</span></div>
-  <div class="kicker">BLOG</div>
+  <div class="logbrand">FLIGHT LOG</div>
   <p class="blurb">Every new feature, logged as it ships &mdash; with a screenshot straight out of the game. Newest first.</p>
-  <a class="rss-link" href="rss.xml" title="Subscribe to the dev journal">&#9673; RSS</a>
+  <a class="rss-link" href="rss.xml" title="Subscribe to the flight log">&#9673; RSS</a>
   <a class="back" href="/">&larr; BACK TO THE COCKPIT</a>
+  <h1 class="rtb"><a href="https://hornetbay.com/blog/">RETURN TO BASE</a></h1>
 </header>
 <main>
 <div id="blog-cols">
 <div id="blog-main">
+  <article id="flight-log">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span></div>
+    <h2><a class="title-link" href="/blog/flight-log">The blog is the Flight Log now</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/flight-log.jpg"><img src="/shots/flight-log.jpg" alt="The renamed Flight Log header with the large amber title and the RETURN TO BASE block link" loading="lazy"></a>
+    <p>A name that fits: a carrier squadron keeps a flight log, and so do we. The blog is now the <b>FLIGHT LOG</b> &mdash; big amber letters under the Hornet Bay brand, and a large <b>RETURN TO BASE</b> block in the header that always takes you home to <a href="https://hornetbay.com/blog/">hornetbay.com/blog</a>. Same entries, same RSS, new stencil on the door.</p>
+  </article>
+  <article id="sar-cover">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/missions">MISSIONS</a></span></div>
+    <h2><a class="title-link" href="/blog/sar-cover">M16 SAR COVER: nothing touches the Angel</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/sar-cover.jpg"><img src="/shots/sar-cover.jpg" alt="The SH-60 Angel hovering dead low over the orange life raft, smoke rising, while bandits are splashed off her" loading="lazy"></a>
+    <p>Viper Three is in the water twenty-five miles west, alive and smoking, and two bandit patrols are being vectored to make sure he stays there. The rescue helo goes in anyway &mdash; <b>your job is written on every SAR briefing board ever chalked: nothing touches the helo.</b></p>
+    <ol>
+      <li><b>The Angel flies the whole profile.</b> Off the deck, seventy-five knots at sixty feet, out to the smoke &mdash; then two minutes hovering dead still at eighteen feet while the hoist does its work, then the long low run home. She does not evade, she does not climb, she cannot afford to.</li>
+      <li><b>Two bandit waves hunt her.</b> The first pair vectors in on the transit; a three-ship comes for her during the hoist, when she is slowest and lowest. Rated-65 pilots &mdash; veterans, cleared for the whole maneuver library.</li>
+      <li><b>Lose the Angel and the sortie is over.</b> Bring her feet dry with Viper Three in the cabin and the debrief writes itself: <i>that was the whole job &mdash; and you did it.</i></li>
+    </ol>
+  </article>
+  <article id="colored-shirts">
+    <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/carrier">CARRIER</a></span></div>
+    <h2><a class="title-link" href="/blog/colored-shirts">Colored shirts on the roof: the deck crew comes to work</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/colored-shirts.jpg"><img src="/shots/colored-shirts.jpg" alt="The Enterprise flight deck from above with yellow, green, red and blue shirt crew figures around the catapults and JBDs" loading="lazy"></a>
+    <p>The flight deck has crew now &mdash; eleven handlers in the proper Navy colors, and they work the whole cycle exactly as their real counterparts do:</p>
+    <ol>
+      <li><b>Yellow shirts direct.</b> A director marshals the air wing up the cat-2 lane with the come-ahead wave, wands crossing overhead when it&rsquo;s time to hold. The recovery director waves trap survivors toward the parking row the same way &mdash; including you, after your own wire.</li>
+      <li><b>The shooter shoots.</b> Kneel on one knee beside the shuttle, one arm pointed down the track &mdash; your cat-1 shooter drops into the pose the moment you come to military power, and the cat-2 shooter does it for every air-wing launch.</li>
+      <li><b>The right colors in the right places.</b> Green shirts stand by their JBDs, blue handlers crouch on the tie-down chains along the port row, ordnance reds wait by the island, and the brown plane captain and purple fuel crew hold the bow spots.</li>
+    </ol>
+    <p>Also in this build: <b>SHIFT+J rides the spectate ring backwards</b> &mdash; J steps forward through every contact in the area, SHIFT+J steps back to the previous one.</p>
+  </article>
   <article id="journal-rails">
     <div class="meta"><time datetime="2026-07-28">2026-07-28</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a></span></div>
     <h2><a class="title-link" href="/blog/journal-rails">The journal grows rails: paging at the top, a bigger search, tags on the right</a> <span class="hash">2d51c42</span></h2>
@@ -2383,7 +2456,7 @@
     </ol>
     <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
   </article>
-<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-70">FEATURE&nbsp;&middot;&nbsp;70</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-18">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-18">SITE&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-15">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-6">CARRIER&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-4">MISSIONS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-3">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-3">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
+<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-72">FEATURE&nbsp;&middot;&nbsp;72</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-19">SITE&nbsp;&middot;&nbsp;19</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-18">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-15">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-8">BRAND&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-7">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-5">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-3">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-3">GRAPHICS&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-3">SIM&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-2">UX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
   <article id="time-acceleration">
     <div class="meta"><time datetime="2026-07-26">2026-07-26</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a></span></div>
     <h2><a class="title-link" href="/blog/time-acceleration">Time acceleration: 2x, 4x, 8x</a> <span class="hash">885dc92</span></h2>

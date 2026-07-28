@@ -1855,6 +1855,104 @@ export const MISSIONS = [
       || c.pos;
   },
 },
+// ------------------------------------------------ M16 SAR COVER
+{
+  id: 'm16', num: 16, title: 'SAR COVER', code: 'NOVEMBER 15, 1994 — 0845 HRS',
+  time: 'day', planeChoice: true,
+  brief: [
+    'AIR BOSS — FLASH TASKING', '',
+    'VIPER THREE IS IN THE WATER, TWENTY-FIVE',
+    'MILES WEST. ALIVE, MARKING WITH SMOKE,',
+    'AND NOT ALONE OUT THERE: TWO BANDIT',
+    'PATROLS ARE BEING VECTORED TO MAKE SURE',
+    'HE NEVER COMES HOME.', '',
+    'THE ANGEL IS ON THE DECK AND TURNING.',
+    'SHE GOES IN ALONE — SLOW, LOW, AND',
+    'HOVERING DEAD STILL FOR TWO MINUTES',
+    'WHILE THE HOIST DOES ITS WORK.', '',
+    'YOUR JOB IS WRITTEN ON EVERY SAR', 
+    'BRIEFING BOARD EVER CHALKED:', '',
+    'NOTHING TOUCHES THE HELO.',
+  ],
+  briefing: 'Fly cover for the rescue helo. Nothing touches her.',
+  loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — TOP COVER',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    this.t = 0;
+    const c = G.world.carrier;
+    // the pilot is in the water twenty-five miles west
+    this.raftPos = c.pos.clone().add(V(-46000, 1, -6000));
+    this.raft = G.spawnAI('raft', { pos: this.raftPos.clone(), speed: 0, name: 'VIPER THREE', label: 'RAFT', mode: 'straight', noEvade: true, hp: 9999, surface: true });
+    this.raft.kind = 'raft'; this.raft.targetSpeed = 0; this.raft.speed = 0;
+    // the Angel lifts off the deck and runs the transit low
+    this.angel = G.spawnAI('seahawk', {
+      pos: c.pos.clone().add(V(-800, 80, -300)), heading: Math.atan2(-46000 + 800, 6000 + 300), speed: 70,
+      name: 'ANGEL 01', label: 'SH-60', mode: 'straight', noEvade: true, hp: 160,
+    });
+    this.angel.kind = 'wingman'; this.angel.identified = true; this.angel.targetSpeed = 75;
+    this.phase = 'outbound';      // outbound → hoist → inbound → home
+    this.hoistT = 0; this.wave1 = false; this.wave2 = false; this.smokeT = 0; this._wv = [];
+    G.waypoint = this.raftPos;
+    G.radio('ANGEL 01: OFF THE DECK AND FEET WET. TWENTY-FIVE MILES, VIPER — KEEP THE SKY CLEAN FOR US.');
+    G.radio('RESCUE COORD: VIPER THREE IS ALIVE AND SMOKING. TWO BANDIT PATROLS PAINTED, CLOSING HIM.');
+  },
+  _wave(G, n, dist) {
+    const a = this.angel;
+    for (let i = 0; i < n; i++) {
+      const ang = rand(0, Math.PI * 2);
+      const b = G.spawnAI('mig29', {
+        pos: a.pos.clone().add(V(Math.cos(ang) * dist, 2500 + i * 800, Math.sin(ang) * dist)),
+        heading: a.heading + Math.PI, speed: 260, hostile: true, name: 'MIG-29', label: 'MIG-29',
+        mode: 'attack', target: a, skill: skillFor(PILOT_RATING.m16), agility: agilityFor(PILOT_RATING.m16),
+      });
+      b.kind = 'bandit'; b.identified = true; b.fireCooldown = rand(8, 14);
+      this._wv.push(b);
+    }
+    G.msg('BANDITS VECTORING ON THE ANGEL', 'bad');
+    G.radio('ANGEL 01: SPIKED! WE HAVE COMPANY COMING — VIPER, WE NEED YOU NOW!');
+  },
+  update(G, dt) {
+    this.t += dt;
+    const a = this.angel, c = G.world.carrier;
+    // orange smoke keeps the raft marked
+    this.smokeT -= dt;
+    if (this.smokeT <= 0 && this.phase !== 'home') { this.smokeT = 0.25; G.fx.smoke(this.raftPos.clone().add(V(0, 2, 0)), 2.5, 4, 0xff6a20); }
+    // the Angel is the mission — lose her and it's over
+    if (a.dead) {
+      G.failMission('ANGEL DOWN', 'THE RESCUE HELO WENT INTO THE SEA WITH HER\nCREW. NOW THERE ARE TWO PILOTS IN THE WATER\n— AND NOBODY COMING FOR EITHER OF THEM.');
+      return;
+    }
+    // scripted rescue: transit, hover, bring him home
+    if (this.phase === 'outbound') {
+      const d = this.raftPos.clone().sub(a.pos);
+      a.heading = Math.atan2(d.x, -d.z); a.targetSpeed = 75;
+      a.pos.y += (60 - a.pos.y) * Math.min(1, dt * 0.5);
+      if (!this.wave1 && d.length() < 30000) { this.wave1 = true; this._wave(G, 2, 26000); }
+      if (Math.hypot(d.x, d.z) < 400) { this.phase = 'hoist'; this.hoistT = 110; a.targetSpeed = 0;
+        G.radio('ANGEL 01: OVER THE SURVIVOR — HOIST GOING DOWN. TWO MINUTES, KEEP THEM OFF US.'); }
+    } else if (this.phase === 'hoist') {
+      a.targetSpeed = 0;
+      a.pos.x += (this.raftPos.x - a.pos.x) * dt; a.pos.z += (this.raftPos.z - a.pos.z) * dt;
+      a.pos.y += (18 - a.pos.y) * Math.min(1, dt * 0.8);
+      this.hoistT -= dt;
+      if (!this.wave2 && this.hoistT < 70) { this.wave2 = true; this._wave(G, 3, 30000); }
+      if (this.hoistT <= 0) { this.phase = 'inbound'; G.addScore(2000);
+        G.msg('PILOT RECOVERED — COVER THE ANGEL HOME', 'good');
+        G.radio('ANGEL 01: WE HAVE HIM! VIPER THREE IS ABOARD — COMING HOME, WATCH OUR SIX.'); }
+    } else if (this.phase === 'inbound') {
+      const d = c.pos.clone().sub(a.pos);
+      a.heading = Math.atan2(d.x, -d.z); a.targetSpeed = 75;
+      a.pos.y += (80 - a.pos.y) * Math.min(1, dt * 0.5);
+      if (Math.hypot(d.x, d.z) < 2500) {
+        this.phase = 'home';
+        G.addScore(2500);
+        G.completeMission('MISSION COMPLETE', 'THE ANGEL IS FEET DRY WITH VIPER THREE\nIN THE CABIN.\n\nNOTHING TOUCHED HER. THAT WAS THE WHOLE\nJOB — AND YOU DID IT.\n\nSCORE +4500 + KILL BONUSES');
+        return;
+      }
+    }
+    G.waypoint = this.phase === 'outbound' || this.phase === 'hoist' ? this.raftPos : a.pos;
+  },
+},
 // ------------------------------------------------ FREE FLIGHT
 {
   id: 'free', num: 99, title: 'FREE FLIGHT', code: 'NO ENEMY ACTIVITY',
@@ -1887,7 +1985,7 @@ export const MISSIONS = [
 export const DIFFICULTY = {
   m1: 20, m2: 25, m3: 40, m4: 45, m5: 60, m6: 45, m7: 60,
   m8: 25, m9: 70, m10: 95, m11: 65, m12: 55, m13: 50,
-  m14: 80, m15: 95,
+  m14: 80, m15: 95, m16: 70,
 };
 
 // what the sortie actually asks of you — type and maneuver tags, shown as
@@ -1908,6 +2006,7 @@ export const MISSION_TAGS = {
   m13: ['CARRIER LAUNCH', 'SWEEP', 'DOGFIGHT'],          // four bandits between you and even
   m14: ['CARRIER LAUNCH', 'INTERCEPT', 'FLEET DEFENSE'],   // run down the missile carrier
   m15: ['CARRIER LAUNCH', 'INTERCEPT', 'EXPERT'],          // the whole regiment, two axes
+  m16: ['CARRIER LAUNCH', 'ESCORT', 'DOGFIGHT'],           // nothing touches the Angel
 };
 
 // one-line hooks under the chips — the pitch that makes you press the key
@@ -1927,6 +2026,7 @@ export const MISSION_HOOKS = {
   m13: 'They killed your wingman. Four bandits between you and even. You know what to do.',
   m14: 'A Bear-H is running at the fleet with two Kitchens on the rails. Kill the archer before the arrows fly.',
   m15: 'Two Bears, four Flankers, eight killers on two axes. The final exam — pass it and become legend.',
+  m16: 'A pilot is in the water and the Angel is going in alone. Slow, low, and hovering dead still — nothing touches her.',
 };
 
 // flight school display data — the same board treatment as the campaign
@@ -1969,6 +2069,7 @@ export const PILOT_RATING = {
   m13: 70,   // the pilots who killed your wingman
   m14: 75,   // Bear escort veterans
   m15: 92,   // legends — the regiment's demonstration team
+  m16: 65,   // vectored onto a hovering helo
   t6: 55,    // your aggressor instructor: rated, but fair
 };
 // rating -> the AI's skill/agility (aces unlock the full maneuver library
