@@ -220,8 +220,14 @@ function buildMenu(mode = 'main') {
     else b.classList.add('locked');
     list.appendChild(b);
   };
+  // every sub-menu: RETURN TO MAIN MENU pinned to the top of the list
+  const addTopReturn = () => {
+    addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
+    list.lastChild.classList.add('mtop');
+  };
   if (mode === 'missions') {
     $('menu-title').textContent = 'SELECTABLE MISSIONS';
+    addTopReturn();
     // the fleet does not send students to war: the campaign board stays
     // locked until every flight school sortie is in the logbook
     const grad = schoolGrad();
@@ -250,6 +256,8 @@ function buildMenu(mode = 'main') {
   // open to every pilot from the first day, no campaign progress required
   if (mode === 'school') {
     $('menu-title').textContent = 'FLIGHT SCHOOL';
+    // a way back to the barn right at the top of the syllabus, before the courses
+    addTopReturn();
     const addHead = (text, sub) => {
       const d = document.createElement('div');
       d.className = sub ? 'msub' : 'mhead';
@@ -279,6 +287,7 @@ function buildMenu(mode = 'main') {
   }
   if (mode === 'log') {
     $('menu-title').textContent = 'YOUR CURRENT FLIGHT LOG STATISTICS';
+    addTopReturn();
     const done = MISSION_ORDER.filter(id => save.done[id]).length;
     for (const ln of [
       `CALLSIGN ......... ${save.callsign || 'ROOKIE'}`,
@@ -299,6 +308,11 @@ function buildMenu(mode = 'main') {
   }
   $('menu-title').textContent = '';   // main mode: the logo block above says it
   if (G._menuResume) addBtn('Q', 'RESUME FLIGHT', 'BACK IN THE COCKPIT', () => resumeFlight());
+  // bailed out of a brief with ESC: one button (or M) returns to that mission's brief
+  if (G._backToMission && !G._menuResume) {
+    const bdef = MISSIONS.find(m => m.id === G._backToMission);
+    if (bdef) addBtn('M', 'BACK TO MISSION', bdef.title, () => startBriefing(bdef.id));
+  }
   addBtn('1', 'FLIGHT SCHOOL', 'BASIC · ADVANCED · COMBAT', () => buildMenu('school'));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
   addBtn('6', 'MISSIONS', schoolGrad() ? '' : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
@@ -323,7 +337,7 @@ function buildMenu(mode = 'main') {
 window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : e.code === 'KeyP' ? 'P' : null;
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : e.code === 'KeyP' ? 'P' : e.code === 'KeyM' ? 'M' : null;
   if (!d) return;
   const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
   // swallow the keypress whole: the button click may change G.state (menu ->
@@ -380,6 +394,9 @@ let pendingMission = null;
 function startBriefing(id) {
   const def = MISSIONS.find(m => m.id === id);
   pendingMission = def;
+  // remember the way back: bailing out of the brief (ESC) leaves a BACK TO
+  // MISSION button on the main menu until the sortie actually launches
+  G._backToMission = id;
   setHash(id);
   $('menu').classList.add('hidden');
   stopDemo();
@@ -556,6 +573,7 @@ function launchMission(def, opts = {}) {
   stats.flushGA();   // report anything left pending from the previous sortie
   if (def.id !== 'free') stats.missionFlown(def.id);
   G._menuResume = false;   // a fresh sortie replaces the one the menu remembered
+  G._backToMission = null;   // and the brief is behind us — no way-back button for it
   wakeLockTry();   // keep the screen awake for the sortie
   // safety net: noBoat types never go to the boat, whatever path got us here
   if (PLANES[G.player.type] && PLANES[G.player.type].noBoat) {
