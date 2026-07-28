@@ -232,18 +232,24 @@ function buildMenu(mode = 'main') {
   // open to every pilot from the first day, no campaign progress required
   if (mode === 'school') {
     $('menu-title').textContent = 'FLIGHT SCHOOL';
-    const addHead = (text) => {
+    const SCHOOL_ORDER = ['t1', 't2', 't3', 't4', 't5', 't6'];
+    const addHead = (text, sub) => {
       const d = document.createElement('div');
-      d.className = 'mhead';
+      d.className = sub ? 'msub' : 'mhead';
       d.textContent = text;
       $('menu-list').appendChild(d);
     };
+    addHead('EARN YOUR WINGS — COMPLETE EACH SORTIE TO UNLOCK THE NEXT', true);
     const row = (key, id) => {
       const def = MISSIONS.find(m => m.id === id);
+      // progressive syllabus: each sortie passed chalks the lock off the next
+      const i = SCHOOL_ORDER.indexOf(id);
+      const locked = i > 0 && !save.done[SCHOOL_ORDER[i - 1]];
       const diff = `<span class="diff d-${(DIFFICULTY[id] || 'EASY').toLowerCase()}">${DIFFICULTY[id] || 'EASY'}</span>`;
       const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
       const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
-      addBtn(key, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      if (locked) addBtn(key, def.title + diff + chips + hook, 'LOCKED', null);
+      else addBtn(key, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
     };
     addHead('BASIC FLIGHT MANEUVERS');
     row('1', 't1'); row('2', 't2');
@@ -1881,7 +1887,12 @@ function routeHash() {
   else if (h === 'log') buildMenu('log');
   else if (h === 'school') buildMenu('school');
   else if (h === 'qual') startBriefing('t1');          // legacy link — the old qual is school T-1 now
-  else if (/^t[1-6]$/.test(h)) startBriefing(h);       // school sorties are never gated
+  else if (/^t[1-6]$/.test(h)) {
+    // deep links honour the syllabus too — locked sortie links land on the board
+    const order = ['t1', 't2', 't3', 't4', 't5', 't6'], i = order.indexOf(h);
+    if (i > 0 && !save.done[order[i - 1]]) buildMenu('school');
+    else startBriefing(h);
+  }
   else if (h.startsWith('gallery/')) {
     const type = h.slice(8);
     $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter();

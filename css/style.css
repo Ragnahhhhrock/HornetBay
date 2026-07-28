@@ -86,7 +86,7 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
 .mbtn.locked .hook { color:#5a6b80; }
 /* course headers inside the flight-school board */
 .mhead { color:#ffb437; font-size:12px; letter-spacing:3px; margin:16px 0 6px 2px; }
-.mhead:first-child { margin-top:2px; }
+.msub { color:#6e84a3; font-size:10px; letter-spacing:2px; margin:2px 0 10px 2px; }
 .mbtn.center { text-align:center; }
 .menu-footer { margin-top:10px; text-align:center; z-index:1; }
 #pilot-record { font-size:12px; color:#7fa8d8; letter-spacing:1px; margin-bottom:10px; }
