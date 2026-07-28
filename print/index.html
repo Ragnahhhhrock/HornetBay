@@ -47,13 +47,14 @@
   body { background: #070b18; color: var(--ink); font-family: "Courier New", ui-monospace, monospace; line-height: 1.55; padding: 0 16px 90px; }
   a { color: var(--link); text-decoration: none; }
   a:hover { color: var(--amber); }
-  header { max-width: 1060px; margin: 0 auto; padding: 36px 0 8px; border-bottom: 2px solid var(--line); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+  header { max-width: 1120px; margin: 0 auto; padding: 28px 0 12px; border-bottom: 2px solid var(--line); display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 18px; }
+  .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
-  .kicker { width: 100%; font-size: 12px; letter-spacing: 4px; color: var(--amber); text-shadow: 0 0 10px #7a3800; }
+  .logbrand { width: 100%; font-size: 24px; font-weight: bold; letter-spacing: 6px; color: var(--amber); margin-top: 6px; text-shadow: 0 0 10px #7a3800; }
   .blurb { width: 100%; margin: 10px 0 8px; font-size: 13px; color: var(--ink-dim); max-width: 820px; }
-  .backrow { width: 100%; display: flex; justify-content: space-between; padding: 6px 0 10px; font-size: 13px; }
-  main { max-width: 1060px; margin: 0 auto; }
+  .backrow { width: 100%; display: flex; justify-content: space-between; padding: 6px 0 10px; font-size: 12px; letter-spacing: 2px; }
+  main { max-width: 1120px; margin: 0 auto; }
   .chips { display: flex; gap: 8px; flex-wrap: wrap; margin: 18px 0 16px; }
   .chip { background: none; border: 1px solid var(--line); color: var(--ink-dim); font: inherit; font-size: 12px; letter-spacing: 2px; padding: 4px 12px; border-radius: 3px; cursor: pointer; }
   .chip.on { color: var(--amber); border-color: #7a5a20; }
@@ -93,12 +94,13 @@
 </head>
 <body>
 <header>
+  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
   <div class="brand">HORNET <span>BAY</span></div>
-  <div class="kicker">3D PRINT BAY &mdash; THE FLEET, ON YOUR DESK</div>
+  <div class="logbrand">3D PRINT BAY &mdash; THE FLEET, ON YOUR DESK</div>
   <p class="blurb">Every aircraft and ship in the sim, exported straight from the game code as printable STL files &mdash; gear up, weapons off, sliced and ready. Instant download after checkout. New to printing? Take the free crabber first and test your bed.</p>
   <div class="backrow">
     <a href="/">&larr; BACK TO THE COCKPIT</a>
-    <span><a href="/store">HORNET BAY STORE</a> &middot; <a href="/assets">WALLPAPERS &amp; ASSETS</a></span>
+    <span><a href="/blog">FLIGHT LOG</a> &middot; <a href="/store">HORNET BAY STORE</a> &middot; <a href="/assets">WALLPAPERS &amp; ASSETS</a></span>
   </div>
 </header>
 <main>

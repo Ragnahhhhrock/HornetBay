@@ -59,27 +59,21 @@
   }
   a { color: var(--link); text-decoration: none; }
   a:hover { color: var(--amber); }
-  .wrap { max-width: 900px; margin: 0 auto; }
+  .wrap { max-width: 1120px; margin: 0 auto; }
   header {
-    padding: 40px 0 8px;
-    border-bottom: 1px solid var(--line);
+    padding: 28px 0 12px;
+    border-bottom: 2px solid var(--line);
     margin-bottom: 8px;
   }
-  h1 {
-    color: var(--amber);
-    font-size: 30px;
-    letter-spacing: 8px;
-    font-weight: 700;
+  .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+  .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
+  .brand span { color: var(--amber); }
+  .logbrand {
+    font-size: 24px; font-weight: bold; letter-spacing: 6px; color: var(--amber);
+    margin-top: 6px; text-shadow: 0 0 10px #7a3800;
   }
-  h1 .bay { color: var(--ink); }
-  .kicker {
-    color: var(--amber-hi);
-    letter-spacing: 4px;
-    font-size: 12px;
-    margin-top: 14px;
-  }
-  .sub { color: var(--ink-dim); font-size: 13px; margin-top: 6px; }
-  .backrow { display: flex; justify-content: space-between; padding: 14px 0 0; font-size: 13px; }
+  .sub { color: var(--ink-dim); font-size: 13px; margin-top: 10px; max-width: 780px; }
+  .backrow { display: flex; justify-content: space-between; padding: 10px 0 4px; font-size: 12px; letter-spacing: 2px; }
   h2 {
     color: var(--amber);
     font-size: 15px;
@@ -128,12 +122,13 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>HORNET <span class="bay">BAY</span></h1>
-    <div class="kicker">ANALYTICS DASHBOARD</div>
+    <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
+    <div class="brand">HORNET <span>BAY</span></div>
+    <div class="logbrand">ANALYTICS DASHBOARD</div>
     <div class="sub">Every sortie this browser has flown, counted. The same events stream to Google Analytics for the fleet-wide picture.</div>
     <div class="backrow">
       <a href="/">&larr; BACK TO THE COCKPIT</a>
-      <a href="/blog">DEV BLOG &rarr;</a>
+      <span><a href="/blog">FLIGHT LOG</a> &middot; <a href="/store">STORE</a> &middot; <a href="/assets">ASSETS</a> &middot; <a href="/print">3D PRINT BAY</a></span>
     </div>
   </header>
 
