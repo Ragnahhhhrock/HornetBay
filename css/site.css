@@ -32,3 +32,9 @@ a:hover { color: var(--amber); }
   .sitenav { flex-direction: column; }
   .sitenav .nvbtn { font-size: 20px; }
 }
+
+/* the site ring — same four section links under the nav block, every page */
+.seclinks { margin: 2px 0 10px; font-size: 11px; letter-spacing: 2px; color: var(--ink-dim); display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.seclinks a { color: var(--ink-dim); text-decoration: none; }
+.seclinks a:hover { color: var(--amber); }
+.seclinks a.cur { color: var(--amber); }

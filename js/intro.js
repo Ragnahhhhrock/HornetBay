@@ -117,7 +117,7 @@ export class Intro {
     c.textAlign = 'center';
     c.fillStyle = '#ffe23a';
     if (this.active === 'mapselect') {
-      c.fillText('SELECT YOUR FREE FLIGHT STARTING LOCATION', w / 2, h - 8);
+      c.fillText('SELECT YOUR FREE FLIGHT STARTING LOCATION     ·     ESC — BACK TO MENU', w / 2, h - 8);
       this._markers(c, w, h, FF_SPOTS.map(s => ({
         key: s.key, label: s.label,
         pos: s.id === 'carrier' ? G.world.carrier?.pos : G.world.landmarks[s.id],
@@ -125,14 +125,22 @@ export class Intro {
     } else if (this.active === 'planesel') {
       // carrier start? the land-based jets aren't even offered — no tailhook
       const tomcat = this.G.save && this.G.save.tomcat ? '3 ..... F-14 TOMCAT' : '3 ..... F-14 TOMCAT [DLC]';
-      const planeOpts = (this.carrierStart
-        ? '1 ..... F/A-18 HORNET'
-        : '1 ..... F/A-18 HORNET     2 ..... F-16 FALCON     4 ..... F-15 EAGLE     5 ..... A-10 WARTHOG') + `     ${tomcat}`;
-      c.fillText(`SELECT:  ${planeOpts}     T ..... TIME: ${(this.G.dayNightSel || 'day').toUpperCase()}     R ..... WX: ${(this.G.weatherSel || 'clear').toUpperCase()}`, w / 2, h - 8);
+      // the HUD canvas is 704 wide — one line never fitted five jets. a taller
+      // panel with two aircraft rows, then time/weather + the ESC hint
+      c.fillStyle = 'rgba(0,0,0,0.55)';
+      c.fillRect(0, h - 86, w, 60);
+      c.fillStyle = '#ffe23a';
+      if (this.carrierStart) {
+        c.fillText(`SELECT:  1 ..... F/A-18 HORNET     ${tomcat}`, w / 2, h - 44);
+      } else {
+        c.fillText('SELECT:  1 ..... F/A-18 HORNET     2 ..... F-16 FALCON', w / 2, h - 66);
+        c.fillText(`4 ..... F-15 EAGLE     5 ..... A-10 WARTHOG     ${tomcat}`, w / 2, h - 44);
+      }
+      c.fillText(`T ..... TIME: ${(this.G.dayNightSel || 'day').toUpperCase()}     R ..... WX: ${(this.G.weatherSel || 'clear').toUpperCase()}     ·     ESC — BACK`, w / 2, h - 20);
       if (this.carrierStart) {
         c.font = `bold 13px "Courier New", monospace`;
         c.fillStyle = '#9ab';
-        c.fillText('USAF JETS UNAVAILABLE — NO TAILHOOK FOR CARRIER OPS', w / 2, h - 30);
+        c.fillText('USAF JETS UNAVAILABLE — NO TAILHOOK FOR CARRIER OPS', w / 2, h - 102);
         c.font = 'bold 15px "Courier New", monospace';
         c.fillStyle = '#ffe23a';
       }
@@ -140,11 +148,11 @@ export class Intro {
       if (this.blockMsg && G.time - (this.blockT || 0) < 2.5) {
         c.font = `bold ${15 * s}px "Courier New", monospace`;
         c.fillStyle = '#ff4040';
-        c.fillText(this.blockMsg, w / 2, h - 34 * s);
+        c.fillText(this.blockMsg, w / 2, h - 104 * s);
         c.fillStyle = '#7dff6a';
       }
     } else if (this.active === 'briefing') {
-      c.fillText('PRESS ENTER TO SCRAMBLE', w / 2, h - 8);
+      c.fillText('PRESS ENTER TO SCRAMBLE     ·     ESC — BACK TO MENU', w / 2, h - 8);
       this._briefText(c, w, h);
     }
     c.restore();

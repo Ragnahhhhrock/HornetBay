@@ -216,9 +216,8 @@ function buildMenu(mode = 'main') {
   const addBtn = (num, label, tag, cb) => {
     const b = document.createElement('button');
     b.className = 'mbtn';
-    // no key badges on the rows: digits on the main menu, and F1-F7 / ESC in
-    // the sub-menus — the keys stay bound, the titles stay clean
-    const showKey = num && !(mode === 'main' && /^\d+$/.test(num)) && !/^F\d+$/.test(num) && num !== 'ESC';
+    // every row wears its key: what you see is what you press, on every menu
+    const showKey = num && num !== 'ESC';
     b.innerHTML = `${showKey ? `<span class="mnum">${num}</span>` : ''}${label}${tag ? `<span class="tag">${tag}</span>` : ''}`;
     b.dataset.key = num || '';
     if (cb) b.onclick = () => { G.audio.ensure(); cb(); };
@@ -258,8 +257,12 @@ function buildMenu(mode = 'main') {
       const diff = diffBadge(id);
       const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
       const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
-      if (locked) addBtn(`F${i + 1}`, def.title + diff + chips + hook, 'LOCKED', null);
-      else addBtn(`F${i + 1}`, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      // keys every keyboard actually has: 1-9, 0, then A-F for the back six —
+      // F1-F12 stay bound as silent aliases for pilots who learned the board
+      const key = '1234567890ABCDEF'[i];
+      if (locked) addBtn(key, def.title + diff + chips + hook, 'LOCKED', null);
+      else addBtn(key, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      if (i < 12) list.lastChild.dataset.fkey = `F${i + 1}`;
     });
     addBtn('U', 'ENTER UNLOCK CODE', save.allAccess ? 'ALL ACCESS ACTIVE' : 'SKIP THE SYLLABUS', openAllAccessUnlock);
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
@@ -328,9 +331,9 @@ function buildMenu(mode = 'main') {
   }
   addBtn('1', 'FLIGHT SCHOOL', 'BASIC · ADVANCED · COMBAT', () => buildMenu('school'));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
-  addBtn('6', 'MISSIONS', (schoolGrad() || save.allAccess) ? (save.allAccess && !schoolGrad() ? 'ALL ACCESS' : '') : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
-  addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
-  addBtn('9', 'GALLERY', '', () => {
+  addBtn('3', 'MISSIONS', (schoolGrad() || save.allAccess) ? (save.allAccess && !schoolGrad() ? 'ALL ACCESS' : '') : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
+  addBtn('4', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
+  addBtn('5', 'GALLERY', '', () => {
     setHash('gallery');
     $('menu').classList.add('hidden');
     stopDemo();
@@ -342,7 +345,7 @@ function buildMenu(mode = 'main') {
   addBtn('P', '3D PRINT BAY', '↗', () => window.open('/print', '_blank'));
   addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
   addBtn('R', 'TOGGLE WEATHER', `NOW: ${{ clear: 'CLEAR', clouds: 'CLOUDS', rain: 'RAIN', storm: 'STORM' }[G.weatherSel]}`, () => cycleMenuWeather());
-  addBtn('', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
+  addBtn('H', 'FLIGHT MANUAL / CONTROLS', '', () => { G.openManual(); });
   $('pilot-record').textContent =
     `PILOT LOG — ${save.callsign || 'ROOKIE'} · MISSIONS FLOWN: ${Object.keys(save.done).length} · KILLS: ${save.kills} · BEST SCORE: ${save.best}`;
 }
@@ -351,9 +354,10 @@ window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
   if (allAccessOverlayOpen()) return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : e.code === 'KeyP' ? 'P' : e.code === 'KeyM' ? 'M' : e.code === 'KeyU' ? 'U' : null;
+  const km = e.code.match(/^Key([A-Z])$/);
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : km ? km[1] : null;
   if (!d) return;
-  const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
+  const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d || b.dataset.fkey === d);
   // swallow the keypress whole: the button click may change G.state (menu ->
   // mapselect), and the intro router further down the listener list would
   // otherwise see the SAME event as a start-point pick
@@ -541,7 +545,13 @@ window.addEventListener('keydown', (e) => {
   }
   if (e.code === 'Backquote' && G.state === 'flying' && !G.player.dead) { openWingOrders(); return; }
   if (G.state === 'planesel') {
-    if (e.code === 'KeyT') {
+    if (e.code === 'Escape') {
+      // step back one level: free flight returns to the start-point map,
+      // a mission sortie returns to the menu (BACK TO MISSION waits there)
+      if (pendingMission && pendingMission.id === 'free') { G.intro.mapSelect(); }
+      else showMenu();
+    }
+    else if (e.code === 'KeyT') {
       G.dayNightSel = G.dayNightSel === 'day' ? 'night' : 'day';
       save.dayNight = G.dayNightSel; save.dayNightForced = true; persist();
       G.audio.radioClick();
@@ -571,6 +581,7 @@ window.addEventListener('keydown', (e) => {
       else { G.player.type = t; stats.planeSelect(t); launchWithZoom(pendingMission); }
     }
   } else if (G.state === 'mapselect') {
+    if (e.code === 'Escape') { showMenu(); return; }
     const spot = FF_SPOTS.find(s => s.key === (e.code.startsWith('Digit') ? e.code.slice(5) : ''));
     if (spot) { G.freeFlightStart = spot.id; stats.startPoint(spot.id); enterPlaneSelect(MISSIONS.find(m => m.id === 'free')); }
   } else if (G.state === 'briefing') {
