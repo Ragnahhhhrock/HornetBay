@@ -66,12 +66,14 @@
   .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
   .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
   .headleft { flex: 1 1 auto; min-width: 0; }
-  #search-slot { flex: 0 0 auto; margin-left: auto; padding-top: 6px; }
+  .navrow { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; }
+  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; }
+  #search-slot { flex: 0 0 auto; margin-left: auto; }
   @media (max-width: 900px) {
     .headrow { flex-direction: column; gap: 14px; }
-    #search-slot { width: 100%; margin: 0; padding-top: 0; }
+    #search-slot { width: 100%; margin: 0; }
     #search-slot #blog-search-wrap { width: 100%; }
-    #search-slot #blog-search { flex: 1 1 auto; width: auto; }
+    #search-slot #blog-search { width: 100%; }
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
@@ -145,10 +147,12 @@
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
-  #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
+  #blog-search-wrap { display: block; position: relative; margin: 0; }
+  #blog-search-clear.chip { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 15px; padding: 3px 9px; background: var(--card); }
+  #blog-search { font: bold 24px/1.55 "Courier New", ui-monospace, monospace; color: var(--ink); background: none; border: 1px solid var(--line); padding: 10px 22px; letter-spacing: 3px; width: 380px; }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
+  @media (max-width: 600px) { #blog-search { font-size: 20px; } }
   #blog-search-clear { visibility: hidden; }
   #blog-search-clear.show { visibility: visible; }
   #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
@@ -173,7 +177,7 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "The colored shirts: every hand signal on the roof, annotated PENDING",
+  "headline": "The colored shirts: every hand signal on the roof, annotated 9b70fcc",
   "datePublished": "2026-07-29",
   "url": "https://hornetbay.com/blog/the-colored-shirts",
   "wordCount": 59,

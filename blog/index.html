@@ -45,12 +45,14 @@
   .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
   .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
   .headleft { flex: 1 1 auto; min-width: 0; }
-  #search-slot { flex: 0 0 auto; margin-left: auto; padding-top: 6px; }
+  .navrow { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; }
+  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; }
+  #search-slot { flex: 0 0 auto; margin-left: auto; }
   @media (max-width: 900px) {
     .headrow { flex-direction: column; gap: 14px; }
-    #search-slot { width: 100%; margin: 0; padding-top: 0; }
+    #search-slot { width: 100%; margin: 0; }
     #search-slot #blog-search-wrap { width: 100%; }
-    #search-slot #blog-search { flex: 1 1 auto; width: auto; }
+    #search-slot #blog-search { width: 100%; }
   }
   .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
   .brand span { color: var(--amber); }
@@ -124,10 +126,12 @@
   .chip:hover, .pg-btn:hover { color: var(--amber); border-color: var(--amber); }
   .chip.on, .pg-btn.on { color: #1a1208; background: var(--amber); border-color: var(--amber); }
   /* journal search */
-  #blog-search-wrap { display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin: 0; }
-  #blog-search { font: bold 14px "Courier New", ui-monospace, monospace; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 9px 16px; letter-spacing: 1px; width: min(360px, 62vw); }
+  #blog-search-wrap { display: block; position: relative; margin: 0; }
+  #blog-search-clear.chip { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 15px; padding: 3px 9px; background: var(--card); }
+  #blog-search { font: bold 24px/1.55 "Courier New", ui-monospace, monospace; color: var(--ink); background: none; border: 1px solid var(--line); padding: 10px 22px; letter-spacing: 3px; width: 380px; }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
+  @media (max-width: 600px) { #blog-search { font-size: 20px; } }
   #blog-search-clear { visibility: hidden; }
   #blog-search-clear.show { visibility: visible; }
   #blog-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; margin: 28px 0 10px; }
@@ -157,7 +161,20 @@
   "blogPost": [
     {
       "@type": "BlogPosting",
-      "headline": "The colored shirts: every hand signal on the roof, annotated PENDING",
+      "headline": "Search joins the rail: same height, same rank as the buttons PENDING",
+      "datePublished": "2026-07-29",
+      "url": "https://hornetbay.com/blog/search-on-the-rail",
+      "wordCount": 38,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/search-on-the-rail.jpg"
+    },
+    {
+      "@type": "BlogPosting",
+      "headline": "The colored shirts: every hand signal on the roof, annotated 9b70fcc",
       "datePublished": "2026-07-29",
       "url": "https://hornetbay.com/blog/the-colored-shirts",
       "wordCount": 59,
@@ -1855,8 +1872,8 @@
       <p class="blurb">Every new feature, logged as it ships &mdash; with a screenshot straight out of the game. Newest first.</p>
       <a class="rss-link" href="rss.xml" title="Subscribe to the flight log">&#9673; RSS</a>
     </div>
-    <div id="search-slot" aria-label="Journal search"></div>
   </div>
+  <div class="navrow">
   <!--SITENAV-->
   <nav class="sitenav" aria-label="Site">
     <span class="nv">
@@ -1869,10 +1886,24 @@
     </span>
   </nav>
   <!--/SITENAV-->
+    <div id="search-slot" aria-label="Journal search"></div>
+  </div>
 </header>
 <main>
 <div id="blog-cols">
 <div id="blog-main">
+  <article id="search-on-the-rail">
+    <div class="meta"><time datetime="2026-07-29">2026-07-29</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/ux">UX</a></span></div>
+    <h2><a class="title-link" href="/blog/search-on-the-rail">Search joins the rail: same height, same rank as the buttons</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/search-on-the-rail.jpg"><img src="/shots/search-on-the-rail.jpg" alt="The Flight Log header with the Search Flight Log box on the same rail as BACK TO THE COCKPIT and RETURN TO BASE, all three the same height" loading="lazy"></a>
+    <p>A header refit, by request. The journal search used to ride the top right of the masthead in a smaller cut than the navigation buttons &mdash; now it steps down onto the button rail and dresses like company:</p>
+    <ol>
+      <li><b>Same rail, same height.</b> The search box leaves the masthead and sits on the same line as <b>&larr; BACK TO THE COCKPIT</b> and <b>RETURN TO BASE</b> &mdash; identical font, padding and border, all three boxes exactly 59 pixels tall.</li>
+      <li><b>Same dimensions as the buttons.</b> It wears the 24-pixel bold cap, the 3-pixel letter spacing and the same one-pixel rail border &mdash; no background fill, exactly like its neighbors. On a phone it drops to the buttons&rsquo; 20-pixel cut and stacks full-width beneath them.</li>
+      <li><b>It answers to a new name:</b> <b>Search Flight Log</b> &mdash; what it always searched, now said plainly.</li>
+      <li><b>Nothing lost.</b> Live filtering, the &times; clear button (tucked inside the box), and the pasteable <b>#q=</b> hash all work exactly as before.</li>
+    </ol>
+  </article>
   <article id="the-colored-shirts">
     <div class="meta"><time datetime="2026-07-29">2026-07-29</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/graphics">GRAPHICS</a></span></div>
     <h2><a class="title-link" href="/blog/the-colored-shirts">The colored shirts: every hand signal on the roof, annotated</a> <span class="hash">9b70fcc</span></h2>
@@ -2759,7 +2790,7 @@
     </ol>
     <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
   </article>
-<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-76">FEATURE&nbsp;&middot;&nbsp;76</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-23">SITE&nbsp;&middot;&nbsp;23</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-18">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-15">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-11">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-7">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-5">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-5">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-4">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-3">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-3">UX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
+<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-76">FEATURE&nbsp;&middot;&nbsp;76</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-24">SITE&nbsp;&middot;&nbsp;24</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-18">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-15">CONTROLS&nbsp;&middot;&nbsp;15</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-11">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-9">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-7">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-5">MISSIONS&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-5">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-4">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-4">UX&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-3">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix-nbsp-middot-nbsp-3">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix-nbsp-middot-nbsp-2">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
   <article id="time-acceleration">
     <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/time-acceleration">Time acceleration: 2x, 4x, 8x</a> <span class="hash">885dc92</span></h2>
@@ -3381,8 +3412,8 @@
   // free-text search over the whole journal — rides the hash like the tag filter
   var wrap = document.createElement('span'); wrap.id = 'blog-search-wrap';
   var box = document.createElement('input');
-  box.id = 'blog-search'; box.type = 'search'; box.placeholder = 'SEARCH THE JOURNAL…';
-  box.setAttribute('aria-label', 'Search the journal');
+  box.id = 'blog-search'; box.type = 'search'; box.placeholder = 'Search Flight Log';
+  box.setAttribute('aria-label', 'Search Flight Log');
   var clr = document.createElement('button');
   clr.className = 'chip'; clr.id = 'blog-search-clear'; clr.type = 'button'; clr.textContent = '×';
   clr.title = 'Clear search';
