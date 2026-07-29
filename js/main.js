@@ -236,7 +236,13 @@ function buildMenu(mode = 'main') {
     // the fleet does not send students to war: the campaign board stays
     // locked until every flight school sortie is in the logbook
     const grad = schoolGrad();
-    if (!grad) {
+    const allAccess = !!save.allAccess;
+    if (allAccess) {
+      const d = document.createElement('div');
+      d.className = 'msub';
+      d.textContent = 'ALL ACCESS GRANTED — EVERY SORTIE ON THE BOARD';
+      list.appendChild(d);
+    } else if (!grad) {
       const d = document.createElement('div');
       d.className = 'msub';
       d.textContent = 'GRADUATE FLIGHT SCHOOL TO UNLOCK THE CAMPAIGN';
@@ -244,8 +250,9 @@ function buildMenu(mode = 'main') {
     }
     MISSION_ORDER.forEach((id, i) => {
       const def = MISSIONS.find(m => m.id === id);
-      // campaign progression: school first, then each mission flown unlocks the next
-      const locked = !grad || (i > 0 && !save.done[MISSION_ORDER[i - 1]]);
+      // campaign progression: school first, then each mission flown unlocks the
+      // next — the all-access code signs the whole board off at once
+      const locked = !allAccess && (!grad || (i > 0 && !save.done[MISSION_ORDER[i - 1]]));
       // every sortie carries its difficulty rating on the board, plus
       // type/maneuver chips — carrier launch, intercept, visual ID, and so on
       const diff = diffBadge(id);
@@ -254,6 +261,7 @@ function buildMenu(mode = 'main') {
       if (locked) addBtn(`F${i + 1}`, def.title + diff + chips + hook, 'LOCKED', null);
       else addBtn(`F${i + 1}`, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
     });
+    addBtn('U', 'ENTER UNLOCK CODE', save.allAccess ? 'ALL ACCESS ACTIVE' : 'SKIP THE SYLLABUS', openAllAccessUnlock);
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
     return;
   }
@@ -274,7 +282,7 @@ function buildMenu(mode = 'main') {
       const def = MISSIONS.find(m => m.id === id);
       // progressive syllabus: each sortie passed chalks the lock off the next
       const i = SCHOOL_ORDER.indexOf(id);
-      const locked = i > 0 && !save.done[SCHOOL_ORDER[i - 1]];
+      const locked = !save.allAccess && i > 0 && !save.done[SCHOOL_ORDER[i - 1]];
       const diff = diffBadge(id);
       const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
       const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
@@ -320,7 +328,7 @@ function buildMenu(mode = 'main') {
   }
   addBtn('1', 'FLIGHT SCHOOL', 'BASIC · ADVANCED · COMBAT', () => buildMenu('school'));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
-  addBtn('6', 'MISSIONS', schoolGrad() ? '' : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
+  addBtn('6', 'MISSIONS', (schoolGrad() || save.allAccess) ? (save.allAccess && !schoolGrad() ? 'ALL ACCESS' : '') : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
   addBtn('8', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
   addBtn('9', 'GALLERY', '', () => {
     setHash('gallery');
@@ -341,8 +349,9 @@ function buildMenu(mode = 'main') {
 // number keys drive the menu like the original (plus T for the time-of-day row)
 window.addEventListener('keydown', (e) => {
   if (G.state !== 'menu') return;
+  if (allAccessOverlayOpen()) return;
   if (e.code === 'Escape' && menuMode !== 'main') { buildMenu('main'); return; }
-  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : e.code === 'KeyP' ? 'P' : e.code === 'KeyM' ? 'M' : null;
+  const d = e.code.startsWith('Digit') ? e.code.slice(5) : /^F\d{1,2}$/.test(e.code) ? e.code : e.code === 'KeyT' ? 'T' : e.code === 'KeyR' ? 'R' : e.code === 'KeyB' ? 'B' : e.code === 'KeyS' ? 'S' : e.code === 'KeyA' ? 'A' : e.code === 'KeyP' ? 'P' : e.code === 'KeyM' ? 'M' : e.code === 'KeyU' ? 'U' : null;
   if (!d) return;
   const btn = [...document.querySelectorAll('#menu-list .mbtn')].find(b => b.dataset.key === d);
   // swallow the keypress whole: the button click may change G.state (menu ->
@@ -464,6 +473,45 @@ async function submitTomcatCode() {
 // owner shortcut: ?tomcat=CODE unlocks without the overlay
 { const tcc = new URLSearchParams(location.search).get('tomcat'); if (tcc) sha256hex(tcc).then(h => { if (TOMCAT_HASHES.has(h)) { save.tomcat = true; persist(); } }); }
 const tomcatOverlayOpen = () => !document.getElementById('tomcat-unlock').classList.contains('hidden');
+
+// ---- all access: one code signs the whole board — every campaign mission
+// and every school sortie open without the syllabus or the progression ----
+const ALLACCESS_HASHES = new Set([
+  '406ea3496b5ef1dab2605a02551202f651adf738771f083cd42d05e74de45d35',   // 'airboss'
+]);
+function openAllAccessUnlock() {
+  document.getElementById('allaccess-unlock').classList.remove('hidden');
+  document.getElementById('aa-error').classList.add('hidden');
+  G.audio.radioClick();
+  const inp = document.getElementById('aa-input');
+  inp.value = '';
+  setTimeout(() => inp.focus(), 50);
+}
+function closeAllAccessUnlock() { document.getElementById('allaccess-unlock').classList.add('hidden'); }
+async function submitAllAccessCode() {
+  const inp = document.getElementById('aa-input');
+  if (!inp.value.trim()) return;
+  if (!ALLACCESS_HASHES.has(await sha256hex(inp.value))) {
+    document.getElementById('aa-error').classList.remove('hidden');
+    return;
+  }
+  if (save.allAccess) { closeAllAccessUnlock(); G.msg('ALL ACCESS ALREADY ACTIVE', 'good'); return; }
+  save.allAccess = true; persist();
+  closeAllAccessUnlock();
+  G.msg('ALL ACCESS GRANTED — THE AIR BOSS SIGNS YOUR CARD', 'good');
+  if (G.state === 'menu') buildMenu(menuMode);
+}
+{
+  const aaInp = document.getElementById('aa-input');
+  aaInp.addEventListener('keydown', (e) => {
+    e.stopPropagation();
+    if (e.code === 'Enter') submitAllAccessCode();
+    else if (e.code === 'Escape') closeAllAccessUnlock();
+  });
+}
+// owner shortcut: ?allaccess=CODE unlocks without the overlay
+{ const aac = new URLSearchParams(location.search).get('allaccess'); if (aac) sha256hex(aac).then(h => { if (ALLACCESS_HASHES.has(h)) { save.allAccess = true; persist(); } }); }
+const allAccessOverlayOpen = () => !document.getElementById('allaccess-unlock').classList.contains('hidden');
 
 // ---- wingman orders card (comma key, like the classic comms menu) ----
 const wingOrdersOpen = () => !document.getElementById('wingman-orders').classList.contains('hidden');
