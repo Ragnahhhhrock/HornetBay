@@ -19,6 +19,7 @@ import { AswOps, EscortWeapons } from './asw.js';
 import { Awacs } from './awacs.js';
 import { Wingman, ORDERS } from './wingman.js';
 import { buildModel } from './models.js';
+import { DemoDirector } from './attract.js';
 import { Traffic } from './traffic.js';
 import { stats } from './stats.js';
 
@@ -60,16 +61,22 @@ renderer.setSize(Math.floor(window.innerWidth * RETRO_SCALE), Math.floor(window.
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 1.5, 320000);
-// showroom F/A-18 pinned to the camera — a slow turntable on the home menu,
-// so the star of the game is on screen the moment the page loads
+// showroom squadron pinned to the camera — a slow turntable on the home menu,
+// cycling through the flyable roster so the homepage shows off the whole air wing
 scene.add(camera);
-const hero = buildModel('f18');
-hero.scale.setScalar(0.28);
-hero.position.set(2.25, -0.15, -6);
-hero.rotation.order = 'YXZ';
-hero.rotation.x = 0.16;
-if (hero.userData.gear) hero.userData.gear.visible = false;   // clean in-flight look
-camera.add(hero);
+const HERO_TYPES = ['f18', 'f14', 'f16', 'f15', 'a10', 'su27', 'mig29'];
+const heroes = HERO_TYPES.map((tp, i) => {
+  const m = buildModel(tp);
+  m.scale.setScalar(0.28);
+  m.position.set(2.25, -0.15, -6);
+  m.rotation.order = 'YXZ';
+  m.rotation.x = 0.16;
+  if (m.userData.gear) m.userData.gear.visible = false;   // clean in-flight look
+  m.visible = i === 0;
+  camera.add(m);
+  return m;
+});
+let hero = heroes[0];
 // soft showroom spot so the star stays lit after dark (short range: only the hero)
 const heroLight = new THREE.PointLight(0xcfe0ff, 0, 16, 1.6);
 heroLight.position.set(3.5, 2.5, -3);
@@ -393,7 +400,8 @@ function showMenu() {
   $('obj-card').classList.add('hidden');
   buildMenu();
   startDemo();
-  applyMenuTimeOfDay();   // menu backdrop reflects the selected time of day
+  // NOTE: no applyMenuTimeOfDay() here — the DemoDirector's scenes set their
+  // own time of day per shot (night cat launch, dusk trap, day furball...)
   applyMenuWeather();     // ...and the selected weather
 }
 
@@ -471,6 +479,7 @@ const tomcatOverlayOpen = () => !document.getElementById('tomcat-unlock').classL
 // and every school sortie open without the syllabus or the progression ----
 const ALLACCESS_HASHES = new Set([
   '406ea3496b5ef1dab2605a02551202f651adf738771f083cd42d05e74de45d35',   // 'airboss'
+  '81612559ce9ef9340d858e823399705cac6c89024d5aaac6d8b95e834968385e',   // 'malcolmsonly'
 ]);
 function openAllAccessUnlock() {
   document.getElementById('allaccess-unlock').classList.remove('hidden');
@@ -957,24 +966,13 @@ function flash(op) {
   f.style.opacity = Math.min(op, 0.8);
   setTimeout(() => f.style.opacity = 0, 120);
 }
+G.flashCut = (op) => flash(op);   // attract-mode scene cuts punch through the same flash
 
 // ---------------- demo flight behind menu ----------------
-let demoJet = null;
+let demoDir = null;
 let attract = false;   // DEMO menu item: full-screen attract loop, any key returns
 function startDemo(attractMode) {
-  if (!demoJet) {
-    demoJet = new AIAircraft(scene, G.world, 'f18', {
-      pos: new THREE.Vector3(-24000, 700, 12000), heading: Math.PI / 2, speed: 210,
-      mode: 'route', loop: true, agility: 1.4, name: 'DEMO',
-      waypoints: [
-        new THREE.Vector3(-3000, 220, 600), new THREE.Vector3(0, 42, 0),      // under the Golden Gate!
-        new THREE.Vector3(5000, 300, 4000), new THREE.Vector3(9800, 260, 100), // Alcatraz
-        new THREE.Vector3(13000, 900, 16000), new THREE.Vector3(4000, 1600, 9000),
-        new THREE.Vector3(-16000, 900, 6000), new THREE.Vector3(-28000, 500, 10000),
-      ],
-    });
-    demoJet.targetSpeed = 210;
-  }
+  if (!demoDir) { demoDir = new DemoDirector(G, scene); G.demoDir = demoDir; }   // the cinematic reel: cat shots, furballs, traps
   if (attractMode && !attract) {
     attract = true;
     $('menu').classList.add('hidden');
@@ -1007,7 +1005,7 @@ function startDemo(attractMode) {
   }
 }
 function stopDemo() {
-  if (demoJet) { demoJet.dispose(); demoJet = null; }
+  if (demoDir) { demoDir.dispose(); demoDir = null; }
 }
 
 // ---------------- pause ----------------
@@ -1064,17 +1062,8 @@ const _qy180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0
 function updateCamera(dt) {
   if (G.intro.active) return; // intro drives the camera in map/briefing/zoom states
   const P = G.player;
-  if (G.state === 'menu' && demoJet) {
-    // cinematic chase of the demo jet
-    const f = demoJet.fwd(_fwd);
-    _v.copy(demoJet.pos).addScaledVector(f, -46).add(_v2.set(0, 12, 0));
-    camPos.x = damp(camPos.x, _v.x, 2.2, dt);
-    camPos.y = damp(camPos.y, Math.max(_v.y, 8), 2.2, dt);
-    camPos.z = damp(camPos.z, _v.z, 2.2, dt);
-    camera.position.copy(camPos);
-    camera.up.set(0, 1, 0);
-    camera.lookAt(_v2.copy(demoJet.pos).addScaledVector(f, 30));
-    camera.fov = damp(camera.fov, 58, 2, dt); camera.updateProjectionMatrix();
+  if (G.state === 'menu' && demoDir) {
+    demoDir.driveCamera(dt, camPos, camera);   // the reel directs its own shots
     return;
   }
   if (!P) return;
@@ -1895,14 +1884,15 @@ function stepGame(dt) {
   G.input.poll();
   if (SCRIPT) runScript(dt);
   handleDiscreteInput(dt);
-  hero.visible = (G.state === 'menu');
+  // the pinned showroom hero stays hidden while the reel runs — the scenes
+  // themselves rotate the cast (F-14, F-16, A-10, MiG-29, carrier, bridge)
+  for (let i = 0; i < heroes.length; i++) heroes[i].visible = false;
 
-  if (G.state === 'menu' && demoJet) {
+  if (G.state === 'menu' && demoDir) {
     heroLight.intensity = 60 * (G.world.night01 || 0);   // lit after dark
     if (!G._menuResume) {
       G.time += dt;
-      hero.rotation.y += dt * 0.45;   // the star's slow turntable
-      demoJet.update(dt, G);
+      demoDir.update(dt);
       G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y);
       G.fx.update(dt);
     }
@@ -2033,7 +2023,7 @@ function syncNavLights(dt) {
       sp.scale.setScalar(base);
     }
   };
-  for (const e of [G.player, ...G.bandits, demoJet]) {
+  for (const e of [G.player, ...G.bandits, ...(demoDir ? demoDir.navJets() : [])]) {
     const nav = e && e.model && e.model.userData.nav;
     if (nav) for (const sp of nav) set(sp);
   }
