@@ -6,6 +6,7 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/the-colored-shirts</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/wands-up</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/one-compass</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/day-and-night-and-nothing-but</loc><priority>0.7</priority></url>
@@ -134,6 +135,7 @@
   <url><loc>https://hornetbay.com/blog/hornet-bay-name</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/graphics</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/sim</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/brand</loc><priority>0.6</priority></url>
@@ -149,7 +151,6 @@
   <url><loc>https://hornetbay.com/blog/tag/flight-model</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/audio</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/ships</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/graphics</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/ai</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/bug-fix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/content</loc><priority>0.6</priority></url>

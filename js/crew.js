@@ -50,19 +50,19 @@ const POSES = {
   // --- the marshalling vocabulary (per the iPin chart) ---
   startEngines:  { L: { x: 0.05, z: 1.5 }, R: { x: 3.05, z: -0.05 }, kneel: 0, wave: 0 },            // right wand up, left points at the engine
   identifyGate:  { L: { x: 3.05, z: 0.06 }, R: { x: 3.05, z: -0.06 }, kneel: 0, wave: 0 },           // both wands straight up: "I have you"
-  straightAhead: { L: { x: 1.9, z: 0.35, w: 1 }, R: { x: 1.9, z: -0.35, w: 1 }, kneel: 0, wave: 0.45 }, // beckon with both
-  turnLeft:      { L: { x: 0.06, z: 1.5 }, R: { x: 1.95, z: -0.35, w: 1 }, kneel: 0, wave: 0.5 },    // left wand out pointing, right beckons
-  turnRight:     { L: { x: 1.95, z: 0.35, w: 1 }, R: { x: 0.06, z: -1.5 }, kneel: 0, wave: 0.5 },    // mirror
-  slowDown:      { L: { x: 0.7, z: 0.3, w: 1 }, R: { x: 0.7, z: -0.3, w: 1 }, kneel: 0, wave: 0.22 }, // wands low, patting down
-  normalStop:    { L: { x: 2.9, z: -0.55 }, R: { x: 2.9, z: 0.55 }, kneel: 0, wave: 0 },             // wands crossed overhead
-  cutEngines:    { L: { x: 0.12, z: 0.08 }, R: { x: 1.75, z: 0.95, w: 1 }, kneel: 0, wave: 0.1 },    // wand across the throat
+  straightAhead: { L: { x: 2.35, z: 0.18, w: 1 }, R: { x: 2.35, z: -0.18, w: 1 }, kneel: 0, wave: 0.45 }, // beckon with both
+  turnLeft:      { L: { x: 0.06, z: 1.5 }, R: { x: 2.35, z: -0.2, w: 1 }, kneel: 0, wave: 0.5 },     // left wand out pointing, right beckons
+  turnRight:     { L: { x: 2.35, z: 0.2, w: 1 }, R: { x: 0.06, z: -1.5 }, kneel: 0, wave: 0.5 },     // mirror
+  slowDown:      { L: { x: 0.6, z: 0.45, w: 1 }, R: { x: 0.6, z: -0.45, w: 1 }, kneel: 0, wave: 0.22 }, // wands low, patting down
+  normalStop:    { L: { x: 3.0, z: 0.85 }, R: { x: 3.0, z: -0.85 }, kneel: 0, wave: 0 },             // wands crossed overhead
+  cutEngines:    { L: { x: 0.12, z: 0.08 }, R: { x: 0.35, z: -0.65, w: 1 }, kneel: 0, wave: 0.12 },  // wand across the throat
   chocks:        { L: { x: 3.08, w: 1 }, R: { x: 3.08, w: 1 }, kneel: 0, wave: 0.05 },               // both up, held: chocks in
   guide:         { L: { x: 0.12, z: 0.08 }, R: { x: 3.05, z: -0.05 }, kneel: 0, wave: 0, bob: 1 },   // wingwalker: one wand up, marching
   guideHold:     { L: { x: 0.12, z: 0.08 }, R: { x: 3.05, z: -0.05 }, kneel: 0, wave: 0 },           // wand up, standing while the jet brakes
   walk:          { L: { x: 0.12, z: 0.10 }, R: { x: 0.12, z: -0.10 }, kneel: 0, wave: 0, bob: 1 },
   // legacy alias kept for the shooter logic below
   comeAhead:     { L: { x: 1.25, z: 0.25 }, R: { x: 1.25, z: -0.25 }, kneel: 0, wave: 0.35 },
-  stop:          { L: { x: 2.9, z: -0.55 }, R: { x: 2.9, z: 0.55 }, kneel: 0, wave: 0 },
+  stop:          { L: { x: 3.0, z: 0.85 }, R: { x: 3.0, z: -0.85 }, kneel: 0, wave: 0 },
 };
 
 class CrewMember {
