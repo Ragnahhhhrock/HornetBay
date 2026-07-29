@@ -8,13 +8,14 @@ import { PILOT_RATING, pilotDescriptor } from './missions.js';
 
 const _v = new THREE.Vector3();
 
-// free flight locations, numbered like the original map
+// free flight locations, numbered like the original map — each with a one-line
+// brief so the pilot knows what they're launching into
 export const FF_SPOTS = [
-  { key: '1', id: 'sfo',     label: 'SAN FRANCISCO INTL' },
-  { key: '2', id: 'oakland', label: 'OAKLAND INTL' },
-  { key: '3', id: 'moffett', label: 'MOFFETT FIELD' },
-  { key: '4', id: 'carrier', label: 'USS ENTERPRISE' },
-  { key: '5', id: 'alameda', label: 'NAS ALAMEDA' },
+  { key: '1', id: 'sfo',     label: 'SAN FRANCISCO INTL', desc: 'The big field on the peninsula — long runways, straight out over the Bay.' },
+  { key: '2', id: 'oakland', label: 'OAKLAND INTL',       desc: 'East Bay side — the bridges and the city skyline dead ahead.' },
+  { key: '3', id: 'moffett', label: 'MOFFETT FIELD',      desc: 'The quiet south-Bay pattern: all the sky to yourself, a long haul home.' },
+  { key: '4', id: 'carrier', label: 'USS ENTERPRISE',     desc: 'The boat, wherever she is — cat shot, wires, the air wing around you. Tailhook only.' },
+  { key: '5', id: 'alameda', label: 'NAS ALAMEDA',        desc: 'The old naval air station by the carrier piers — the shortest hop to the boat.' },
 ];
 
 export class Intro {
@@ -122,6 +123,7 @@ export class Intro {
         key: s.key, label: s.label,
         pos: s.id === 'carrier' ? G.world.carrier?.pos : G.world.landmarks[s.id],
       })));
+      this._ffLegend(c, w, h);
     } else if (this.active === 'planesel') {
       // carrier start? the land-based jets aren't even offered — no tailhook
       const tomcat = this.G.save && this.G.save.tomcat ? '3 ..... F-14 TOMCAT' : '3 ..... F-14 TOMCAT [DLC]';
@@ -227,7 +229,54 @@ export class Intro {
       c.fillStyle = '#141414';
       c.font = 'bold 15px "Courier New", monospace';
       c.fillText(m.key, x, y + 5);
+      // the field's name rides beside its number, flipping side near the edge
+      if (m.label) {
+        const right = x < w - 180;
+        c.fillStyle = '#ffe23a';
+        c.font = 'bold 11px "Courier New", monospace';
+        c.textAlign = right ? 'left' : 'right';
+        c.fillText(m.label, x + (right ? 18 : -18), y + 4);
+        c.textAlign = 'center';
+      }
     }
+  }
+
+  // the free-flight chart's legend: every start point, titled and briefed
+  _ffLegend(c, w, h) {
+    const pad = 9, lw = 352;
+    c.font = 'bold 10px "Courier New", monospace';
+    const wrap = (t, max) => {
+      const words = t.split(' '), lines = [];
+      let cur = '';
+      for (const word of words) {
+        const s = cur ? cur + ' ' + word : word;
+        if (c.measureText(s).width <= max) cur = s;
+        else { lines.push(cur); cur = word; }
+      }
+      lines.push(cur);
+      return lines;
+    };
+    const entries = FF_SPOTS.map(s => ({ s, lines: wrap(s.desc, lw - pad * 2 - 16) }));
+    const lh = 13, th = 17, gap = 7;
+    const ph = pad + entries.reduce((n, e) => n + th + e.lines.length * lh + gap, 0);
+    c.fillStyle = 'rgba(0,0,0,0.55)';
+    c.fillRect(8, 8, lw, ph);
+    c.strokeStyle = 'rgba(215,215,215,0.35)';
+    c.lineWidth = 1;
+    c.strokeRect(8.5, 8.5, lw - 1, ph - 1);
+    c.textAlign = 'left';
+    let y = 8 + pad + 9;
+    for (const e of entries) {
+      c.font = 'bold 12px "Courier New", monospace';
+      c.fillStyle = '#ffe23a';
+      c.fillText(`${e.s.key} · ${e.s.label}`, 8 + pad, y);
+      y += th;
+      c.font = 'bold 10px "Courier New", monospace';
+      c.fillStyle = '#aebcd4';
+      for (const line of e.lines) { c.fillText(line, 8 + pad + 16, y); y += lh; }
+      y += gap;
+    }
+    c.textAlign = 'center';
   }
   _briefText(c, w, h) {
     const lines = (this.briefLines || []).join('\n').slice(0, Math.floor(this.typed)).split('\n');
