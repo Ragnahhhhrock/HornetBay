@@ -13,7 +13,6 @@ import { AudioEngine } from './audio.js';
 import { MISSIONS, DIFFICULTY, MISSION_TAGS, MISSION_HOOKS, SCHOOL_ORDER } from './missions.js';
 import { Intro, FF_SPOTS } from './intro.js';
 import { MapView } from './mapview.js';
-import { Gallery } from './gallery.js';
 import { HeliOps } from './rotors.js';
 import { P3Patrol } from './patrol.js';
 import { AswOps, EscortWeapons } from './asw.js';
@@ -161,9 +160,6 @@ G.intro = new Intro(G);
 const hud = new HUD($('hud'));
 G.hud = hud;
 G.mapview = new MapView();   // N toggles the live tactical map
-G.gallery = new Gallery(G, () => showMenu());   // menu item 9: aircraft viewer
-G.gallery.onShow = (it) => setHash('gallery/' + it.type);   // every asset has its own URL stub
-G.gallery.onGrid = () => setHash('gallery');
 
 // world is heavy — build lazily on first load but before menu demo
 G.world = new World(scene);
@@ -190,7 +186,7 @@ if (save.dayNightForced == null) save.dayNightForced = (save.dayNight === 'day' 
 // ---------------- menu (original 1-8 structure) ----------------
 const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13', 'm14', 'm15', 'm16'];
 let menuMode = 'main';
-// every menu screen carries a URL stub (#missions, #gallery, #m1 …) so any
+// every menu screen carries a URL stub (#missions, #m1 …) so any
 // item is a shareable link. setHash stays silent until the boot router has
 // read the incoming hash — otherwise showMenu() would clobber the link you
 // arrived on before routeHash() gets to see it
@@ -333,15 +329,8 @@ function buildMenu(mode = 'main') {
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
   addBtn('3', 'MISSIONS', (schoolGrad() || save.allAccess) ? (save.allAccess && !schoolGrad() ? 'ALL ACCESS' : '') : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
   addBtn('4', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
-  addBtn('5', 'GALLERY', '', () => {
-    setHash('gallery');
-    $('menu').classList.add('hidden');
-    stopDemo();
-    G.gallery.enter();
-  });
   addBtn('B', 'BLOG', '↗', () => window.open('/blog', '_blank'));
   addBtn('S', 'HORNET BAY STORE', '↗', () => window.open('/store', '_blank'));
-  addBtn('A', 'ANALYTICS DASHBOARD', '↗', () => window.open('/analytics', '_blank'));
   addBtn('P', '3D PRINT BAY', '↗', () => window.open('/print', '_blank'));
   addBtn('T', 'TOGGLE DAY or NIGHT FLIGHT', `NOW: ${{ day: 'DAY', night: 'NIGHT' }[G.dayNightSel]}`, () => cycleMenuDayNight());
   addBtn('R', 'TOGGLE WEATHER', `NOW: ${{ clear: 'CLEAR', clouds: 'CLOUDS', rain: 'RAIN', storm: 'STORM' }[G.weatherSel]}`, () => cycleMenuWeather());
@@ -602,6 +591,79 @@ $('debrief-menu').onclick = () => { $('debrief').classList.add('hidden'); showMe
 // RESUME FLIGHT: back into the cockpit and keep flying the world you just
 // saved (the mission is scored and over; what's left is free flight)
 $('debrief-next').onclick = () => { $('debrief').classList.add('hidden'); G.state = 'flying'; };
+
+// ---------------- sortie feedback poll ----------------
+// GOES LIVE IN TWO MINUTES: create a free form at https://formspree.io (or
+// web3forms.com) with maverick@hornetbay.com as the recipient, paste the
+// endpoint below — ratings land in that dashboard and every submission
+// emails the tower. Empty endpoint keeps the poll hidden; put #fbtest in
+// the URL to fly it in test mode (payload goes to the console, nothing sent).
+const FEEDBACK_ENDPOINT = '';
+const FB = { ctx: null };
+const fbActive = () => !!FEEDBACK_ENDPOINT || location.search.indexOf('fbtest') >= 0 || location.hash.indexOf('fbtest') >= 0;
+function fbBind(prefix) {
+  const P = {
+    stars: 0, sent: false,
+    starBtns: document.querySelectorAll('#' + prefix + '-stars button'),
+    text: $(prefix + '-text'), submit: $(prefix + '-submit'), status: $(prefix + '-status')
+  };
+  P.paint = () => { for (const b of P.starBtns) b.classList.toggle('on', +b.dataset.star <= P.stars); };
+  for (const b of P.starBtns) b.addEventListener('click', () => { P.stars = +b.dataset.star; P.paint(); b.blur(); });
+  P.submit.addEventListener('click', () => fbSend(P));
+  P.text.addEventListener('keydown', (e) => e.stopPropagation());   // typing isn't flying
+  P.reset = () => {
+    P.stars = 0; P.sent = false;
+    P.text.value = ''; P.submit.disabled = false;
+    P.status.textContent = FEEDBACK_ENDPOINT ? '' : 'TEST MODE — WIRE FEEDBACK_ENDPOINT TO GO LIVE';
+    P.paint();
+  };
+  return P;
+}
+const fbDebrief = fbBind('fb');
+const fbCrash = fbBind('fb2');
+async function fbSend(P) {
+  if (P.sent) return;
+  if (!P.stars) { P.status.textContent = 'PICK 1–5 STARS FIRST'; return; }
+  const payload = {
+    stars: P.stars,
+    feedback: P.text.value.trim(),
+    mission: FB.ctx ? FB.ctx.mission : (G.missionDef ? G.missionDef.id : ''),
+    result: FB.ctx ? FB.ctx.result : '',
+    score: G.score, kills: G.kills,
+    when: new Date().toISOString(),
+    ua: navigator.userAgent,
+    page: location.href
+  };
+  if (!FEEDBACK_ENDPOINT) {   // test mode: log it, call it good
+    console.log('[feedback:test]', payload);
+    P.sent = true; P.submit.disabled = true;
+    P.status.textContent = 'TEST MODE — PAYLOAD LOGGED TO CONSOLE';
+    return;
+  }
+  P.submit.disabled = true;
+  P.status.textContent = 'SENDING…';
+  try {
+    const r = await fetch(FEEDBACK_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    P.sent = true;
+    P.status.textContent = 'LOGGED — THANKS, PILOT';
+  } catch (e) {
+    P.submit.disabled = false;
+    P.status.textContent = 'SEND FAILED — TRY AGAIN';
+  }
+}
+// the crash poll flies solo: SKIP (or a finished submit) heads back to base
+$('fb2-skip').onclick = () => { $('feedback-poll').classList.add('hidden'); quitToMenu(); };
+function fbOfferCrash() {
+  FB.ctx = { mission: G.missionDef ? G.missionDef.id : '', result: 'CRASHED — ' + (G.crashReason || 'AIRCRAFT DOWN') };
+  fbCrash.reset();
+  $('fb2-skip').textContent = 'SKIP';
+  $('feedback-poll').classList.remove('hidden');
+}
 // flight manual on demand — corner button or ? key; auto-pauses the sim while open
 G._manualPaused = false;
 G.openManual = () => {
@@ -648,6 +710,8 @@ function launchMission(def, opts = {}) {
   $('menu').classList.add('hidden');
   $('briefing').classList.add('hidden');
   $('debrief').classList.add('hidden');
+  $('debrief-feedback').classList.add('hidden');
+  $('feedback-poll').classList.add('hidden');
   $('pause').classList.add('hidden');
   $('obj-card').classList.add('hidden');
   stopDemo();
@@ -857,6 +921,7 @@ G.completeMission = (title, text) => {
     $('debrief').classList.remove('hidden');
     $('obj-card').classList.add('hidden');
     G.state = 'debrief';
+    if (fbActive()) { FB.ctx = { mission: id, result: 'MISSION COMPLETE' }; fbDebrief.reset(); $('debrief-feedback').classList.remove('hidden'); }
   }, 2500);
   G.msg('MISSION COMPLETE', 'good');
   G.audio.kill();
@@ -874,6 +939,7 @@ G.failMission = (title, text) => {
     $('debrief').classList.remove('hidden');
     $('obj-card').classList.add('hidden');
     G.state = 'debrief';
+    if (fbActive()) { FB.ctx = { mission: G.missionDef ? G.missionDef.id : '', result: 'MISSION FAILED' }; fbDebrief.reset(); $('debrief-feedback').classList.remove('hidden'); }
   }, 2200);
   G.msg('MISSION FAILED', 'bad');
   G.audio.fail();
@@ -997,7 +1063,6 @@ const _qy180 = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0
 
 function updateCamera(dt) {
   if (G.intro.active) return; // intro drives the camera in map/briefing/zoom states
-  if (G.state === 'gallery') return;   // the gallery drives the camera
   const P = G.player;
   if (G.state === 'menu' && demoJet) {
     // cinematic chase of the demo jet
@@ -1724,7 +1789,7 @@ function frame() {
   // lightning struck this frame: flash already painted — now the thunder
   if (G.world.thunderDist) { G.audio.thunder(G.world.thunderDist); G.world.thunderDist = 0; }
   updateCamera(dt * ((G.state === 'flying' || G.state === 'dead') ? G.timeScale : 1));
-  if (!G._skipRender) renderer.render(scene, camera);   // the gallery floor renders its own cells
+  if (!G._skipRender) renderer.render(scene, camera);
   G._skipRender = false;
   G.input.postUpdate();
   if (qsTimer > 0) {
@@ -1856,11 +1921,7 @@ function stepGame(dt) {
     G.world.update(dt, camera.position, G.player ? G.player.pos.y : camera.position.y, null, true);
     G.fx.update(dt);
     hud.draw(G, dt);
-  } else if (G.state === 'gallery') {
-    G.time += dt;
-    G.gallery.update(dt, G.input);
-    G.world.update(dt, camera.position, camera.position.y);
-    G.fx.update(dt);
+  } else if (false) {
     hud.draw(G, dt);
   } else if (G.state === 'flying' || G.state === 'dead') {
     // time acceleration: the flying world steps G.timeScale times per frame
@@ -1884,9 +1945,11 @@ function stepGame(dt) {
       else if (P.ejected) P._updateBallistic(dt, G);
       G.deadT += dt;
       if (G.deadT > (G.chute ? 9 : 3) && !G.over) {   // let the wreck / chute ride play out
-        // then it's straight back to the menu — no paperwork, no debrief
+        // then it's straight back to the menu — no paperwork, no debrief…
+        // …but the tower would still like a word: quick poll on the way out
         save.best = Math.max(save.best, G.score); persist();
-        quitToMenu();
+        if (fbActive()) { G.over = true; fbOfferCrash(); }   // over=true: offer once, don't stomp the pilot's answer
+        else quitToMenu();
       }
     }
     // entities
@@ -1974,13 +2037,11 @@ function syncNavLights(dt) {
     const nav = e && e.model && e.model.userData.nav;
     if (nav) for (const sp of nav) set(sp);
   }
-  const gm = G.gallery && G.gallery.model;
-  if (gm && gm.userData.nav) for (const sp of gm.userData.nav) set(sp);
 }
 
 // ---------------- URL stubs: every menu item is a link ----------------
-// #menu #freeflight #missions #m1..#m7 #log #gallery #manual #resume
-// #day #night #clear #clouds #rain #storm #blog #store #analytics #print
+// #menu #freeflight #missions #m1..#m7 #log #manual #resume
+// #day #night #clear #clouds #rain #storm #blog #store #print
 function routeHash() {
   const h = location.hash.replace(/^#\/?/, '').toLowerCase();
   if (!h) return;
@@ -2004,17 +2065,11 @@ function routeHash() {
     if (i > 0 && !save.done[SCHOOL_ORDER[i - 1]]) buildMenu('school');
     else startBriefing(h);
   }
-  else if (h.startsWith('gallery/')) {
-    const type = h.slice(8);
-    $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter();
-    if (!G.gallery.showType(type)) showMenu();   // unknown asset — back to the menu
-  }
-  else if (h === 'gallery') { setHash('gallery'); $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter(); }
   else if (h === 'manual') G.openManual();
   else if (h === 'resume') { if (G._menuResume) resumeFlight(); }
   else if (h === 'day' || h === 'night') { G.dayNightSel = h; save.dayNight = h; save.dayNightForced = true; persist(); applyMenuTimeOfDay(); buildMenu('main'); }
   else if (['clear', 'clouds', 'rain', 'storm'].includes(h)) { G.weatherSel = h; save.weather = h; persist(); applyMenuWeather(); buildMenu('main'); }
-  else if (['blog', 'store', 'analytics', 'print'].includes(h)) location.href = '/' + h;
+  else if (['blog', 'store', 'print'].includes(h)) location.href = '/' + h;
 }
 
 // ---------------- URL params for direct launch (testing) ----------------
@@ -2036,26 +2091,6 @@ if (viewP) G.view = viewP;
 if (auto === 'menu') { /* stay on menu */ }
 else if (auto === 'demo') { startDemo(true); }   // attract mode
 else if (auto === 'map') { startFreeFlightMap(); }
-else if (auto === 'gallery') {
-  // anchor first: _show() places the model at the anchor
-  if (params.get('ax')) G.gallery.anchor.x = +params.get('ax');
-  if (params.get('ay')) G.gallery.anchor.y = +params.get('ay');
-  if (params.get('az')) G.gallery.anchor.z = +params.get('az');
-  $('menu').classList.add('hidden'); stopDemo(); G.gallery.enter();
-  // capture hooks for promo footage: gi=aircraft slot, gd=dist, gp=pitch, gy=yaw, spin=orbit rad/s
-  if (params.get('gi')) G.gallery._show(+params.get('gi'));
-  if (params.get('gd')) G.gallery.dist = +params.get('gd');
-  if (params.get('gp')) G.gallery.pitch = +params.get('gp');
-  if (params.get('gy')) G.gallery.yaw = +params.get('gy');
-  if (params.get('gr')) G.gallery.roll = +params.get('gr');
-  if (params.get('spin')) G.forceSpin = +params.get('spin');
-  // chroma hook: flat backdrop + hide everything but the gallery model (cutout captures)
-  if (params.get('chroma')) {
-    G.scene.background = new THREE.Color('#' + params.get('chroma'));
-    for (const c of G.scene.children)
-      if (c !== G.gallery.model && !c.isLight) c.visible = false;
-  }
-}
 else if (auto && auto.startsWith('brief:')) { startBriefing(auto.slice(6)); }
 else if (auto && auto.startsWith('planesel:')) {
   const def = MISSIONS.find(m => m.id === auto.slice(9));

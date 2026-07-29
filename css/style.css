@@ -15,13 +15,13 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
 #menu { background:radial-gradient(ellipse at 50% 30%, rgba(10,26,58,0.42) 0%, rgba(3,8,16,0.66) 70%);
   align-items:flex-start; padding-left:6vw; }
 #menu .title-block, #menu .menu-footer { text-align:left; }
-#menu .title-block, #menu .menu-list, #menu .menu-footer, #menu .menu-mode-title { max-width:44vw; }
+#menu .title-block, #menu .menu-list, #menu .menu-footer, #menu .menu-mode-title, #menu .soc-row { max-width:44vw; }
 #menu .menu-list { min-width:min(420px, 44vw); }
 /* narrow windows: fall back to the centred layout (hero jet sits behind the panel) */
 @media (max-aspect-ratio: 5/4) {
   #menu { align-items:center; padding-left:0; }
   #menu .title-block, #menu .menu-footer { text-align:center; }
-  #menu .title-block, #menu .menu-list, #menu .menu-footer, #menu .menu-mode-title { max-width:none; }
+  #menu .title-block, #menu .menu-list, #menu .menu-footer, #menu .menu-mode-title, #menu .soc-row { max-width:none; }
 }
 
 /* ------- title ------- */
@@ -99,6 +99,11 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
 .x-follow { margin-top:8px; font-size:11px; letter-spacing:2px; }
 .x-follow a { color:#5f86b8; text-decoration:none; transition:color .12s; }
 .x-follow a:hover { color:#ffb437; }
+/* social platforms: big, bordered, impossible to miss */
+.soc-row { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+.soc-row a.soc { font-size:13px; font-weight:bold; letter-spacing:2px; color:#ffb437; text-decoration:none;
+  border:1px solid #24355f; padding:7px 13px; background:rgba(10,20,44,.35); transition:border-color .12s, box-shadow .12s; }
+.soc-row a.soc:hover { border-color:#ffb437; box-shadow:0 0 10px rgba(255,180,55,.28); }
 
 /* ------- briefing / debrief ------- */
 .brief-box { width:min(760px, 92vw); max-height:88vh; overflow-y:auto; background:rgba(4,12,28,.92);
@@ -113,6 +118,24 @@ canvas { position:fixed; inset:0; width:100%; height:100%; display:block;
 .brief-buttons { display:flex; gap:12px; margin-top:26px; }
 .brief-buttons .mbtn { text-align:center; flex:1; }
 #debrief-body { font-size:14px; line-height:1.8; color:#c8dcf5; white-space:pre-wrap; }
+/* sortie feedback poll — rides the debrief card, flies solo after a crash */
+#debrief-feedback { margin-top:20px; padding-top:16px; border-top:1px dashed rgba(95,134,184,.4); }
+.fb-head { font-size:12px; letter-spacing:3px; color:#ffb437; text-align:center; margin-bottom:8px; }
+.fb-sub { font-size:13px; letter-spacing:2px; color:#c8dcf5; text-align:center; margin:-6px 0 14px; }
+.fb-stars { display:flex; justify-content:center; gap:8px; margin-bottom:12px; }
+.fb-stars button { background:none; border:none; padding:0 2px; font-size:34px; line-height:1; color:#2c3f63; cursor:pointer; transition:transform .08s; }
+.fb-stars button:hover { color:#ffd75e; transform:scale(1.12); }
+.fb-stars button.on { color:#ffb437; text-shadow:0 0 14px rgba(255,180,55,.55); }
+#fb-text, #fb2-text { width:100%; box-sizing:border-box; background:#0a1830; color:#ffd75e; border:1px solid rgba(95,134,184,.5);
+  border-radius:6px; padding:10px 12px; font-family:inherit; font-size:13px; letter-spacing:1px;
+  resize:vertical; min-height:56px; outline:none; text-transform:none; }
+#fb-text:focus, #fb2-text:focus { border-color:#ffb437; box-shadow:0 0 12px rgba(255,180,55,.25); }
+#fb-text::placeholder, #fb2-text::placeholder { color:#5f86b8; }
+.fb-row { display:flex; align-items:center; justify-content:center; gap:14px; margin-top:12px; }
+.fb-row .mbtn { flex:0 0 auto; padding-left:34px; padding-right:34px; }
+.fb-status { display:block; font-size:11px; letter-spacing:1.5px; color:#7fd8a8; text-align:center; margin-top:10px; min-height:14px; }
+.fb-status:empty { margin-top:0; min-height:0; }
+.mbtn:disabled { opacity:.45; cursor:default; }
 #debrief-title.good { color:#7fd8a8; }
 #debrief-title.bad { color:#ff5b4d; }
 
@@ -332,9 +355,9 @@ html.touch .qs-grid { font-size:15px; }
    body — so landscape layouts written in viewport units must swap axes here. */
 html.fakeland .overlay, html.fakeland-ccw .overlay { padding-left:6vh; }
 html.fakeland #menu .title-block, html.fakeland #menu .menu-list,
-html.fakeland #menu .menu-footer, html.fakeland #menu .menu-mode-title,
+html.fakeland #menu .menu-footer, html.fakeland #menu .menu-mode-title, html.fakeland #menu .soc-row,
 html.fakeland-ccw #menu .title-block, html.fakeland-ccw #menu .menu-list,
-html.fakeland-ccw #menu .menu-footer, html.fakeland-ccw #menu .menu-mode-title { max-width:44vh; }
+html.fakeland-ccw #menu .menu-footer, html.fakeland-ccw #menu .menu-mode-title, html.fakeland-ccw #menu .soc-row { max-width:44vh; }
 html.fakeland #menu .menu-list, html.fakeland-ccw #menu .menu-list { min-width:min(420px, 44vh); }
 html.fakeland .menu-list, html.fakeland-ccw .menu-list { max-height:62vw; }
 html.fakeland .brief-box, html.fakeland-ccw .brief-box { width:min(760px, 92vh); max-height:88vw; }

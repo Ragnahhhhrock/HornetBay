@@ -45,7 +45,6 @@ export class HUD {
     const c = this.cx, w = this.w, h = this.h;
     c.clearRect(0, 0, w, h);
     if (G.intro && G.intro.active) { G.intro.drawOverlay(c, w, h); return; }
-    if (G.state === 'gallery') { if (G.gallery) G.gallery.drawOverlay(c, w, h); return; }
     if (!G.player || G.state !== 'flying') return;
     const P = G.player, s = this.scale;
     const fwd = P.fwd;

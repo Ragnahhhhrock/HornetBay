@@ -6,6 +6,8 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/sortie-poll</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/five-squadrons</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/chart-briefs</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/every-rung</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/all-access</loc><priority>0.7</priority></url>
@@ -141,6 +143,7 @@
   <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/ux</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/content</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/controls</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/missions</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/graphics</loc><priority>0.6</priority></url>
@@ -151,16 +154,13 @@
   <url><loc>https://hornetbay.com/blog/tag/combat</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/specs</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/merch</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/fix</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/bug-fix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/flight-model</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/audio</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/ships</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/ai</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/bug-fix</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/content</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/store</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/fleet</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/bugfix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/world</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/art</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/input</loc><priority>0.6</priority></url>

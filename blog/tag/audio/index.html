@@ -118,6 +118,8 @@
   a.tag:hover { color: #ffd76a; border-color: #ffd76a; }
   .taghead { color: var(--amber); font-size: 14px; letter-spacing: 2px; margin: 0 0 22px; }
   #tagmenu { margin: 4px 0 26px; font-size: 14px; letter-spacing: 1px; color: var(--ink-dim); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  /* the flat tag strip stays in the markup for crawlers; the sidebar tree serves readers */
+  #tagmenu { display: none; }
   h2 a.title-link { color: inherit; text-decoration: none; }
   h2 a.title-link:hover { color: var(--amber); }
   article h3 { color: var(--amber); font-size: 18px; letter-spacing: 2px; margin: 24px 0 8px; }
@@ -148,7 +150,7 @@
   /* journal search */
   #blog-search-wrap { display: block; position: relative; margin: 0; }
   #blog-search-clear.chip { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); font-size: 15px; padding: 3px 9px; background: var(--card); }
-  #blog-search { font: bold 24px/1.55 "Courier New", ui-monospace, monospace; color: var(--ink); background: none; border: 1px solid var(--line); padding: 10px 22px; letter-spacing: 3px; width: 380px; }
+  #blog-search { font: bold 24px/1.55 "Courier New", ui-monospace, monospace; color: var(--ink); background: none; border: 1px solid var(--line); padding: 10px 22px; letter-spacing: 3px; width: 380px; } #blog-search { height: 59px; box-sizing: border-box; }
   #blog-search:focus { outline: none; border-color: var(--amber); }
   #blog-search::placeholder { color: var(--ink-dim); }
   @media (max-width: 600px) { #blog-search { font-size: 20px; } }
@@ -165,10 +167,20 @@
   #blog-side .side-head { color: var(--amber); font-size: 11px; letter-spacing: 3px; margin: 0 0 10px; }
   #blog-side #blog-menu { flex-direction: column; align-items: stretch; gap: 6px; margin: 0; }
   #blog-side #blog-menu .chip { text-align: left; }
+  /* five squadrons: parent rows open a sub-menu of child tag chips */
+  #blog-menu .chip.parent { display: flex; align-items: center; gap: 8px; color: var(--ink); font-size: 12px; }
+  #blog-menu .chip.parent .caret { display: inline-block; font-size: 10px; transition: transform .15s; }
+  #blog-menu .chip.parent.open .caret { transform: rotate(90deg); }
+  #blog-menu .chip.parent .pcount { margin-left: auto; color: var(--ink-dim); font-size: 10px; }
+  #blog-menu .chip.parent.open, #blog-menu .chip.parent.lit { color: var(--amber); border-color: var(--amber); }
+  #blog-menu .chip.parent.open .pcount, #blog-menu .chip.parent.lit .pcount { color: var(--amber); }
+  #blog-menu .tagkids { display: none; flex-direction: column; align-items: stretch; gap: 6px; padding: 0 0 4px 16px; }
+  #blog-menu .tagkids.open { display: flex; }
   @media (max-width: 900px) {
     #blog-cols { grid-template-columns: 1fr; }
     #blog-side { position: static; order: -1; }
     #blog-side #blog-menu { flex-direction: row; flex-wrap: wrap; }
+    #blog-side #blog-menu .tagkids { flex-basis: 100%; flex-direction: row; flex-wrap: wrap; padding-left: 0; }
   }
 </style>
 <link rel="stylesheet" href="/css/site.css">
@@ -200,12 +212,12 @@
   </nav>
   <!--/SITENAV-->
   <!--SECLINKS-->
-  <div class="seclinks"><a href="/store">SQUADRON STORE</a> &nbsp;&middot;&nbsp; <a href="/assets">WALLPAPERS &amp; ASSETS</a> &nbsp;&middot;&nbsp; <a href="/print">3D PRINT BAY</a> &nbsp;&middot;&nbsp; <a href="/analytics">ANALYTICS</a></div>
+  <div class="seclinks"><a href="/store">SQUADRON STORE</a> &nbsp;&middot;&nbsp; <a href="/assets">WALLPAPERS &amp; ASSETS</a> &nbsp;&middot;&nbsp; <a href="/print">3D PRINT BAY</a></div>
   <!--/SECLINKS-->
 </header>
 <main>
 <div class="taghead">#AUDIO &mdash; 5 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;78</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;25</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;16</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/fix">FIX&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/bugfix">BUGFIX&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;79</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;27</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;16</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
 <article id="faster-forward">
     <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/faster-forward">Faster forward: 16x and 32x, and the Viking finds its voice</a> <span class="hash">bb1a177</span></h2>
@@ -261,7 +273,14 @@
   </article>
 </main>
 <footer>
-  HORNET BAY &mdash; a tribute rebuild of the 1988 Amiga classic F/A-18 INTERCEPTOR &middot; <a href="/">FLY NOW</a> &middot; <a href="https://x.com/hornetbay" target="_blank" rel="noopener">@hornetbay</a> &middot; <a href="https://www.facebook.com/people/Hornet-Bay/61592078535997/" target="_blank" rel="noopener">FACEBOOK</a> &middot; <a href="https://www.instagram.com/hornet_bay/" target="_blank" rel="noopener">INSTAGRAM</a>
+  HORNET BAY &mdash; a tribute rebuild of the 1988 Amiga classic F/A-18 INTERCEPTOR &middot; <a href="/">FLY NOW</a>
+  <div class="soclinks">
+      <a href="https://x.com/hornetbay" target="_blank" rel="noopener">@hornetbay ON &#120143;</a>
+      <a href="https://www.facebook.com/people/Hornet-Bay/61592078535997/" target="_blank" rel="noopener">FACEBOOK</a>
+      <a href="https://www.instagram.com/hornet_bay/" target="_blank" rel="noopener">INSTAGRAM</a>
+      <a href="https://youtube.com/@hornetbay?si=zIvf14AcSKWnyFMd" target="_blank" rel="noopener">YOUTUBE</a>
+      <a href="mailto:maverick@hornetbay.com">MAVERICK@HORNETBAY.COM</a>
+    </div>
 </footer>
 <script>
 (function () {

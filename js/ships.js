@@ -375,5 +375,5 @@ export class Ships {
   }
 }
 
-// gallery exports — every hull type in the game, for the model showroom
+// hull exports — every hull type in the game
 export { buildWarship, buildCargo, buildTanker, buildCruise, buildFishing, buildSailboat };
