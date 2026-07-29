@@ -46,8 +46,10 @@
   .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
   .headleft { flex: 1 1 auto; min-width: 0; }
   .navrow { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; }
-  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; }
-  #search-slot { flex: 0 0 auto; margin-left: auto; }
+  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; order: 1; }
+  /* search rides the button row (same 59px height); seclinks drop to their own line */
+  #search-slot { flex: 0 0 auto; margin-left: auto; order: 2; }
+  .navrow .seclinks { order: 3; flex-basis: 100%; }
   @media (max-width: 900px) {
     .headrow { flex-direction: column; gap: 14px; }
     #search-slot { width: 100%; margin: 0; }
@@ -172,6 +174,19 @@
   "url": "https://hornetbay.com/blog",
   "description": "Every new feature in the Hornet Bay rebuild, logged with a screenshot.",
   "blogPost": [
+    {
+      "@type": "BlogPosting",
+      "headline": "Cards for every post, a banner that flies home, and a search box back in formation PENDING",
+      "datePublished": "2026-07-29",
+      "url": "https://hornetbay.com/blog/cards-clicks-alignment",
+      "wordCount": 26,
+      "author": {
+        "@type": "Organization",
+        "name": "Hornet Bay",
+        "url": "https://hornetbay.com"
+      },
+      "image": "https://hornetbay.com/shots/cards-clicks-alignment.jpg"
+    },
     {
       "@type": "BlogPosting",
       "headline": "The tower would like a word: the sortie poll 0b53c94",
@@ -902,7 +917,7 @@
     },
     {
       "@type": "BlogPosting",
-      "headline": "Meet the SH-60 Seahawk: the cruiserhref=\"/blog/sh60-seahawk\">Meet the SH-60 Seahawk: the cruiser\u2019s rotor, by the numbers 715f0f9 2e1b3aa",
+      "headline": "Meet the SH-60 Seahawk: the cruiser\u2019s rotor, by the numbers 2e1b3aa",
       "datePublished": "2026-07-27T12:00Z",
       "url": "https://hornetbay.com/blog/sh60-seahawk",
       "wordCount": 68,
@@ -1797,7 +1812,7 @@
     },
     {
       "@type": "BlogPosting",
-      "headline": "Day/night toggle on the main menu cc5ba39 70fd029",
+      "headline": "Day/night toggle on the main menu 70fd029",
       "datePublished": "2026-07-22T12:00Z",
       "url": "https://hornetbay.com/blog/day-night-menu-toggle",
       "wordCount": 42,
@@ -1849,7 +1864,7 @@
     },
     {
       "@type": "BlogPosting",
-      "headline": "Road traffic & proper markings b5c1618 8644229",
+      "headline": "Road traffic & proper markings 8644229",
       "datePublished": "2026-07-22T12:00Z",
       "url": "https://hornetbay.com/blog/road-traffic-markings",
       "wordCount": 41,
@@ -1888,7 +1903,7 @@
     },
     {
       "@type": "BlogPosting",
-      "headline": "Renamed: HORNET BAY f5c2e39 e4dd37f",
+      "headline": "Renamed: HORNET BAY e4dd37f",
       "datePublished": "2026-07-21T12:00Z",
       "url": "https://hornetbay.com/blog/hornet-bay-name",
       "wordCount": 16,
@@ -1942,7 +1957,7 @@
 </head>
 <body class="home">
 <header>
-  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
+  <a class="banner-link" href="/" aria-label="Hornet Bay — back to the homepage"><img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640"></a>
   <div class="headrow">
     <div class="headleft">
       <div class="brand">HORNET <span>BAY</span></div>
@@ -1973,6 +1988,18 @@
 <main>
 <div id="blog-cols">
 <div id="blog-main">
+  <article id="cards-clicks-alignment">
+    <div class="meta"><time datetime="2026-07-29">2026-07-29</time><span class="tags"><a class="tag" href="/blog/tag/site">SITE</a><a class="tag" href="/blog/tag/ux">UX</a><a class="tag" href="/blog/tag/content">CONTENT</a></span></div>
+    <h2><a class="title-link" href="/blog/cards-clicks-alignment">Cards for every post, a banner that flies home, and a search box back in formation</a> <span class="hash">PENDING</span></h2>
+    <a class="shot" href="/shots/cards-clicks-alignment.jpg"><img src="/shots/cards-clicks-alignment.jpg" alt="The flight log header — the Search Flight Log box riding the same row as the two nav buttons, with the tag squadrons rail at the right" loading="lazy"></a>
+    <p>Three site chores landed in one sweep &mdash; one visible alignment fix, one clickable banner, and a full dress uniform for every journal link you share:</p>
+    <ol>
+      <li><b>The search box is back in formation.</b> Search Flight Log rides the same row as BACK TO THE COCKPIT and RETURN TO BASE &mdash; 59 pixels to 59 pixels, tops aligned &mdash; while the squadron-store links keep the row below to themselves. Phones stack the lot, search full-width.</li>
+      <li><b>Every post now ships its cards.</b> All 134 journal entries carry an optimised meta description (cut at a sentence where one fits, 155 characters budget), a complete Open Graph card &mdash; image with its true pixel dimensions read off the file, secure URL, type, alt text, locale, published time and one article:tag per squadron &mdash; and a complete Twitter card: summary_large_image, site and creator @hornetbay, a title trimmed to 70 characters, and alt text on the image. Drop a link anywhere and it arrives in dress uniform.</li>
+      <li><b>The banner flies home.</b> The laurel header on every one of the 212 pages is now a link back to the homepage, with a soft amber glow when you hover it. One template, one shared stylesheet, one sweep &mdash; every page born from here on carries it.</li>
+      <li><b>Found and fixed in the sweep:</b> four old headlines carried spliced markup from an ancient hash-stamp &mdash; one title duplicated mid-word, four wearing two hash badges. All repaired, and the rebuild now audits every page: descriptions under 160, Twitter titles under 70, no exceptions.</li>
+    </ol>
+  </article>
   <article id="sortie-poll">
     <div class="meta"><time datetime="2026-07-29">2026-07-29</time><span class="tags"><a class="tag" href="/blog/tag/feature">FEATURE</a><a class="tag" href="/blog/tag/ux">UX</a><a class="tag" href="/blog/tag/site">SITE</a></span></div>
     <h2><a class="title-link" href="/blog/sortie-poll">The tower would like a word: the sortie poll</a> <span class="hash">0b53c94</span></h2>
@@ -2719,7 +2746,7 @@
   </article>
   <article id="sh60-seahawk">
     <div class="meta"><time datetime="2026-07-27T12:00Z">271200Z JUL 26</time></div>
-    <h2><a class="title-link" href="/blog/sh60-seahawk">Meet the SH-60 Seahawk: the cruiserhref="/blog/sh60-seahawk">Meet the SH-60 Seahawk: the cruiser&rsquo;s rotor, by the numbers</a> <span class="hash">715f0f9</span>rsquo;s rotor, by the numbers</a> <span class="hash">2e1b3aa</span></h2>
+    <h2><a class="title-link" href="/blog/sh60-seahawk">Meet the SH-60 Seahawk: the cruiser&rsquo;s rotor, by the numbers</a> <span class="hash">2e1b3aa</span></h2>
     <span class="tags"><a class="tag" href="/blog/tag/aircraft">AIRCRAFT</a><a class="tag" href="/blog/tag/specs">SPECS</a></span>
     <a class="shot" href="/shots/sh60-seahawk.jpg"><img src="/shots/sh60-seahawk.jpg" alt="The Hornet Bay SH-60 Seahawk in the gallery — haze grey side profile, main rotor with yellow tips, tail rotor on the boom" loading="lazy"></a>
     <p>The thump you hear crossing the cruiser&rsquo;s wake is her: the Sikorsky SH-60 Seahawk, the fleet&rsquo;s shipboard helicopter, and the first rotor in Hornet Bay. She spools up on the guided-missile cruiser&rsquo;s aft deck, flies a four-leg circuit of the group, and puts it back down on a deck that&rsquo;s still making 15 knots &mdash; while two of her sisters shuttle the bay&rsquo;s five new helipads. Her card:</p>
@@ -2942,7 +2969,7 @@
     </ol>
     <p>One housekeeping note: from now on, every model screenshot you see here comes straight from the gallery &mdash; and any new model that joins the game joins the gallery at the same time.</p>
   </article>
-<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-79">FEATURE&nbsp;&middot;&nbsp;79</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-27">SITE&nbsp;&middot;&nbsp;27</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-18">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-16">CONTROLS&nbsp;&middot;&nbsp;16</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-14">BUG FIX&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-11">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-8">UX&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-7">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-6">MISSIONS&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-5">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-4">CONTENT&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-4">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
+<!--TAGMENU--><nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature-nbsp-middot-nbsp-79">FEATURE&nbsp;&middot;&nbsp;79</a> <a class="tag" href="/blog/tag/site-nbsp-middot-nbsp-28">SITE&nbsp;&middot;&nbsp;28</a> <a class="tag" href="/blog/tag/aircraft-nbsp-middot-nbsp-18">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls-nbsp-middot-nbsp-16">CONTROLS&nbsp;&middot;&nbsp;16</a> <a class="tag" href="/blog/tag/bug-fix-nbsp-middot-nbsp-14">BUG FIX&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/specs-nbsp-middot-nbsp-12">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand-nbsp-middot-nbsp-11">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/ux-nbsp-middot-nbsp-9">UX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch-nbsp-middot-nbsp-8">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier-nbsp-middot-nbsp-7">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/missions-nbsp-middot-nbsp-6">MISSIONS&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio-nbsp-middot-nbsp-5">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/content-nbsp-middot-nbsp-5">CONTENT&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet-nbsp-middot-nbsp-5">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile-nbsp-middot-nbsp-5">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim-nbsp-middot-nbsp-5">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/graphics-nbsp-middot-nbsp-4">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model-nbsp-middot-nbsp-4">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat-nbsp-middot-nbsp-3">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night-nbsp-middot-nbsp-3">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui-nbsp-middot-nbsp-3">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world-nbsp-middot-nbsp-3">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art-nbsp-middot-nbsp-2">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model-nbsp-middot-nbsp-2">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta-nbsp-middot-nbsp-2">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone-nbsp-middot-nbsp-2">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships-nbsp-middot-nbsp-2">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social-nbsp-middot-nbsp-2">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios-nbsp-middot-nbsp-2">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai-nbsp-middot-nbsp-1">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit-nbsp-middot-nbsp-1">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx-nbsp-middot-nbsp-1">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input-nbsp-middot-nbsp-1">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store-nbsp-middot-nbsp-1">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather-nbsp-middot-nbsp-1">WEATHER&nbsp;&middot;&nbsp;1</a></nav><!--/TAGMENU-->
   <article id="time-acceleration">
     <div class="meta"><time datetime="2026-07-26T12:00Z">261200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/time-acceleration">Time acceleration: 2x, 4x, 8x</a> <span class="hash">885dc92</span></h2>
@@ -3390,7 +3417,7 @@
 
   <article id="day-night-menu-toggle">
     <div class="meta"><time datetime="2026-07-22T12:00Z">221200Z JUL 26</time></div>
-    <h2><a class="title-link" href="/blog/day-night-menu-toggle">Day/night toggle on the main menu</a> <span class="hash">cc5ba39</span> <span class="hash">70fd029</span></h2>
+    <h2><a class="title-link" href="/blog/day-night-menu-toggle">Day/night toggle on the main menu</a> <span class="hash">70fd029</span></h2>
     <span class="tags"><a class="tag" href="/blog/tag/ui">UI</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span>
     <a class="shot" href="/shots/night-city.jpg"><img src="/shots/night-city.jpg" alt="Night flight over the city" loading="lazy"></a>
     <p>Time of day is now a first-class citizen: <b>TOGGLE DAY or NIGHT FLIGHT</b> sits right on the main menu, and flipping it re-lights the scenery behind the menu live. Night ops over the glittering city are worth the trip on their own.</p>
@@ -3422,7 +3449,7 @@
 
   <article id="road-traffic-markings">
     <div class="meta"><time datetime="2026-07-22T12:00Z">221200Z JUL 26</time></div>
-    <h2><a class="title-link" href="/blog/road-traffic-markings">Road traffic &amp; proper markings</a> <span class="hash">b5c1618</span> <span class="hash">8644229</span></h2>
+    <h2><a class="title-link" href="/blog/road-traffic-markings">Road traffic &amp; proper markings</a> <span class="hash">8644229</span></h2>
     <span class="tags"><a class="tag" href="/blog/tag/world">WORLD</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span>
     <a class="shot" href="/shots/day-traffic.jpg"><img src="/shots/day-traffic.jpg" alt="Traffic on a marked two-way highway" loading="lazy"></a>
     <p>The Bay Area highways carry live traffic now &mdash; cars glued to the asphalt in their lanes (no more driving on the grass), over roads painted with center dividing lines and lane dashes, draped over the terrain including the bridge decks.</p>
@@ -3446,7 +3473,7 @@
 
   <article id="hornet-bay-name">
     <div class="meta"><time datetime="2026-07-21T12:00Z">211200Z JUL 26</time></div>
-    <h2><a class="title-link" href="/blog/hornet-bay-name">Renamed: HORNET BAY</a> <span class="hash">f5c2e39</span> <span class="hash">e4dd37f</span></h2>
+    <h2><a class="title-link" href="/blog/hornet-bay-name">Renamed: HORNET BAY</a> <span class="hash">e4dd37f</span></h2>
     <span class="tags"><a class="tag" href="/blog/tag/milestone">MILESTONE</a></span>
     <p>The tribute got its own name and its own home: <b>HORNET BAY</b>, flying out of <a href="https://hornetbay.com">hornetbay.com</a>.</p>
   </article>

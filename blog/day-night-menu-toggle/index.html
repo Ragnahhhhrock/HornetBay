@@ -27,17 +27,29 @@
     document.head.appendChild(s);
   })();
 </script>
+<meta name="author" content="Hornet Bay">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
+<meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://hornetbay.com/blog/day-night-menu-toggle">
 <meta property="og:title" content="Day/night toggle on the main menu — HORNET BAY">
 <meta property="og:description" content="Time of day is now a first-class citizen: TOGGLE DAY or NIGHT FLIGHT sits right on the main menu, and flipping it re-lights the scenery behind the…">
 <meta property="og:image" content="https://hornetbay.com/shots/night-city.jpg">
+<meta property="og:image:secure_url" content="https://hornetbay.com/shots/night-city.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="800">
+<meta property="og:image:height" content="600">
+<meta property="og:image:alt" content="Night flight over the city">
+<meta property="article:published_time" content="2026-07-22T12:00Z">
+<meta property="article:tag" content="UI">
+<meta property="article:tag" content="FEATURE">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@hornetbay">
+<meta name="twitter:creator" content="@hornetbay">
 <meta name="twitter:title" content="Day/night toggle on the main menu — HORNET BAY">
 <meta name="twitter:description" content="Time of day is now a first-class citizen: TOGGLE DAY or NIGHT FLIGHT sits right on the main menu, and flipping it re-lights the scenery behind the…">
 <meta name="twitter:image" content="https://hornetbay.com/shots/night-city.jpg">
+<meta name="twitter:image:alt" content="Night flight over the city">
 <link rel="alternate" type="application/rss+xml" title="Hornet Bay — Blog" href="https://hornetbay.com/rss.xml">
 <style>
   :root {
@@ -67,8 +79,10 @@
   .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
   .headleft { flex: 1 1 auto; min-width: 0; }
   .navrow { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; }
-  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; }
-  #search-slot { flex: 0 0 auto; margin-left: auto; }
+  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; order: 1; }
+  /* search rides the button row (same 59px height); seclinks drop to their own line */
+  #search-slot { flex: 0 0 auto; margin-left: auto; order: 2; }
+  .navrow .seclinks { order: 3; flex-basis: 100%; }
   @media (max-width: 900px) {
     .headrow { flex-direction: column; gap: 14px; }
     #search-slot { width: 100%; margin: 0; }
@@ -190,7 +204,7 @@
 {
   "@context": "https://schema.org",
   "@type": "BlogPosting",
-  "headline": "Day/night toggle on the main menu cc5ba39 70fd029",
+  "headline": "Day/night toggle on the main menu 70fd029",
   "datePublished": "2026-07-22T12:00Z",
   "url": "https://hornetbay.com/blog/day-night-menu-toggle",
   "wordCount": 42,
@@ -210,7 +224,7 @@
 </head>
 <body>
 <header>
-  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
+  <a class="banner-link" href="/" aria-label="Hornet Bay — back to the homepage"><img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640"></a>
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
@@ -233,7 +247,7 @@
 <main>
 <article id="day-night-menu-toggle">
     <div class="meta"><time datetime="2026-07-22T12:00Z">221200Z JUL 26</time></div>
-    <h2><a class="title-link" href="/blog/day-night-menu-toggle">Day/night toggle on the main menu</a> <span class="hash">cc5ba39</span> <span class="hash">70fd029</span></h2>
+    <h2><a class="title-link" href="/blog/day-night-menu-toggle">Day/night toggle on the main menu</a> <span class="hash">70fd029</span></h2>
     <span class="tags"><a class="tag" href="/blog/tag/ui">UI</a> <a class="tag" href="/blog/tag/feature">FEATURE</a></span>
     <a class="shot" href="/shots/night-city.jpg"><img src="/shots/night-city.jpg" alt="Night flight over the city" loading="lazy"></a>
     <p>Time of day is now a first-class citizen: <b>TOGGLE DAY or NIGHT FLIGHT</b> sits right on the main menu, and flipping it re-lights the scenery behind the menu live. Night ops over the glittering city are worth the trip on their own.</p>

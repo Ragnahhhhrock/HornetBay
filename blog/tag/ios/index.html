@@ -27,13 +27,16 @@
     document.head.appendChild(s);
   })();
 </script>
+<meta name="author" content="Hornet Bay">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
+<meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://hornetbay.com/blog/tag/ios">
 <meta property="og:title" content="#iOS — HORNET BAY Blog">
 <meta property="og:description" content="Hornet Bay dev journal entries tagged iOS.">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@hornetbay">
+<meta name="twitter:creator" content="@hornetbay">
 <meta name="twitter:title" content="#iOS — HORNET BAY Blog">
 <meta name="twitter:description" content="Hornet Bay dev journal entries tagged iOS.">
 <link rel="alternate" type="application/rss+xml" title="Hornet Bay — Blog" href="https://hornetbay.com/rss.xml">
@@ -65,8 +68,10 @@
   .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
   .headleft { flex: 1 1 auto; min-width: 0; }
   .navrow { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; }
-  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; }
-  #search-slot { flex: 0 0 auto; margin-left: auto; }
+  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; order: 1; }
+  /* search rides the button row (same 59px height); seclinks drop to their own line */
+  #search-slot { flex: 0 0 auto; margin-left: auto; order: 2; }
+  .navrow .seclinks { order: 3; flex-basis: 100%; }
   @media (max-width: 900px) {
     .headrow { flex-direction: column; gap: 14px; }
     #search-slot { width: 100%; margin: 0; }
@@ -195,7 +200,7 @@
 </head>
 <body>
 <header>
-  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
+  <a class="banner-link" href="/" aria-label="Hornet Bay — back to the homepage"><img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640"></a>
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
@@ -217,7 +222,7 @@
 </header>
 <main>
 <div class="taghead">#iOS &mdash; 2 ENTRIES</div>
-<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;79</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;27</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;16</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
+<nav id="tagmenu">TAGS: <a class="tag" href="/blog/tag/feature">FEATURE&nbsp;&middot;&nbsp;79</a> <a class="tag" href="/blog/tag/site">SITE&nbsp;&middot;&nbsp;28</a> <a class="tag" href="/blog/tag/aircraft">AIRCRAFT&nbsp;&middot;&nbsp;18</a> <a class="tag" href="/blog/tag/controls">CONTROLS&nbsp;&middot;&nbsp;16</a> <a class="tag" href="/blog/tag/bug-fix">BUG FIX&nbsp;&middot;&nbsp;14</a> <a class="tag" href="/blog/tag/specs">SPECS&nbsp;&middot;&nbsp;12</a> <a class="tag" href="/blog/tag/brand">BRAND&nbsp;&middot;&nbsp;11</a> <a class="tag" href="/blog/tag/ux">UX&nbsp;&middot;&nbsp;9</a> <a class="tag" href="/blog/tag/merch">MERCH&nbsp;&middot;&nbsp;8</a> <a class="tag" href="/blog/tag/carrier">CARRIER&nbsp;&middot;&nbsp;7</a> <a class="tag" href="/blog/tag/missions">MISSIONS&nbsp;&middot;&nbsp;6</a> <a class="tag" href="/blog/tag/audio">AUDIO&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/content">CONTENT&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/fleet">FLEET&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/mobile">MOBILE&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/sim">SIM&nbsp;&middot;&nbsp;5</a> <a class="tag" href="/blog/tag/graphics">GRAPHICS&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/model">MODEL&nbsp;&middot;&nbsp;4</a> <a class="tag" href="/blog/tag/combat">COMBAT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/night">NIGHT&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/ui">UI&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/world">WORLD&nbsp;&middot;&nbsp;3</a> <a class="tag" href="/blog/tag/art">ART&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/flight-model">FLIGHT MODEL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/meta">META&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/milestone">MILESTONE&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ships">SHIPS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/social">SOCIAL&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ios">iOS&nbsp;&middot;&nbsp;2</a> <a class="tag" href="/blog/tag/ai">AI&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/cockpit">COCKPIT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/fx">FX&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/input">INPUT&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/store">STORE&nbsp;&middot;&nbsp;1</a> <a class="tag" href="/blog/tag/weather">WEATHER&nbsp;&middot;&nbsp;1</a></nav>
 <article id="rotation-lock-detective">
     <div class="meta"><time datetime="2026-07-23T12:00Z">231200Z JUL 26</time></div>
     <h2><a class="title-link" href="/blog/rotation-lock-detective">Rotation-lock detective: when ROTATE YOUR DEVICE never ends</a> <span class="hash">f4d11ff</span></h2>

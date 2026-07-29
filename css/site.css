@@ -10,6 +10,10 @@ a:hover { color: var(--amber); }
 
 /* header identity stack */
 .banner { display: block; width: 100%; height: auto; margin: 0 0 20px; }
+/* the banner flies you home */
+.banner-link { display: block; }
+.banner-link .banner { transition: filter .18s ease; }
+.banner-link:hover .banner, .banner-link:focus-visible .banner { filter: brightness(1.09) drop-shadow(0 0 16px rgba(255,180,55,.28)); }
 .brand { font-size: 30px; font-weight: bold; letter-spacing: 3px; color: #fff; }
 .brand span { color: var(--amber); }
 .logbrand { font-size: 24px; font-weight: bold; letter-spacing: 6px; color: var(--amber); margin-top: 6px; text-shadow: 0 0 10px #7a3800; }

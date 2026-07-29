@@ -27,17 +27,29 @@
     document.head.appendChild(s);
   })();
 </script>
+<meta name="author" content="Hornet Bay">
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="Hornet Bay">
+<meta property="og:locale" content="en_US">
 <meta property="og:url" content="https://hornetbay.com/blog/social-channels-live">
 <meta property="og:title" content="The squadron is on Facebook and Instagram — HORNET BAY">
 <meta property="og:description" content="Two more channels report for duty: Hornet Bay on Facebook and @hornet_bay on Instagram are live, wearing the squadron badge and flying the launch…">
 <meta property="og:image" content="https://hornetbay.com/shots/social-channels.png">
+<meta property="og:image:secure_url" content="https://hornetbay.com/shots/social-channels.png">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="900">
+<meta property="og:image:alt" content="The Hornet Bay home menu footer with the new Facebook and Instagram links alongside X and YouTube">
+<meta property="article:published_time" content="2026-07-25T12:00Z">
+<meta property="article:tag" content="FEATURE">
+<meta property="article:tag" content="SITE">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@hornetbay">
+<meta name="twitter:creator" content="@hornetbay">
 <meta name="twitter:title" content="The squadron is on Facebook and Instagram — HORNET BAY">
 <meta name="twitter:description" content="Two more channels report for duty: Hornet Bay on Facebook and @hornet_bay on Instagram are live, wearing the squadron badge and flying the launch…">
 <meta name="twitter:image" content="https://hornetbay.com/shots/social-channels.png">
+<meta name="twitter:image:alt" content="The Hornet Bay home menu footer with the new Facebook and Instagram links alongside X and YouTube">
 <link rel="alternate" type="application/rss+xml" title="Hornet Bay — Blog" href="https://hornetbay.com/rss.xml">
 <style>
   :root {
@@ -67,8 +79,10 @@
   .headrow { display: flex; justify-content: space-between; align-items: flex-start; gap: 28px; }
   .headleft { flex: 1 1 auto; min-width: 0; }
   .navrow { display: flex; align-items: flex-start; gap: 18px; flex-wrap: wrap; margin: 18px 0 6px; }
-  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; }
-  #search-slot { flex: 0 0 auto; margin-left: auto; }
+  .navrow .sitenav { flex: 0 1 auto; width: auto; margin: 0; order: 1; }
+  /* search rides the button row (same 59px height); seclinks drop to their own line */
+  #search-slot { flex: 0 0 auto; margin-left: auto; order: 2; }
+  .navrow .seclinks { order: 3; flex-basis: 100%; }
   @media (max-width: 900px) {
     .headrow { flex-direction: column; gap: 14px; }
     #search-slot { width: 100%; margin: 0; }
@@ -210,7 +224,7 @@
 </head>
 <body>
 <header>
-  <img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640">
+  <a class="banner-link" href="/" aria-label="Hornet Bay — back to the homepage"><img class="banner" src="/shots/header-banner.png" alt="Hornet Bay Flight Log — the laurel emblem and an F/A-18 in the emblem's rear-quarter orientation" width="2240" height="640"></a>
   <div class="brand">HORNET <span>BAY</span></div>
   <div class="logbrand">FLIGHT LOG</div>
   <a class="back" href="/blog">&larr; ALL ENTRIES</a>
