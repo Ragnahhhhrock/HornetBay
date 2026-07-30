@@ -1727,4 +1727,4 @@ const CityBuzz = {
   },
 };
 
-const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, HeloTorp, HeloGun, Rescue, MissileCam, Eagle, Airliner, AirForceOne, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun];
+const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, HeloTorp, HeloGun, Rescue, MissileCam, Eagle, AirForceOne, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun];   // airliner pulled from the reel

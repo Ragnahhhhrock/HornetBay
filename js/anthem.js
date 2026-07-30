@@ -79,7 +79,7 @@
     el = document.createElement('div');
     el.id = 'hb-anthem';
     el.innerHTML =
-      '<span class="hb-a-label">&#9834; ANTHEM</span>' +
+      '<span class="hb-a-label">&#9834; <span class="hb-a-title">HORNET BAY ANTHEM - LIVING ON THE EDGE</span></span>' +
       '<button type="button" data-a="play" aria-label="Play anthem">&#9654;</button>' +
       '<button type="button" data-a="pause" aria-label="Pause anthem">&#10073;&#10073;</button>' +
       '<button type="button" data-a="stop" aria-label="Stop anthem">&#9632;</button>';
@@ -92,7 +92,8 @@
       '#hb-anthem button{background:#12264e;border:1px solid rgba(120,160,255,.4);color:#cfe0ff;' +
       'font:700 10px/1 "Courier New",monospace;padding:4px 7px;cursor:pointer;letter-spacing:.05em}' +
       '#hb-anthem button:hover{border-color:#ffb050;color:#ffb050}' +
-      '#hb-anthem button.on{background:#ffb050;color:#0a1526;border-color:#ffb050}';
+      '#hb-anthem button.on{background:#ffb050;color:#0a1526;border-color:#ffb050}' +
+      '@media (max-width:900px){#hb-anthem .hb-a-title{display:none}}';
     document.head.appendChild(st);
     document.body.appendChild(el);
     var btns = el.querySelectorAll('button');
