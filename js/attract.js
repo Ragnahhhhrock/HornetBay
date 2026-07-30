@@ -1,5 +1,5 @@
 // attract.js — the homepage demo director. The old attract was one Hornet
-// touring the bay at 210 knots; this is a seventeen-scene cinematic reel
+// touring the bay at 210 knots; this is a twenty-scene cinematic reel
 // that cuts between carrier ops, dogfights, the battle group, the heavies
 // and the sub hunt — day, dusk and night — so the menu sells the world
 // behind it.
@@ -13,6 +13,7 @@ import { flightQuat, clamp, lerp, damp, rand } from './util.js';
 let _abGlowTex = null;
 
 const _v = new THREE.Vector3(), _w = new THREE.Vector3(), _look = new THREE.Vector3();
+const _zAxis = new THREE.Vector3(0, 0, 1);
 
 // deck-local -> world helpers (the carrier steams at 7.7 m/s, so every
 // deck-referenced point is re-evaluated through its live transform)
@@ -841,4 +842,343 @@ const Hawg = {
   },
 };
 
-const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Trap, Sonobuoy, MissileCam, Eagle, Airliner, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, BridgeRun];
+// ---------------- scene: the group throws steel — VLS birds and CIWS at night ----------------
+const Ciws = {
+  name: 'ciws', dur: 10,
+  setup(A) {
+    A.G.world.setTimeOfDay('night');
+    const ships = A.G.world.ships;
+    const cg = ships.all.find(s => s.name === 'USS GETTYSBURG CG-64') || ships.all[0];
+    const ddg = ships.all.find(s => s.name === 'USS STOUT DDG-55') || cg;
+    const ffg = ships.all.find(s => s.name === 'USS KLAKRING FFG-42') || cg;
+    // fore & aft gatling mounts on each escort — one GunSystem per mount so
+    // the bursts phase against each other up and down the formation
+    const mounts = [];
+    [cg, ddg, ffg].forEach((sh, si) => {
+      for (const off of [52, -52]) {
+        mounts.push({
+          sh, off,
+          gun: new GunSystem(A.G),
+          shooter: { pos: new THREE.Vector3(), fwd: new THREE.Vector3(), vel: new THREE.Vector3(7.7, 0, 0), stores: { gun: 99999 }, isPlayer: false },
+          phase: si * 0.5 + (off > 0 ? 0 : 0.18),
+          az: si % 2 ? -0.65 : 0.65,
+          cont: si === 0,          // the Gettysburg never lets go of the trigger
+          flashT: 0,
+        });
+      }
+    });
+    A.data = { cg, ships: [cg, ddg, ffg], mounts, vls: [], launches: [0.8, 2.6, 4.9, 7.2], li: 0 };
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t;
+    // VLS launches ripple down the line — vertical off the deck, then tip
+    // over onto the threat axis and streak away under their own smoke pillar
+    if (D.li < D.launches.length && t >= D.launches[D.li]) {
+      const sh = D.ships[D.li % D.ships.length];
+      const grp = new THREE.Group();
+      grp.add(new THREE.Mesh(
+        Ciws.vlsGeo || (Ciws.vlsGeo = (() => { const g = new THREE.CylinderGeometry(0.28, 0.36, 3.8, 6); g.rotateX(Math.PI / 2); return g; })()),
+        Ciws.vlsMat || (Ciws.vlsMat = new THREE.MeshBasicMaterial({ color: 0xdde2e8 }))));
+      Ciws.glowTex = Ciws.glowTex || makeGlowTexture('rgba(255,240,210,1)', 'rgba(255,140,40,0)');
+      const gl = new THREE.Sprite(new THREE.SpriteMaterial({ map: Ciws.glowTex, color: 0xffc060, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending }));
+      gl.position.z = -2.4; gl.scale.setScalar(8); grp.add(gl);
+      grp.position.set(sh.pos.x + 14, sh.pos.y + 15, sh.pos.z + (D.li % 2 ? -6 : 6));
+      A.G.scene.add(grp);
+      D.vls.push({ grp, vel: new THREE.Vector3(0, 30, 0), age: 0, smokeT: 0 });
+      D.li++;
+      A.G.fx.flash(grp.position, 16, 0xffc060, 0.25);
+      A.G.fx.fire(grp.position, 0.7, 6);
+    }
+    for (let i = D.vls.length - 1; i >= 0; i--) {
+      const m = D.vls[i];
+      m.age += dt;
+      const tip = t01(m.age - 0.9, 1.3);
+      _w.set(0, 30 + 150 * Math.min(m.age, 1), 0).lerp(_v.set(0.86, 0.42, -0.28).normalize().multiplyScalar(340), tip);
+      m.vel.copy(_w);
+      m.grp.position.addScaledVector(m.vel, dt);
+      m.grp.quaternion.setFromUnitVectors(_zAxis, _w.normalize());
+      m.smokeT -= dt;
+      if (m.smokeT <= 0) { m.smokeT = 0.055; A.G.fx.trail(m.grp.position, 2.6, 0xe8ecf2, 2.8); }
+      if (m.age > 4.6) { A.G.scene.remove(m.grp); D.vls.splice(i, 1); }
+    }
+    // the gatlings hose the dark — short bursts, slow azimuth fans, muzzle
+    // flash winking on the decks between the fountains of tracer
+    for (const mt of D.mounts) {
+      const cyc = (t + mt.phase) % 1.5;
+      mt.shooter.pos.set(mt.sh.pos.x + mt.off, mt.sh.pos.y + 15, mt.sh.pos.z + (mt.off > 0 ? 4 : -4));
+      if (mt.cont || cyc < 0.85) {
+        // the flagship's hoses sweep the sky like sprinklers; the escorts
+        // fire short disciplined bursts in fixed quadrants
+        const az = mt.cont ? 0.35 + Math.sin(t * 0.4 + mt.off) * 0.85
+                           : mt.az + Math.sin((t + mt.phase) * 1.7) * 0.45;
+        const el = mt.cont ? 0.5 + Math.sin(t * 0.23 + mt.off) * 0.16
+                           : 0.55 + Math.sin(t * 0.9 + mt.phase) * 0.08;
+        mt.shooter.fwd.set(Math.cos(el) * Math.cos(az), Math.sin(el), Math.cos(el) * Math.sin(az)).normalize();
+        mt.gun.fire(dt, mt.shooter, []);
+        mt.flashT -= dt;
+        if (mt.flashT <= 0) { mt.flashT = 0.09; A.G.fx.flash(mt.shooter.pos, 5, 0xffd090, 0.09); }
+      }
+      mt.gun.update(dt);
+    }
+  },
+  teardown(A) {
+    const D = A.data;
+    for (const mt of D.mounts) for (const tr of mt.gun.tracers) A.G.scene.remove(tr.mesh);
+    for (const m of D.vls) A.G.scene.remove(m.grp);
+  },
+  cam(A, dt, camPos, camera) {
+    // one unbroken 360 round the Gettysburg while the whole group fires —
+    // hulls slide by below, tracer fountains wheel across the sky
+    const cg = A.data.cg, t = A.t;
+    const phi = 0.6 + t01(t, 10) * Math.PI * 2;
+    A._chase(dt, camPos, camera,
+      cg.pos.x + Math.sin(phi) * 500, 70, cg.pos.z + Math.cos(phi) * 500,
+      cg.pos.x + 200, 190, cg.pos.z + 30, 3.2, 58 - t01(t, 10) * 12);
+  },
+};
+
+// ---------------- scene: the sub hunt — torpedoes away ----------------
+const Torpedo = {
+  name: 'torpedo', dur: 11,
+  setup(A) {
+    A.G.world.setTimeOfDay('day');
+    const sub = A.G.world.enemySub;
+    sub.group.visible = true;
+    const p3 = A._spawn('p3', { ab: false, gear: false, name: 'P-3 ORION' });
+    const s3 = A._spawn('s3', { ab: false, gear: false, name: 'S-3 VIKING' });
+    A.data = { sub, p3, s3, torps: [], rel1: false, rel2: false, beat: -1 };
+  },
+  _drop(A, ac) {
+    const D = A.data, f = ac.fwd(_w);
+    const grp = new THREE.Group();
+    grp.add(new THREE.Mesh(
+      Torpedo.geo || (Torpedo.geo = (() => { const g = new THREE.CylinderGeometry(0.32, 0.32, 4.4, 8); g.rotateX(Math.PI / 2); return g; })()),
+      Torpedo.mat || (Torpedo.mat = new THREE.MeshLambertMaterial({ color: 0x30343a }))));
+    grp.position.copy(ac.pos); grp.position.y -= 3;
+    A.G.scene.add(grp);
+    // the retarder chute streams the instant the weapon leaves the rack
+    const ch = new THREE.Group();
+    ch.add(new THREE.Mesh(
+      Torpedo.canGeo || (Torpedo.canGeo = new THREE.SphereGeometry(3.6, 12, 7, 0, Math.PI * 2, 0, Math.PI * 0.52)),
+      Torpedo.canMat || (Torpedo.canMat = new THREE.MeshLambertMaterial({ color: 0xff6a26, side: THREE.DoubleSide }))));
+    const lp = [];
+    for (let k = 0; k < 6; k++) { const a = k / 6 * Math.PI * 2; lp.push(Math.cos(a) * 3.3, -0.35, Math.sin(a) * 3.3, 0, -5.2, 0); }
+    const lg = new THREE.BufferGeometry();
+    lg.setAttribute('position', new THREE.Float32BufferAttribute(lp, 3));
+    ch.add(new THREE.LineSegments(lg, Torpedo.lineMat || (Torpedo.lineMat = new THREE.LineBasicMaterial({ color: 0xe8e8e8 }))));
+    ch.position.copy(grp.position); ch.position.y += 5.6;
+    ch.scale.set(0.25, 0.3, 0.25);
+    A.G.scene.add(ch);
+    D.torps.push({ grp, ch, vel: new THREE.Vector3(f.x * 100, -2, f.z * 100), state: 'chute', open: 0, seed: Math.random() * 9, wakeT: 0, crumple: -1, hit: false });
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t, sub = D.sub;
+    // parallel low tracks up the sub's line of advance — Orion on the port
+    // side, Viking offset starboard and a half-mile back
+    A._place(D.p3, sub.pos.x - 480 + 115 * t, 86, sub.pos.z - 60, Math.PI / 2, 0, 0);
+    A._place(D.s3, sub.pos.x - 620 + 125 * t, 78, sub.pos.z + 90, Math.PI / 2, -0.01, 0);
+    for (const p of D.p3.model.userData.props || []) p.rotation.z += dt * 50;
+    if (!D.rel1 && D.p3.pos.x >= sub.pos.x - 130) { D.rel1 = true; Torpedo._drop(A, D.p3); }
+    if (!D.rel2 && D.s3.pos.x >= sub.pos.x - 120) { D.rel2 = true; Torpedo._drop(A, D.s3); }
+    for (const tp of D.torps) {
+      if (tp.state === 'chute') {
+        // canopy cracks open, then brakes the fall to a soft splashdown
+        tp.open = Math.min(1, tp.open + dt / 0.4);
+        const s = 0.25 + 0.8 * tp.open;
+        tp.ch.scale.set(s, 0.3 + 0.7 * tp.open, s);
+        tp.ch.rotation.z = Math.sin(A.G.time * 1.6 + tp.seed) * 0.12;
+        tp.ch.rotation.x = Math.cos(A.G.time * 1.3 + tp.seed) * 0.1;
+        tp.vel.x = damp(tp.vel.x, 12, 1.1, dt);
+        tp.vel.z = damp(tp.vel.z, 0, 1.1, dt);
+        tp.vel.y = damp(tp.vel.y, -17, 1.4, dt);
+        tp.grp.position.addScaledVector(tp.vel, dt);
+        tp.grp.quaternion.setFromUnitVectors(_zAxis, _w.copy(tp.vel).normalize());
+        tp.ch.position.copy(tp.grp.position); tp.ch.position.y += 5.6;
+        if (tp.grp.position.y <= 0.5) {
+          tp.state = 'run';
+          tp.grp.position.y = -3;
+          A.G.fx.splash(_v.copy(tp.grp.position).setY(0.5), 1.1);
+          tp.crumple = 0;
+          tp.ch.position.y = 1.4;   // the spent canopy collapses on the sea
+        }
+      } else if (tp.state === 'run') {
+        const p = tp.grp.position;
+        _v.set(sub.pos.x - p.x, 0, sub.pos.z - p.z);
+        const dist = _v.length(); _v.normalize();
+        p.x += _v.x * 46 * dt; p.z += _v.z * 46 * dt; p.y = -3;
+        tp.grp.quaternion.setFromUnitVectors(_zAxis, _v);
+        tp.wakeT -= dt;
+        if (tp.wakeT <= 0) {
+          tp.wakeT = 0.1;
+          A.G.fx.trail(_w.set(p.x, 0.5, p.z), 3.6, 0xffffff, 1.7);
+          if (Math.random() < 0.3) A.G.fx.splash(_w, 0.45);
+        }
+        if (dist < 26 || t > 10.15) {
+          tp.state = 'dead';
+          A.G.scene.remove(tp.grp);
+          _w.set(p.x, 1, p.z);
+          A.G.fx.splash(_w, 2.3);
+          A.G.fx.explosion(_w, 0.9);
+        }
+      }
+      if (tp.crumple >= 0) {
+        tp.crumple += dt;
+        const k = t01(tp.crumple, 0.55);
+        tp.ch.scale.set(1.05 + k * 0.15, (1 - k) * 0.9 + 0.06, 1.05 + k * 0.15);
+        if (tp.crumple > 1.4) { A.G.scene.remove(tp.ch); tp.crumple = -1; }
+      }
+    }
+  },
+  teardown(A) {
+    const D = A.data;
+    for (const tp of D.torps) { A.G.scene.remove(tp.grp); A.G.scene.remove(tp.ch); }
+    A.G.world.enemySub.group.visible = false;
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, t = A.t, sub = D.sub, p3 = D.p3, s3 = D.s3;
+    const b = t < 2.8 ? 0 : t < 5.6 ? 1 : t < 8.6 ? 2 : 3;
+    if (D.beat !== b) {
+      D.beat = b;
+      if (A.G.flashCut) A.G.flashCut(0.12);
+      if (b === 1) camPos.set(sub.pos.x - 40, 9, sub.pos.z - 200);
+      else if (b === 2 && D.torps[0]) camPos.set(D.torps[0].grp.position.x - 30, D.torps[0].grp.position.y + 14, D.torps[0].grp.position.z + 36);
+      else if (b === 3) camPos.set(sub.pos.x + 120, 12, sub.pos.z + 260);
+      camera.position.copy(camPos);
+    }
+    if (b === 0) {
+      // off the Orion's starboard wing — both hunters in one frame
+      A._chase(dt, camPos, camera,
+        p3.pos.x - 24, p3.pos.y + 9, p3.pos.z + 26,
+        (p3.pos.x + s3.pos.x) / 2, (p3.pos.y + s3.pos.y) / 2 - 4, (p3.pos.z + s3.pos.z) / 2,
+        3.2, 54 - t01(t, 2.8) * 12);
+    } else if (b === 1) {
+      // down on the water at the drop point — the run comes overhead and the
+      // chutes crack open right on top of the camera
+      const lk = (t < 3.9 || !D.torps[0]) ? p3.pos : D.torps[0].grp.position;
+      A._chase(dt, camPos, camera,
+        sub.pos.x - 40, 9, sub.pos.z - 200,
+        lk.x, lk.y, lk.z, 5, 50 - t01(t - 2.8, 2.8) * 12);
+    } else if (b === 2) {
+      // riding alongside the first weapon under its canopy — the boat waits below
+      const tp = (D.torps[0] && D.torps[0].state === 'chute') ? D.torps[0] : D.torps[1] || D.torps[0];
+      A._chase(dt, camPos, camera,
+        tp.grp.position.x - 26, tp.grp.position.y + 12, tp.grp.position.z + 32,
+        tp.grp.position.x, tp.grp.position.y, tp.grp.position.z, 4.5, 46 - t01(t - 5.6, 3) * 10);
+    } else {
+      // low and wide off the bow — two wakes converge and the sea erupts
+      A._chase(dt, camPos, camera,
+        sub.pos.x + 120, 12, sub.pos.z + 260,
+        sub.pos.x + 20, 6, sub.pos.z, 3.2, 52 - t01(t - 8.6, 2.4) * 14);
+    }
+  },
+};
+
+// ---------------- scene: burners over downtown ----------------
+const CityBuzz = {
+  name: 'citybuzz', dur: 11,
+  setup(A) {
+    A.G.world.setTimeOfDay('night');
+    const jets = [];
+    for (let i = 0; i < 4; i++) jets.push(A._spawn('f18', { ab: true, gear: false, name: 'BUZZ ' + (i + 1) }));
+    // the skyline is rebuilt fresh every load — pull the real towers out of
+    // the instanced mesh so the corridor and rooftop cams hit actual buildings
+    const bm = A.G.world.cityMesh, M = new THREE.Matrix4(), P = new THREE.Vector3(), Q = new THREE.Quaternion(), S = new THREE.Vector3();
+    const towers = [];
+    for (let i = 0; i < bm.count; i++) { bm.getMatrixAt(i, M); M.decompose(P, Q, S); towers.push({ x: P.x, z: P.z, top: P.y + S.y, h: S.y }); }
+    const dir = new THREE.Vector3(0.806, 0, -0.592).normalize();
+    const P0 = new THREE.Vector3(5900, 0, 5620);
+    // slide the corridor sideways until nothing taller than the jets pierces it
+    let best = 0, bestScore = -1;
+    for (let s = -80; s <= 80; s += 8) {
+      let score = 1e9;
+      for (const b of towers) {
+        if (b.top < 198) continue;
+        const rx = b.x - P0.x, rz = b.z - P0.z;
+        const along = rx * dir.x + rz * dir.z;
+        if (along < -100 || along > 3500) continue;
+        const perp = Math.abs(rx * -dir.z + rz * dir.x - s);
+        if (perp < score) score = perp;
+      }
+      if (score > bestScore) { bestScore = score; best = s; }
+    }
+    P0.x += -dir.z * best; P0.z += dir.x * best;
+    // rooftop anchors: the tallest tower nearest each beat's stretch of track
+    const anchor = (tt, lo) => {
+      const px = P0.x + dir.x * 300 * tt, pz = P0.z + dir.z * 300 * tt;
+      let pick = null, pd = 1e9;
+      for (const b of towers) { if (b.h < lo) continue; const d = (b.x - px) ** 2 + (b.z - pz) ** 2; if (d < pd) { pd = d; pick = b; } }
+      return pick;
+    };
+    // rooftop: a tower the formation will actually BUZZ — right beside the
+    // track with its roof just below the jets, not a block away
+    let bRoof = null, bd = 1e9;
+    for (const b of towers) {
+      if (b.top < 150 || b.top > 196) continue;
+      const rx = b.x - P0.x, rz = b.z - P0.z;
+      const along = rx * dir.x + rz * dir.z;
+      if (along < 700 || along > 1500) continue;   // the pass must land inside beat 1
+      const lat = Math.abs(rx * -dir.z + rz * dir.x);
+      if (lat < bd) { bd = lat; bRoof = b; }
+    }
+    if (!bRoof || bd > 70) bRoof = anchor(3.6, 110) || { x: 7000, z: 5000, top: 160 };
+    A.data = { jets, P0, dir, right: new THREE.Vector3(-dir.z, 0, dir.x), y: 205, h: Math.atan2(dir.x, -dir.z), bRoof, beat: -1 };
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t, f = D.dir, r = D.right;
+    const bank = Math.sin(t * 0.85) * 0.16;
+    const cx = D.P0.x + f.x * 300 * t, cz = D.P0.z + f.z * 300 * t;
+    // tight diamond — lead, wingmen stepped back on the beams, slot in the wash
+    const offs = [[0, 0, 0], [-26, 4, -20], [-26, 4, 20], [-52, 9, 0]];
+    D.jets.forEach((j, i) => {
+      const o = offs[i];
+      A._place(j,
+        cx + f.x * o[0] + r.x * o[2], D.y + o[1] + Math.sin(t * 0.7 + i) * 2, cz + f.z * o[0] + r.z * o[2],
+        D.h, -0.01, bank * (i === 3 ? 0.6 : 1));
+    });
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, t = A.t, lead = D.jets[0], f = D.dir;
+    const b = t < 2.4 ? 0 : t < 4.8 ? 1 : t < 7.2 ? 2 : t < 9.4 ? 3 : 4;
+    if (D.beat !== b) {
+      D.beat = b;
+      if (A.G.flashCut) A.G.flashCut(0.1);
+      if (b === 1) camPos.set(D.bRoof.x + D.right.x * 18, D.bRoof.top + 9, D.bRoof.z + D.right.z * 18);
+      else if (b === 2) camPos.set(7372, 248, 4672);
+      else if (b === 3) camPos.set(lead.pos.x + f.x * 95, lead.pos.y + 6, lead.pos.z + f.z * 95);
+      else if (b === 4) camPos.set(lead.pos.x - f.x * 75, lead.pos.y + 34, lead.pos.z - f.z * 75);
+      camera.position.copy(camPos);
+    }
+    if (b === 0) {
+      // hard arc off the formation — swings astern-to-beam, city rising ahead
+      const r = D.right, phi = Math.PI + t01(t, 2.4) * Math.PI * 0.85;
+      A._chase(dt, camPos, camera,
+        lead.pos.x + (f.x * Math.cos(phi) + r.x * Math.sin(phi)) * 58,
+        lead.pos.y + 12,
+        lead.pos.z + (f.z * Math.cos(phi) + r.z * Math.sin(phi)) * 58,
+        lead.pos.x + f.x * 10, lead.pos.y + 2, lead.pos.z + f.z * 10, 4.5, 58 - t01(t, 2.4) * 10);
+    } else if (b === 1) {
+      // rooftop — the diamond comes straight down the boulevard and over the camera
+      A._chase(dt, camPos, camera,
+        D.bRoof.x + D.right.x * 18, D.bRoof.top + 9, D.bRoof.z + D.right.z * 18,
+        lead.pos.x, lead.pos.y, lead.pos.z, 5, 50 - t01(t - 2.4, 2.4) * 12);
+    } else if (b === 2) {
+      // the Transamerica perch — burners carve past BELOW the tip
+      A._chase(dt, camPos, camera,
+        7372, 248, 4672,
+        lead.pos.x, lead.pos.y + 2, lead.pos.z, 5, 55 - t01(t - 4.8, 2.4) * 15);
+    } else if (b === 3) {
+      // riding ahead looking back — four burners coming at the camera with
+      // the whole lit skyline and the pyramid behind them
+      A._chase(dt, camPos, camera,
+        lead.pos.x + f.x * 95, lead.pos.y + 6, lead.pos.z + f.z * 95,
+        lead.pos.x - f.x * 140, lead.pos.y + 18, lead.pos.z - f.z * 140, 4.5, 58 - t01(t - 7.2, 2.2) * 14);
+    } else {
+      // gone — chasing the burners out over the bay
+      A._chase(dt, camPos, camera,
+        lead.pos.x - f.x * 75, lead.pos.y + 34, lead.pos.z - f.z * 75,
+        lead.pos.x + f.x * 140, lead.pos.y + 10, lead.pos.z + f.z * 140, 4, 54 - t01(t - 9.4, 1.6) * 12);
+    }
+  },
+};
+
+const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, MissileCam, Eagle, Airliner, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun];
