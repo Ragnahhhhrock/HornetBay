@@ -163,20 +163,26 @@ const Catapult = {
     }
   },
   cam(A, dt, camPos, camera) {
-    const D = A.data, c = A.G.world.carrier, t = A.t, k = t01(t, 10);
-    // one full lap round the boat: starts dead astern on the cat line,
-    // swings right (past the island, round the bow as he launches, down
-    // the port side and home) — the radius and height keep growing the
-    // whole way, so the Enterprise swells from jet close-up to full-length
-    const phi = k * Math.PI * 2;
-    const r = 55 + k * 300, h = c.deckY + 9 + k * 135;
-    deckP(c, -13 - Math.sin(phi) * r, h, 40 - Math.cos(phi) * r, _v);
-    // eyes on the jet until he's away, then on the island for the reveal
-    const m = t01(t - 3.4, 2.8);
-    deckP(c, 20, c.deckY + 26, 0, _w);
-    A._chase(dt, camPos, camera, _v.x, _v.y, _v.z,
-      lerp(D.j.pos.x, _w.x, m), lerp(D.j.pos.y + 2, _w.y, m), lerp(D.j.pos.z, _w.z, m),
-      3.2, 58);
+    const D = A.data, t = A.t, k = t01(t, 10);
+    // tail-chase on the cat line, full blower, swinging right round him the
+    // whole way — astern at the holdback, starboard abeam through the shot,
+    // and finishing dead ahead looking straight back down his nose with the
+    // Enterprise laid out behind him
+    const j = D.j, h = j.heading;
+    const fx = Math.sin(h), fz = -Math.cos(h);          // jet forward
+    const rx = Math.cos(h), rz = Math.sin(h);           // starboard
+    const a = k * Math.PI;                              // astern -> abeam -> nose
+    const r = 30 + Math.sin(k * Math.PI) * 16;          // breathe out through the swing
+    const cx = j.pos.x - fx * Math.cos(a) * r + rx * Math.sin(a) * r;
+    const cz = j.pos.z - fz * Math.cos(a) * r + rz * Math.sin(a) * r;
+    // screen-space bias keeps him right of the menu, and the lens dips below
+    // his climb as the swing completes — the Enterprise fills the frame behind
+    _v.set(j.pos.x - cx, 0, j.pos.z - cz).normalize();
+    _w.set(-_v.z, 0, _v.x);
+    const bias = 4 + k * 9;
+    A._chase(dt, camPos, camera,
+      cx, j.pos.y + 5 - k * 8, cz,
+      j.pos.x - _w.x * bias, j.pos.y + 1 + k * 1.5, j.pos.z - _w.z * bias, 3.4, 58 - k * 14);
   },
 };
 
@@ -922,7 +928,7 @@ const Hawg = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, j = D.j;
-    A._spec('jet', 0.7);
+    A._spec('turbofan', 0.7);                 // twin TF34s — the Hawg is a turbofan bird
     // low and unhurried up the strait, a gentle wing-rock for the camera
     D.bank = Math.sin(t * 0.7) * 0.14;
     const h = Math.PI / 2 - 0.08 + Math.sin(t * 0.3) * 0.06;
@@ -1345,9 +1351,12 @@ const HeloGun = {
     barrel.position.set(-1.7, -0.6, 0.3);   // model right is -x
     h.model.add(barrel);
     const shooter = { pos: new THREE.Vector3(), fwd: new THREE.Vector3(), vel: new THREE.Vector3(), stores: { gun: 99999 }, isPlayer: false };
+    // the go-fast packs a gun of its own, bolted aft, and answers back
+    const gun2 = new GunSystem(A.G);
+    const shooter2 = { pos: new THREE.Vector3(), fwd: new THREE.Vector3(), vel: new THREE.Vector3(), stores: { gun: 99999 }, isPlayer: false };
     A.data = {
-      h, boat, gun, shooter, barrel, beat: -1, flashT: 0, splashT: 0, aimT: 0,
-      aim: new THREE.Vector3(30, 0, -14),
+      h, boat, gun, shooter, barrel, gun2, shooter2, beat: -1, flashT: 0, splashT: 0, aimT: 0,
+      aim: new THREE.Vector3(30, 0, -14), aim2: new THREE.Vector3(),
     };
   },
   update(A, dt) {
@@ -1393,10 +1402,21 @@ const HeloGun = {
       if (Math.random() < 0.55) A.G.fx.splash(_v.set(D.aim.x + rand(-6, 6), 0.5, D.aim.z + rand(-6, 6)), 0.55);
     }
     D.gun.update(dt);
+    // the go-fast answers: its own tracers clawing up at the hover once it
+    // has closed enough to make the shot — 0.9 s on, 0.7 s off
+    D.aim2.set(h.pos.x + rand(-14, 14), h.pos.y + rand(-8, 8), h.pos.z + rand(-14, 14));
+    D.shooter2.pos.set(boat.pos.x, 2.6, boat.pos.z);
+    D.shooter2.fwd.set(D.aim2.x - boat.pos.x, D.aim2.y - 2.6, D.aim2.z - boat.pos.z).normalize();
+    if (t > 6 && (t % 1.6) < 0.9) {
+      D.gun2.fire(dt, D.shooter2, []);
+      if (Math.random() < 0.4) A.G.fx.flash(D.shooter2.pos, 2, 0xffc860, 0.07);
+    }
+    D.gun2.update(dt);
   },
   teardown(A) {
     const D = A.data;
     for (const tr of D.gun.tracers) A.G.scene.remove(tr.mesh);
+    for (const tr of D.gun2.tracers) A.G.scene.remove(tr.mesh);
     D.h.model.remove(D.barrel);
     A.G.scene.remove(D.h.model);
   },
@@ -1408,7 +1428,8 @@ const HeloGun = {
       D.beat = b;
       if (b === 1) {
         const bh = Math.atan2(h.pos.x - boat.pos.x, -(h.pos.z - boat.pos.z));
-        camPos.set(boat.pos.x - Math.sin(bh) * 3.5, 2.6, boat.pos.z + Math.cos(bh) * 3.5);
+        const fx = Math.sin(bh), fz = -Math.cos(bh);
+        camPos.set(boat.pos.x - fx * 28 - fz * 12, 7.5, boat.pos.z - fz * 28 + fx * 12);
       }
       camera.position.copy(camPos);
     }
@@ -1432,12 +1453,19 @@ const HeloGun = {
         cx, h.pos.y + 10 - k * 6, cz,
         lx - rx * 12, h.pos.y - 1 - k * 2, lz - rz * 12, 3, 56 - k * 8);
     } else {
-      // the go-fast's bow: the Seahawk hangs dead ahead at 300 ft and the
-      // tracers rip past overhead
+      // astern chase: forty metres back and up, boat riding low-right of the
+      // frame, its tracers clawing up at the Seahawk hanging off the bow
       const bh = Math.atan2(h.pos.x - boat.pos.x, -(h.pos.z - boat.pos.z));
-      A._chase(dt, camPos, camera,
-        boat.pos.x - Math.sin(bh) * 3.5, 2.6, boat.pos.z + Math.cos(bh) * 3.5,
-        h.pos.x, h.pos.y, h.pos.z, 7, 52);
+      const fx = Math.sin(bh), fz = -Math.cos(bh);
+      // aim at the angular midpoint of the boat/helo spread — robust to his jinks
+      const ax = boat.pos.x - fx * 28 - fz * 12, az = boat.pos.z - fz * 28 + fx * 12;
+      const dH = Math.hypot(h.pos.x - ax, h.pos.z - az);
+      const eH = Math.atan2(h.pos.y - 7.5, dH), eB = Math.atan2(-3.5, 28);
+      const ly2 = 7.5 + Math.tan(eB + (eH - eB) * 0.58) * 44;   // shade above the midpoint — helo off the top edge
+      // pan right in screen space — the boat clears the footer buttons
+      _v.set(fx, 0, fz); _w.set(-_v.z, 0, _v.x);
+      A._chase(dt, camPos, camera, ax, 7.5, az,
+        boat.pos.x + fx * 16 - _w.x * 14, ly2, boat.pos.z + fz * 16 - _w.z * 14, 5, 62 + t01(t - 8.6, 1.9) * 12);
     }
   },
 };

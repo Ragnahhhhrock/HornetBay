@@ -1889,8 +1889,8 @@ function specSoundKind(s) {
   if (s.kind === 'heli') return 'prop';         // rotor whirr (checked first — helos carry a len for the camera)
   const ty = s.type || (s.def && s.def.type) || '';   // air-wing frames keep it on .def
   if (/^(e2c|c2|p3)$/.test(ty)) return 'prop';
-  // airliners and the S-3 (twin TF34s) sing the turbofan whine
-  if (s.kind === 'airliner' || /^(b747|b744|b737|dc10|md90|b707|cruise|s3)$/.test(ty)) return 'turbofan';
+  // airliners, the S-3 and the A-10 (twin TF34s) sing the turbofan whine
+  if (s.kind === 'airliner' || /^(b747|b744|b737|dc10|md90|b707|cruise|s3|a10)$/.test(ty)) return 'turbofan';
   if (s.cfg) return null;                       // missiles
   if (s.len && !s.model) return null;           // vessels & the carrier (aircraft all carry a model)
   return 'jet';

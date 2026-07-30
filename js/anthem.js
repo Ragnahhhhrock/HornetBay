@@ -1,4 +1,6 @@
-/* anthem.js — The Star-Spangled Banner as an Amiga-flavoured chiptune loop.
+/* anthem.js — The Hornet Bay Anthem: an original heroic march as an
+   Amiga-flavoured chiptune, looping seamlessly (no gap at the seam — the last
+   note releases exactly as the downbeat of the next lap attacks).
    Plays in the background on every non-game page (homepage menu, blog, store,
    print bay, assets). Browsers gate audio behind a user gesture: the first
    click or key anywhere on the page wakes the band. A small player is pinned
@@ -13,30 +15,31 @@
     return 440 * Math.pow(2, (N2S[m[1]] + (parseInt(m[2], 10) + 1) * 12 - 69) / 12);
   }
   var BPM = 88, SPB = 60 / BPM;
-  // the first verse, [note, beats] — Francis Scott Key, 1814
+  // The Hornet Bay Anthem — sixteen bars of 4/4 in A minor, [note, beats].
+  // Two strains: the call (bars 1-8) and the answer an octave up (9-16),
+  // closing on the dominant so the loop falls straight back into bar 1.
   var MEL = [
-    ['G4', .75], ['E4', .25], ['C4', 1], ['E4', 1], ['G4', 1], ['C5', 2],
-    ['E5', 1.5], ['D5', .5], ['C5', 1], ['E4', .5], ['F#4', .5], ['G4', 2],
-    ['G4', .75], ['G4', .25], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 2],
-    ['A4', .75], ['B4', .25], ['C5', 1], ['C5', 1], ['G4', 1], ['E4', 1], ['C4', 1],
-    ['E4', .75], ['G4', .25], ['C5', 1], ['E4', 1], ['G4', 1], ['C5', 2],
-    ['E5', 1.5], ['D5', .5], ['C5', .5], ['E4', .25], ['F#4', .25], ['G4', 2.5],
-    ['G4', .75], ['G4', .25], ['E5', 1], ['D5', 1], ['C5', 1], ['B4', 2],
-    ['A4', .75], ['B4', .25], ['C5', 1], ['C5', .5], ['G4', .5], ['E4', 1], ['C4', 2],
-    ['E5', .75], ['E5', .25], ['E5', 1], ['F5', 1], ['G5', 3],
-    ['F5', .75], ['E5', .25], ['D5', 1], ['E5', .5], ['F5', .5], ['F5', 3],
-    ['F5', .75], ['E5', .25], ['D5', 1], ['C5', 1], ['B4', 3],
-    ['A4', .75], ['B4', .25], ['C5', 1], ['E4', 1], ['F#4', 1], ['G4', 2],
-    ['G4', .75], ['C5', .25], ['C5', 1], ['C5', .5], ['B4', .5], ['A4', 1],
-    ['A4', .5], ['D5', .5], ['F5', .5], ['E5', 1], ['D5', .5], ['E5', .25], ['C5', .25], ['B4', 1.5],
-    ['G4', .75], ['G4', .25], ['C5', .5], ['D5', .5], ['E5', 1], ['F#5', 1], ['G5', 2],
-    ['C5', 1], ['E5', 1], ['E5', .5], ['F5', .5], ['D5', 1], ['C5', 2]
+    ['A4', 1], ['E5', .5], ['D5', .5], ['C5', 1], ['B4', .5], ['A4', .5],   // 1  Am
+    ['G4', 1], ['A4', .5], ['B4', .5], ['C5', 2],                          // 2  Am
+    ['A4', 1], ['C5', .5], ['F5', .5], ['E5', 1], ['D5', .5], ['C5', .5],   // 3  F
+    ['B4', 1.5], ['C5', .5], ['D5', 1], ['E5', 1],                         // 4  E
+    ['A4', 1], ['E5', .5], ['D5', .5], ['C5', 1], ['B4', .5], ['A4', .5],   // 5  Am
+    ['A4', 1.5], ['G4', .5], ['F4', 1], ['E4', 1],                         // 6  F
+    ['D5', 1], ['E5', .5], ['F5', .5], ['G5', 2],                          // 7  G
+    ['E5', 1.5], ['D5', .5], ['B4', 1], ['C5', .5], ['B4', .5],             // 8  E
+    ['E5', 2], ['A5', 1.5], ['G5', .5],                                    // 9  Am
+    ['A5', 1], ['G5', .5], ['E5', .5], ['C5', 2],                          // 10 Am
+    ['F5', 2], ['A5', 1.5], ['G5', .5],                                    // 11 F
+    ['G5', 1], ['F5', .5], ['D5', .5], ['B4', 2],                          // 12 G
+    ['C5', 2], ['E5', 1.5], ['D5', .5],                                    // 13 Am
+    ['C5', 1], ['A4', .5], ['C5', .5], ['F5', 2],                          // 14 F
+    ['D5', 1.5], ['E5', .5], ['F5', 1], ['G5', 1],                         // 15 G
+    ['B4', 1.5], ['G#4', .5], ['A4', 1], ['E4', 1]                         // 16 E -> back to 1
   ];
-  // oom-pah bass: one chord root per 3-beat measure
-  var CHORDS = ['C', 'C', 'C', 'G', 'C', 'G', 'F', 'C', 'C', 'C', 'C', 'G', 'C', 'G', 'F', 'C',
-                'C', 'G', 'F', 'F', 'F', 'G', 'C', 'D', 'C', 'F', 'G', 'C', 'D', 'C', 'C'];
-  var ROOT = { C: 'C3', F: 'F2', G: 'G2', D: 'D3' };
-  var REST = 3;                                  // beats of silence between loops
+  // one chord per 4-beat bar; the bass marches root - fifth - root - fifth
+  var CHORDS = ['Am', 'Am', 'F', 'E', 'Am', 'F', 'G', 'E', 'Am', 'Am', 'F', 'G', 'Am', 'F', 'G', 'E'];
+  var ROOT = { Am: 'A2', F: 'F2', G: 'G2', E: 'E2' };
+  var REST = 0;                                  // seamless: no gap between loops
   var LOOP_B = 0, i;
   for (i = 0; i < MEL.length; i++) LOOP_B += MEL[i][1];
 
@@ -49,11 +52,21 @@
   }
   for (i = 0; i < CHORDS.length; i++) {
     var r = freq(ROOT[CHORDS[i]]);
-    EV.push({ t: i * 3, f: r, d: 1.1, bass: true });
-    EV.push({ t: i * 3 + 1, f: r * 1.4983, d: 0.9, bass: true });
-    EV.push({ t: i * 3 + 2, f: r * 1.4983, d: 0.9, bass: true });
+    EV.push({ t: i * 4, f: r, d: 1.05, bass: true });
+    EV.push({ t: i * 4 + 1, f: r * 1.4983, d: 0.9, bass: true });
+    EV.push({ t: i * 4 + 2, f: r, d: 0.95, bass: true });
+    EV.push({ t: i * 4 + 3, f: r * 1.4983, d: 0.9, bass: true });
   }
   EV.sort(function (a, b) { return a.t - b.t; });
+  // seamless seam: the final lead and bass notes ring a third of a beat PAST
+  // the loop point, so the downbeat of the next lap lands on their release —
+  // no silence, no click, ever
+  for (i = EV.length - 1; i >= 0; i--) {
+    if (!EV[i].seamed && EV[i].t + EV[i].d > LOOP_B - 0.75) {
+      EV[i].d = LOOP_B - EV[i].t + 0.3;
+      EV[i].seamed = true;
+    }
+  }
 
   var ctx = null, master = null, timer = null;
   var playing = false, paused = false, visible = true;

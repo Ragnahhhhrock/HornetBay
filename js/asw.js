@@ -353,6 +353,7 @@ export class EscortWeapons {
     G.missiles.push(new Missile(G, org, type, target));
     for (let i = 0; i < 10; i++) G.fx.smoke(org.pos, 1.5, 2.5, 0xcccccc);
     G.fx.flash(org.pos, 8);
+    G.audio.missileFire();                  // the whoosh sells a shipboard launch too
     G.msg(`KLAKRING: ${type === 'sm1' ? 'SM-1 AWAY' : 'HARPOON AWAY'}`, 'info');
   }
 }
