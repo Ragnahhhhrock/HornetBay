@@ -66,6 +66,16 @@
 <canvas id="gl"></canvas>
 <canvas id="hud"></canvas>
 
+<!-- ============ MOBILE WARNING ============ -->
+<div id="mobile-warn" class="overlay hidden">
+  <div class="mw-card">
+    <div class="mw-title">BEST PLAYED ON COMPUTER</div>
+    <div class="mw-sub">NOT DESIGNED FOR MOBILE</div>
+    <div class="mw-body">HORNET BAY flies with a keyboard and a mouse &mdash; throttle, stick, weapons, the lot. Visit on a desktop or laptop for the full carrier-ops experience.</div>
+    <button id="mw-dismiss" type="button">CONTINUE ANYWAY</button>
+  </div>
+</div>
+
 <!-- ============ TITLE SCREEN ============ -->
 <div id="menu" class="overlay">
   <div class="stars"></div>
@@ -74,6 +84,7 @@
     <h1 class="game-title">HORNET<br><span>BAY</span></h1>
     <div class="title-sub">CARRIER OPS FLIGHT SIMULATOR</div>
     <div class="title-sim">F/A-18 HORNET &middot; SAN FRANCISCO BAY &middot; 1994</div>
+    <div class="title-desktop">BEST PLAYED ON COMPUTER &mdash; NOT DESIGNED FOR MOBILE</div>
   </div>
   <div id="menu-title" class="menu-mode-title"></div>
   <div class="menu-list" id="menu-list"></div>
@@ -259,6 +270,7 @@
 
 <div id="errbox"></div>
 
+<script src="/js/anthem.js" defer></script>
 <script type="module" src="js/main.js"></script>
 <script>
 // service worker: installable + offline-capable (skipped for file:// standalone builds)

@@ -578,7 +578,22 @@ export function build744(livery = 0) {
   const tailB = new THREE.Mesh(tB, M(L.accent)); tailB.rotation.z = Math.PI / 2; tailB.position.set(0, 2.5, -28); g.add(tailB);
   const sG = wingGeo([[1.5, 1], [1.5, -3], [11, -3.5], [11, -2]], 0.4);
   for (const s of [1, -1]) { const st = new THREE.Mesh(sG, M(L.fuse)); st.scale.x = s; st.position.set(0, 1, -30); g.add(st); }
-  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'b744' };
+  // gear: nose + four body bogies — hidden by default; the takeoff roll
+  // shows it and it tucks away on the climb
+  const gear = new THREE.Group();
+  {
+    const leg = (x, z, len) => {
+      const s = box(0.22, len, 0.22, 0x2a2e34);
+      s.position.set(x, -3.2 - len / 2, z); gear.add(s);
+      const w = box(0.5, 0.9, 1.4, 0x14171a);
+      w.position.set(x, -3.2 - len + 0.45, z); gear.add(w);
+    };
+    leg(0, 30, 3.2);                    // nose
+    for (const s of [1, -1]) { leg(s * 2.6, -2, 3.2); leg(s * 2.6, -6, 3.2); }   // body bogies
+  }
+  gear.visible = false;
+  g.add(gear);
+  g.userData = { ab: [], gear, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'b744' };
   addNavLights(g, 30, -34, 2.5);
   return g;
 }

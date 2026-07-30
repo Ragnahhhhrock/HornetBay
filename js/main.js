@@ -161,6 +161,14 @@ window.G = G; // debug hook
 G.applyResize = applyResize;   // touch.js flips sideways mode, then re-lays out
 
 G.audio = new AudioEngine();
+// browsers gate audio behind a gesture: the first touch or key anywhere
+// wakes the context so the menu reel's engines/guns play without a menu click
+for (const ev of ['pointerdown', 'keydown']) {
+  window.addEventListener(ev, function wake() {
+    G.audio.ensure();
+    window.removeEventListener(ev, wake);
+  }, { passive: true });
+}
 G.input = new Input();
 G.touch = setupTouch(G);   // mobile: thumb stick + button deck (no-op on desktop)
 G.intro = new Intro(G);
@@ -389,8 +397,19 @@ function applyMenuWeather() {
   G.world.setWeather(G.weatherSel);
 }
 
+// mobile pilots get the centre-screen notice; CONTINUE ANYWAY lets them peek at the menu
+let _mwWired = false;
+function mobileWarnCheck() {
+  if (_mwWired) return;
+  _mwWired = true;
+  if (document.documentElement.classList.contains('touch')) $('mobile-warn').classList.remove('hidden');
+  $('mw-dismiss').onclick = () => $('mobile-warn').classList.add('hidden');
+}
+
 function showMenu() {
   G.state = 'menu';
+  mobileWarnCheck();
+  if (window.HBAnthem) window.HBAnthem.show();   // the anthem belongs to the menu and the site, not the cockpit
   if (G.chute) { G.chute.dispose(); G.chute = null; }
   G.audio.endChute();
   $('menu').classList.remove('hidden');
@@ -705,6 +724,7 @@ $('pause-quit').onclick = () => { $('pause').classList.add('hidden'); showMenu()
 
 // ---------------- mission lifecycle ----------------
 function launchMission(def, opts = {}) {
+  if (window.HBAnthem) { window.HBAnthem.mute(); window.HBAnthem.hide(); }   // the sim owns the soundscape now
   G.missionDef = def;
   stats.flushGA();   // report anything left pending from the previous sortie
   if (def.id !== 'free') stats.missionFlown(def.id);

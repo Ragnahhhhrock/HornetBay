@@ -1,5 +1,5 @@
 // attract.js — the homepage demo director. The old attract was one Hornet
-// touring the bay at 210 knots; this is a twenty-scene cinematic reel
+// touring the bay at 210 knots; this is a twenty-four-scene cinematic reel
 // that cuts between carrier ops, dogfights, the battle group, the heavies
 // and the sub hunt — day, dusk and night — so the menu sells the world
 // behind it.
@@ -7,6 +7,7 @@ import * as THREE from 'three';
 import { AIAircraft } from './ai.js';
 import { Missile, GunSystem } from './weapons.js';
 import { Helicopter } from './rotors.js';
+import { Chute } from './flight.js';
 import { makeGlowTexture } from './models.js';
 import { flightQuat, clamp, lerp, damp, rand } from './util.js';
 
@@ -68,8 +69,12 @@ export class DemoDirector {
     const m = new Missile(this.G, owner, type, target);
     owner.speed = owner.speed || 220;
     this.missiles.push(m);
+    this.G.audio.missileFire();            // the whoosh sells every launch
     return m;
   }
+  // reel voice: scenes call this every frame with the engine the camera
+  // rides ('jet' | 'prop' | 'turbofan'); nothing called = silence
+  _spec(kind, rpm = 0.7) { this._svKind = kind; this._svRpm = rpm; }
   _teardown() {
     if (this.idx >= 0 && SCENES[this.idx].teardown) SCENES[this.idx].teardown(this);
     for (const a of this.actors) a.dispose();
@@ -77,6 +82,8 @@ export class DemoDirector {
     for (const m of this.missiles) if (!m.dead) m._die();
     this.missiles = [];
     this.data = {};
+    this.G.audio.specTick(null);
+    this.G.audio.setGatling(false);
   }
   _next() {
     this._teardown();
@@ -89,6 +96,8 @@ export class DemoDirector {
     this.t += dt;
     const s = SCENES[this.idx];
     s.update(this, dt);
+    this.G.audio.specTick(this._svKind || null, this._svRpm || 0);
+    this._svKind = null;
     for (const m of this.missiles) if (!m.dead) m.update(dt);
     for (const a of this.actors) {
       a.model.quaternion.copy(a.quat);
@@ -125,6 +134,7 @@ const Catapult = {
   },
   update(A, dt) {
     const D = A.data, c = A.G.world.carrier, t = A.t, Y = c.deckY + 2.2;
+    A._spec('jet', t < 2 ? 0.35 : 1.05);         // idle to full blower
     deckD(c, 0, 0, 1, _w);                       // bow direction in the world
     const h = headingOf(_w);
     if (t < 2) {                                 // tension on the cat
@@ -137,7 +147,7 @@ const Catapult = {
         A.G.fx.smoke(_v, 0.9, 1.4, 0xdfe8f2);
       }
     } else if (t < 4.1) {                        // the shot: 0 -> 78 m/s in 128 m
-      if (!D.launched) { D.launched = true; deckP(c, -13, Y, 32, _v); A.G.fx.flash(_v, 10, 0xffa030, 0.3); }
+      if (!D.launched) { D.launched = true; deckP(c, -13, Y, 32, _v); A.G.fx.flash(_v, 10, 0xffa030, 0.3); A.G.audio.catapult(); }
       const u = (t - 2) / 2.1;
       deckP(c, -13, Y, 30 + 128 * u * u, _v);
       A._place(D.j, _v.x, _v.y, _v.z, h, 0.02, 0);
@@ -153,21 +163,20 @@ const Catapult = {
     }
   },
   cam(A, dt, camPos, camera) {
-    const D = A.data, c = A.G.world.carrier, t = A.t;
-    if (t < 2) {                                 // bow ramp, looking back at the jet on the cat
-      deckP(c, 4, c.deckY + 3, 112, _v);
-      A._chase(dt, camPos, camera, _v.x, _v.y, _v.z, D.j.pos.x, D.j.pos.y + 1, D.j.pos.z, 4, 52 - t01(A.t, 2) * 8);
-    } else if (t < 4.6) {                        // run alongside the shot, trailing the burners
-      deckD(c, 0, 0, 1, _w);
-      A._chase(dt, camPos, camera,
-        D.j.pos.x - _w.x * 26 + _w.z * 14, D.j.pos.y + 4.5, D.j.pos.z - _w.z * 26 - _w.x * 14,
-        D.j.pos.x, D.j.pos.y + 1, D.j.pos.z, 4, 52 - t01(A.t - 2, 2.6) * 12);
-    } else {                                     // chase the climb-out
-      const f = D.j.fwd(_w);
-      A._chase(dt, camPos, camera,
-        D.j.pos.x - f.x * 46, D.j.pos.y + 10, D.j.pos.z - f.z * 46,
-        D.j.pos.x + f.x * 40, D.j.pos.y + 3, D.j.pos.z + f.z * 40, 3.2, 60 - t01(A.t - 4.6, 5.4) * 16);
-    }
+    const D = A.data, c = A.G.world.carrier, t = A.t, k = t01(t, 10);
+    // one full lap round the boat: starts dead astern on the cat line,
+    // swings right (past the island, round the bow as he launches, down
+    // the port side and home) — the radius and height keep growing the
+    // whole way, so the Enterprise swells from jet close-up to full-length
+    const phi = k * Math.PI * 2;
+    const r = 55 + k * 300, h = c.deckY + 9 + k * 135;
+    deckP(c, -13 - Math.sin(phi) * r, h, 40 - Math.cos(phi) * r, _v);
+    // eyes on the jet until he's away, then on the island for the reveal
+    const m = t01(t - 3.4, 2.8);
+    deckP(c, 20, c.deckY + 26, 0, _w);
+    A._chase(dt, camPos, camera, _v.x, _v.y, _v.z,
+      lerp(D.j.pos.x, _w.x, m), lerp(D.j.pos.y + 2, _w.y, m), lerp(D.j.pos.z, _w.z, m),
+      3.2, 58);
   },
 };
 
@@ -179,10 +188,11 @@ const Furball = {
     const f18 = A._spawn('f18', { ab: false, gear: false, name: 'VIPER' });
     const mig = A._spawn('mig29', { ab: true, gear: false, hostile: true, name: 'BANDIT' });
     f18.speed = mig.speed = 235;
-    A.data = { f18, mig, C: new THREE.Vector3(-3000, 1400, 4000), fired1: false, flared: false, fired2: false, killT: 0, splashed: false, m1: null, phi: 0.8 };
+    A.data = { f18, mig, C: new THREE.Vector3(-15000, 1200, 8000), fired1: false, flared: false, fired2: false, killT: 0, splashed: false, m1: null, phi: 0.8 };
   },
   update(A, dt) {
     const D = A.data, t = A.t, G = A.G;
+    A._spec('jet', t > 8 ? 1.05 : 0.85);         // burner for the kill shot
     const orbit = (j, phase, r, wob) => {
       const th = phase + t * 0.34;
       const x = D.C.x + Math.sin(th) * r, z = D.C.z + Math.cos(th) * r;
@@ -191,8 +201,16 @@ const Furball = {
       const dx = Math.cos(th), dz = -Math.sin(th);
       A._place(j, x, y, z, headingOf(_v.set(dx, 0, dz)), Math.cos(t * 1.3 + phase) * 0.06, -0.95);
     };
-    orbit(D.f18, 0, 430, 60);
-    if (!D.mig.dead) orbit(D.mig, Math.PI, 460, 75);
+    orbit(D.f18, 0, 120, 15);
+    if (!D.mig.dead) orbit(D.mig, Math.PI, 130, 18);
+    // wingtip ribbons: the circle draws itself on the sky — the only way
+    // a two-ship orbit reads at reel distance
+    D.trailT = (D.trailT || 0) - dt;
+    if (D.trailT <= 0) {
+      D.trailT = 0.1;
+      G.fx.trail(D.f18.pos, 1.7, 0xdfe8ff, 3.2);
+      if (!D.mig.dead) G.fx.trail(D.mig.pos, 1.9, 0x9aa2ac, 3.2);
+    }
     // bandit shoots first — and the Hornet flares it off
     if (t > 3 && !D.fired1) { D.fired1 = true; D.m1 = A._fire(D.mig, D.f18, 'r73'); }
     if (t > 5.1 && !D.flared) {
@@ -224,6 +242,7 @@ const Furball = {
         D.splashed = true;
         D.mig.pos.y = 0;
         G.fx.splash(D.mig.pos, 2.4);
+        G.audio.splash(1.1);
         G.explode(D.mig.pos.clone(), 1.4);
         D.mig.model.visible = false;
       }
@@ -235,14 +254,27 @@ const Furball = {
     }
   },
   cam(A, dt, camPos, camera) {
-    const D = A.data;
-    // ride with the Hornet; when the bandit dies, watch his death spiral instead
-    const subj = (D.mig.dead && !D.splashed) ? D.mig : D.f18;
-    const f = subj.fwd(_w);
-    const back = D.mig.dead ? 110 : 55, up = D.mig.dead ? 34 : 15;
+    const D = A.data, t = A.t;
+    if (D.mig.dead) {                            // the death spiral still gets the ride
+      const subj = D.mig, f = subj.fwd(_w);
+      A._chase(dt, camPos, camera,
+        subj.pos.x - f.x * 110, subj.pos.y + 34, subj.pos.z - f.z * 110,
+        subj.pos.x + f.x * 45, subj.pos.y - 4, subj.pos.z + f.z * 45, 2.6, 56 - t01(t, 12) * 14);
+      return;
+    }
+    // wide orbit of the whole fight: opens on the Hornet's six with both
+    // jets framed, swings round to his nose as the camera pushes in
+    const k = t01(t, 12);
+    const psi = t * 0.34 - 0.3 + k * 1.7;      // trail his circle, rear -> front
+    const R = 280 - k * 60;
+    const mx = (D.f18.pos.x + D.mig.pos.x) / 2, my = (D.f18.pos.y + D.mig.pos.y) / 2 + 4, mz = (D.f18.pos.z + D.mig.pos.z) / 2;
+    // menu sits on the left of the screen: bias the look left of the fight
+    // so the pair holds right-of-centre
+    _v.set(mx - camPos.x, 0, mz - camPos.z).normalize();
+    _w.set(-_v.z, 0, _v.x);
     A._chase(dt, camPos, camera,
-      subj.pos.x - f.x * back, subj.pos.y + up, subj.pos.z - f.z * back,
-      subj.pos.x + f.x * 45, subj.pos.y - 4, subj.pos.z + f.z * 45, 2.6, 56 - t01(A.t, 12) * 14);
+      D.C.x + Math.sin(psi) * R, D.C.y + 12 - k * 6, D.C.z + Math.cos(psi) * R,
+      mx - _w.x * 104, my, mz - _w.z * 104, 2.8, 62 - k * 6);
   },
 };
 
@@ -258,6 +290,7 @@ const Trap = {
   },
   update(A, dt) {
     const D = A.data, c = A.G.world.carrier, t = A.t;
+    A._spec('jet', t < 7.5 ? 0.5 : 0.25);        // groove power, then cut
     // the angled deck line in carrier-local coords (matches the deck texture)
     const a0 = { x: -14, z: -160 }, a1 = { x: 27, z: 112 };
     const dl = Math.hypot(a1.x - a0.x, a1.z - a0.z);
@@ -274,7 +307,7 @@ const Trap = {
       D.roll = (D.roll || 0) + D.v * dt;
       deckP(c, a0.x + dx * (30 + D.roll), c.deckY + 2.2, a0.z + dz * (30 + D.roll), _v);
       A._place(D.j, _v.x, _v.y, _v.z, h, D.v > 40 ? 0.09 : 0, 0);
-      if (!D.puff) { D.puff = true; A.G.fx.smoke(_v, 1.2, 1.6, 0xcccccc); }
+      if (!D.puff) { D.puff = true; A.G.fx.smoke(_v, 1.2, 1.6, 0xcccccc); A.G.audio.trap(); }
     }
   },
   cam(A, dt, camPos, camera) {
@@ -302,6 +335,7 @@ const Fleet = {
   },
   update(A, dt) {
     const D = A.data, t = A.t;
+    A._spec('jet', 0.85);
     const offsets = [[0, 0, 0], [-26, 6, -42], [26, 12, -84]];   // tight vic
     D.jets.forEach((j, i) => {
       const [ox, oy, oz] = offsets[i];
@@ -343,38 +377,52 @@ const BridgeRun = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, j = D.j;
+    A._spec('jet', 1.05);                        // full blower on the deck
     // the Golden Gate gap from the old demo route: through (0,42,0) heading +x
     const x = -2900 + 290 * t, z = 520 - 52 * t;
-    if (t < 8.6) {
+    if (t < 9.7) {
       A._place(j, x, 46, z, Math.PI / 2 + 0.03, 0, 0);
-    } else {                                     // the pull: vertical over the towers
+    } else {                                     // clear of the deck — the pull: vertical
       if (!D.pulled) {
         D.pulled = true;
         A.G.fx.flash(j.pos.clone(), 12, 0xffffff, 0.14);
         for (let i = 0; i < 8; i++) A.G.fx.smoke(_v.copy(j.pos).addScaledVector(j.fwd(_w), 2 - i * 1.8), 0.55, 1.3, 0xf4f8ff);
       }
-      const u = Math.min(1, (t - 8.6) / 1.4);
-      const climb = 1.05 * u * u;
+      const u = Math.min(1, (t - 9.7) / 1.3);
+      const climb = 1.3 * u * u;
       A._place(j, j.pos.x + Math.cos(climb) * 290 * dt, j.pos.y + Math.sin(climb) * 290 * dt, j.pos.z - 6 * dt, Math.PI / 2 + 0.03, climb, 0);
+    }
+    // night run: an ember streak off the tailpipes so the jet reads
+    D.streak = (D.streak || 0) - dt;
+    if (D.streak <= 0) {
+      D.streak = 0.09;
+      j.fwd(_v);
+      A.G.fx.trail(_w.copy(j.pos).addScaledVector(_v, -9), 1.3, 0xffa050, 0.8);
     }
   },
   cam(A, dt, camPos, camera) {
     const j = A.data.j, t = A.t;
     const f = j.fwd(_w);
-    if (t < 5) {
-      // off the left wing, bridge ahead — the pilot's run
-      A._chase(dt, camPos, camera,
-        j.pos.x - f.x * 44 - f.z * 18, j.pos.y + 9, j.pos.z - f.z * 44 + f.x * 18,
-        j.pos.x + f.x * 60, j.pos.y + 4, j.pos.z + f.z * 60, 3.4, 56 - t01(t, 5) * 12);
-    } else if (t < 8.8) {
-      // from a boat in the strait — the landmark's view: he swells out of
-      // the west with the north tower behind him, then blasts past overhead
-      A._chase(dt, camPos, camera, -560, 12, 330, j.pos.x, j.pos.y, j.pos.z, 5, 32 - t01(t - 5, 3.8) * 12);
+    if (t < 9.7) {
+      // opens on his six with the bridge swelling ahead, swings to the
+      // bow quarter, pushing in the whole way
+      const k = t01(t, 9.7);
+      const psi = Math.PI - k * 1.85;          // rear -> front-quarter
+      const r = 90 - k * 36;
+      const cx = j.pos.x + (f.x * Math.cos(psi) - f.z * Math.sin(psi)) * r;
+      const cy = j.pos.y + 10 + k * 4;
+      const cz = j.pos.z + (f.z * Math.cos(psi) + f.x * Math.sin(psi)) * r;
+      _v.set(j.pos.x - cx, 0, j.pos.z - cz).normalize();
+      _w.set(-_v.z, 0, _v.x);                  // camera right (xz)
+      A._chase(dt, camPos, camera, cx, cy, cz,
+        j.pos.x + f.x * 12 - _w.x * 36, j.pos.y + 5, j.pos.z + f.z * 12 - _w.z * 36, 3.6, 58 - k * 12);
     } else {
-      // back on him for the pull over the towers
+      // vertical now — the camera hangs ahead of him and looks back at the
+      // bridge: he rips up through frame, still pushing in for speed
+      const k = t01(t - 9.7, 1.3);
       A._chase(dt, camPos, camera,
-        j.pos.x - f.x * 44 - f.z * 18, j.pos.y + 9, j.pos.z - f.z * 44 + f.x * 18,
-        j.pos.x + f.x * 60, j.pos.y + 4, j.pos.z + f.z * 60, 3.4, 50 - t01(t - 8.8, 2.2) * 14);
+        j.pos.x + 125 - k * 45, j.pos.y + 18 - k * 12, j.pos.z + 44 - k * 16,
+        j.pos.x - 30, j.pos.y - 6, j.pos.z - 8, 4.5, 50 - k * 14);
     }
   },
 };
@@ -391,6 +439,7 @@ const Screwtops = {
   },
   update(A, dt) {
     const D = A.data, t = A.t;
+    A._spec('prop', 0.75);
     // the E-2 holds its own wide circle over the group; the camera orbits IT
     const th = t * 0.22;
     const x = D.C.x + Math.sin(th) * 900, z = D.C.z + Math.cos(th) * 900;
@@ -423,6 +472,8 @@ const Tracers = {
   },
   update(A, dt) {
     const D = A.data, t = A.t;
+    A._spec('jet', 0.9);
+    A.G.audio.setGatling(t > 1.2 && t < 8.5);    // the Vulcan sings with the hose
     // shallow dive down a gentle weave, hammering the water off the headlands
     const th = t * 0.5;
     const x = D.C.x + t * 225, z = D.C.z + Math.sin(th) * 90;
@@ -500,15 +551,17 @@ const Sonobuoy = {
     A.G.world.setTimeOfDay('day');
     const j = A._spawn('p3', { ab: false, gear: false, name: 'P-3 ORION' });
     j.speed = 96;
-    A.data = { j, buoys: [], dropped: 0, C: new THREE.Vector3(-42000, 130, -8000) };
+    A.data = { j, buoys: [], dropped: 0, C: new THREE.Vector3(-42000, 130, -8000), beat: -1 };
   },
   update(A, dt) {
     const D = A.data, t = A.t;
+    A._spec('prop', 0.6);
     // straight low run down the datum line — due east, no crab
     A._place(D.j, D.C.x + 96 * t, D.C.y + Math.sin(t * 0.8) * 4, D.C.z, Math.PI / 2, 0, -0.04);
     for (const p of D.j.model.userData.props || []) p.rotation.z += dt * 50;
-    // a stick of three buoys
-    const want = t > 3 ? (t > 4.5 ? (t > 6 ? 3 : 2) : 1) : 0;
+    // a stick of three buoys — early enough that the first splash lands
+    // while the belly cam is still on
+    const want = t > 1.6 ? (t > 3.2 ? (t > 4.8 ? 3 : 2) : 1) : 0;
     while (D.dropped < want) {
       D.dropped++;
       const m = new THREE.Mesh(Sonobuoy.geo || (Sonobuoy.geo = new THREE.CylinderGeometry(0.35, 0.35, 1.6, 6)),
@@ -525,18 +578,36 @@ const Sonobuoy = {
       b.m.rotation.x += dt * 4;
       if (b.m.position.y <= 0.4) {
         b.live = false; b.m.position.y = 0.4; b.m.rotation.x = 0;
-        A.G.fx.splash(b.m.position, 0.8);
+        A.G.fx.splash(b.m.position, 1.6);
+        A.G.audio.splash(0.8);
       }
     }
   },
   teardown(A) { for (const b of (A.data.buoys || [])) A.G.scene.remove(b.m); },
   cam(A, dt, camPos, camera) {
-    // high off the RIGHT beam, looking back-down — Orion up top, the buoy
-    // stick strung out below as it falls toward the water
-    const j = A.data.j, f = j.fwd(_w);
-    A._chase(dt, camPos, camera,
-      j.pos.x + 125, j.pos.y - 22, j.pos.z + 38,
-      j.pos.x - 25, j.pos.y - 55, j.pos.z - 8, 2.8, 52 - t01(A.t, 9.5) * 14);
+    const D = A.data, j = D.j, t = A.t, f = j.fwd(_w);
+    const b = t < 2.5 ? 0 : t < 7.2 ? 1 : 2;
+    let tx, ty, tz, lx, ly, lz, rate, fov;
+    if (b === 1) {
+      // belly cam: slung under the Orion looking back and straight down —
+      // the buoys fall away under us, shrink, and stitch white into the sea
+      tx = j.pos.x - f.x * 3; ty = j.pos.y - 4.2; tz = j.pos.z - f.z * 3 + 1.4;
+      lx = j.pos.x - f.x * 40; ly = j.pos.y - 75; lz = j.pos.z - f.z * 40;
+      rate = 8; fov = 58;
+    } else {
+      // high off the RIGHT beam, looking back-down — Orion up top, the buoy
+      // stick strung out below as it falls toward the water
+      tx = j.pos.x + 125; ty = j.pos.y - 22; tz = j.pos.z + 38;
+      lx = j.pos.x - 25; ly = j.pos.y - 55; lz = j.pos.z - 8;
+      rate = 2.8; fov = 52 - t01(t, 9.5) * 14;
+    }
+    if (D.beat !== b) {
+      if (D.beat >= 0 && A.G.flashCut) A.G.flashCut(0.1);   // fast cut to the drop view
+      D.beat = b;
+      camPos.set(tx, ty, tz);                               // hard snap — a cut, not a swoop
+      camera.position.copy(camPos);
+    }
+    A._chase(dt, camPos, camera, tx, ty, tz, lx, ly, lz, rate, fov);
   },
 };
 
@@ -556,6 +627,7 @@ const MissileCam = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, G = A.G;
+    A._spec('jet', 0.9);
     if (!D.mig.dead) {
       // both jets press east; the bandit holds a shallow bank — the
       // Sidewinder runs him down in one clean pass
@@ -603,6 +675,7 @@ const Eagle = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, j = D.j;
+    A._spec('jet', 1.0);                         // the Eagle stays in blower
     if (t < 3) {
       A._place(j, D.C.x + 280 * t, D.C.y, D.C.z, Math.PI / 2, 0, 0);
     } else {
@@ -631,15 +704,19 @@ const Eagle = {
 
 // ---------------- scene: heavy metal off 01R ----------------
 const Airliner = {
-  name: 'airliner', dur: 11.5,
+  name: 'airliner', dur: 13.5,
   setup(A) {
-    A.G.world.setTimeOfDay('morning');
+    A.G.world.setTimeOfDay('day');
+    // grey day out of SFO: a broken deck overhead (snapped on, not ramped) —
+    // half cover: the puffs read without dragging the light down to dusk
+    A.G.world.setWeather('clouds');
+    A.G.world.cloud01 = 0.5;
     const G = A.G, rw = G.world.runways.find(r => r.name === 'SFO INTL 01R');
     const f = { x: Math.sin(rw.hdg), z: -Math.cos(rw.hdg) };
     const thr = { x: rw.x - f.x * rw.len / 2, z: rw.z - f.z * rw.len / 2 };
     const V = (x, y, z) => new THREE.Vector3(x, y, z);
     const ai = G.spawnAI('b744', {
-      pos: V(thr.x, rw.elev + 2, thr.z), heading: rw.hdg, speed: 70,
+      pos: V(thr.x, rw.elev + 6.4, thr.z), heading: rw.hdg, speed: 70,
       name: 'BAY AIR 216', label: 'BAY AIR', livery: 0,
       mode: 'route', noEvade: true, surface: true,
       waypoints: [
@@ -649,36 +726,53 @@ const Airliner = {
       ],
     });
     ai.kind = 'airliner'; ai.identified = true; ai.targetSpeed = 80;
+    if (ai.model.userData.gear) ai.model.userData.gear.visible = true;
     A.data = { ai, rw, f, airborne: false };
   },
   update(A, dt) {
     // hand-flown: menu state never ticks traffic AI, so the reel drives the
-    // roll, rotation and climb itself (gear stays down like the real jet)
+    // roll, rotation, gear-up and climb itself
     const D = A.data, t = A.t, f = D.f, rw = D.rw, ai = D.ai;
+    A._spec('turbofan', t > 8.6 ? 0.95 : 0.6);   // spool up for the climb
     const thr = D.thr || (D.thr = { x: rw.x - f.x * rw.len / 2, z: rw.z - f.z * rw.len / 2 });
     let d, y, pitch;
     if (t < 8) {                       // the roll: 70 -> 166 m/s
       d = 70 * t + 6 * t * t;
-      y = rw.elev + 2; pitch = 0;
+      y = rw.elev + 6.4; pitch = 0;    // riding on the gear
     } else {                           // rotate at ~950 m, climb away
       const u = Math.min(1, (t - 8) / 1.3), w = Math.max(0, t - 8.6);
       d = 944 + 166 * (t - 8) + 6.9 * (t - 8) * (t - 8);
-      y = rw.elev + 2 + 8 * w * w;
+      y = rw.elev + 6.4 + 8 * w * w;
       pitch = 0.24 * u * u;
     }
     A._place(ai, thr.x + f.x * d, y, thr.z + f.z * d, rw.hdg, pitch, 0);
     if (!D.vapor && t > 8.1) { D.vapor = true; A.G.fx.flash(ai.pos.clone(), 8, 0xffffff, 0.1); }
+    if (!D.gearUp && t > 9.8) {        // gear comes up as the orbit sweeps on
+      D.gearUp = true;
+      if (ai.model.userData.gear) ai.model.userData.gear.visible = false;
+    }
   },
   teardown(A) {
     const D = A.data, i = A.G.bandits.indexOf(D.ai);
     if (i >= 0) A.G.bandits.splice(i, 1);
     D.ai.dispose();
+    A.G.world.setWeather('clear');
+    A.G.world.cloud01 = 0;
   },
   cam(A, dt, camPos, camera) {
-    const D = A.data, ai = D.ai, f = D.f, rw = D.rw;
-    // parked close beside the rotation point, looking back up the runway
-    const cx = rw.x - f.x * rw.len * 0.15 + f.z * 120, cz = rw.z - f.z * rw.len * 0.15 - f.x * 120;
-    A._chase(dt, camPos, camera, cx, 16, cz, ai.pos.x, ai.pos.y + 8, ai.pos.z, 3.2, 48 - t01(A.t, 11.5) * 14);
+    // one long slow orbit round the jet: opens on her rear quarter as the
+    // roll begins, swings round the nose as she rotates, and keeps going
+    // onto the far beam through the gear-up and the climb — closing the
+    // whole way
+    const D = A.data, ai = D.ai, t = A.t, k = t01(t, 13.5);
+    const f = ai.fwd(_w);
+    const alpha = Math.PI - 0.55 - t * 0.33;   // rear-right -> ahead -> far beam
+    const r = 122 - k * 58;
+    A._chase(dt, camPos, camera,
+      ai.pos.x + (f.x * Math.cos(alpha) - f.z * Math.sin(alpha)) * r,
+      ai.pos.y + 9 + k * 30,
+      ai.pos.z + (f.z * Math.cos(alpha) + f.x * Math.sin(alpha)) * r,
+      ai.pos.x + f.x * 18, ai.pos.y + 4, ai.pos.z + f.z * 18, 3.2, 56 - k * 10);
   },
 };
 
@@ -747,6 +841,7 @@ const HeloShip = {
   },
   update(A, dt) {
     const D = A.data;
+    A._spec('prop', 0.6);
     // hover off the cruiser's quarter, riding with her
     D.h.wp.x = D.cg.pos.x - 90; D.h.wp.z = D.cg.pos.z - 60;
     D.h.update(dt, A.G);
@@ -774,6 +869,7 @@ const Harrier = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, j = D.j;
+    A._spec('jet', 0.85);
     const s = D.ship;
     // station-keeping over the container stacks, gentle bob, slow turn
     const bob = Math.sin(t * 1.1) * 1.4;
@@ -798,15 +894,20 @@ const Prowler = {
     sub.group.visible = true;
     A.data = { sub };
   },
-  update(A, dt) { /* she creeps on her own update */ },
+  update(A, dt) { A._spec('prop', 0.45); /* she creeps on her own update */ },
   teardown(A) { A.G.world.enemySub.group.visible = false; },
   cam(A, dt, camPos, camera) {
-    const s = A.data.sub, t = A.t;
-    // full low circle round the boat — hull, sail and wake in one sweep
-    const phi = 0.9 + t01(t, 9) * Math.PI * 2;
-    A._chase(dt, camPos, camera,
-      s.pos.x + Math.sin(phi) * 150, 13, s.pos.z + Math.cos(phi) * 150,
-      s.pos.x + 30, 10, s.pos.z, 3, 52 - t01(t, 9) * 14);
+    const s = A.data.sub, t = A.t, k = t01(t, 9);
+    // the tracker's eye: high overhead, circling slow and sinking lower —
+    // her whole plan-view profile, sail and wake on the blue, like a P-3
+    // sitting on top of the contact
+    const phi = 0.6 + k * Math.PI * 1.5;
+    const r = 800 - k * 120, h = 760 - k * 140;   // she's a kilometre long — stand off enough to hold the whole profile
+    const tx = s.pos.x + Math.sin(phi) * r, tz = s.pos.z + Math.cos(phi) * r;
+    _v.set(s.pos.x + 15 - tx, 0, s.pos.z - tz).normalize();   // camera-right look bias keeps her clear of the menu
+    _w.set(-_v.z, 0, _v.x);
+    A._chase(dt, camPos, camera, tx, h, tz,
+      s.pos.x + 15 - _w.x * 170, 0, s.pos.z - _w.z * 170, 2.6, 46 - k * 6);
   },
 };
 
@@ -821,6 +922,7 @@ const Hawg = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, j = D.j;
+    A._spec('jet', 0.7);
     // low and unhurried up the strait, a gentle wing-rock for the camera
     D.bank = Math.sin(t * 0.7) * 0.14;
     const h = Math.PI / 2 - 0.08 + Math.sin(t * 0.3) * 0.06;
@@ -871,6 +973,7 @@ const Ciws = {
   },
   update(A, dt) {
     const D = A.data, t = A.t;
+    A.G.audio.setGatling(true);            // the Gettysburg never lets go
     // VLS launches ripple down the line — vertical off the deck, then tip
     // over onto the threat axis and streak away under their own smoke pillar
     if (D.li < D.launches.length && t >= D.launches[D.li]) {
@@ -888,6 +991,7 @@ const Ciws = {
       D.li++;
       A.G.fx.flash(grp.position, 16, 0xffc060, 0.25);
       A.G.fx.fire(grp.position, 0.7, 6);
+      A.G.audio.missileFire();
     }
     for (let i = D.vls.length - 1; i >= 0; i--) {
       const m = D.vls[i];
@@ -973,6 +1077,7 @@ const Torpedo = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, sub = D.sub;
+    A._spec('prop', 0.65);                     // the Orion owns the voice
     // parallel low tracks up the sub's line of advance — Orion on the port
     // side, Viking offset starboard and a half-mile back
     A._place(D.p3, sub.pos.x - 480 + 115 * t, 86, sub.pos.z - 60, Math.PI / 2, 0, 0);
@@ -980,54 +1085,7 @@ const Torpedo = {
     for (const p of D.p3.model.userData.props || []) p.rotation.z += dt * 50;
     if (!D.rel1 && D.p3.pos.x >= sub.pos.x - 130) { D.rel1 = true; Torpedo._drop(A, D.p3); }
     if (!D.rel2 && D.s3.pos.x >= sub.pos.x - 120) { D.rel2 = true; Torpedo._drop(A, D.s3); }
-    for (const tp of D.torps) {
-      if (tp.state === 'chute') {
-        // canopy cracks open, then brakes the fall to a soft splashdown
-        tp.open = Math.min(1, tp.open + dt / 0.4);
-        const s = 0.25 + 0.8 * tp.open;
-        tp.ch.scale.set(s, 0.3 + 0.7 * tp.open, s);
-        tp.ch.rotation.z = Math.sin(A.G.time * 1.6 + tp.seed) * 0.12;
-        tp.ch.rotation.x = Math.cos(A.G.time * 1.3 + tp.seed) * 0.1;
-        tp.vel.x = damp(tp.vel.x, 12, 1.1, dt);
-        tp.vel.z = damp(tp.vel.z, 0, 1.1, dt);
-        tp.vel.y = damp(tp.vel.y, -17, 1.4, dt);
-        tp.grp.position.addScaledVector(tp.vel, dt);
-        tp.grp.quaternion.setFromUnitVectors(_zAxis, _w.copy(tp.vel).normalize());
-        tp.ch.position.copy(tp.grp.position); tp.ch.position.y += 5.6;
-        if (tp.grp.position.y <= 0.5) {
-          tp.state = 'run';
-          tp.grp.position.y = -3;
-          A.G.fx.splash(_v.copy(tp.grp.position).setY(0.5), 1.1);
-          tp.crumple = 0;
-          tp.ch.position.y = 1.4;   // the spent canopy collapses on the sea
-        }
-      } else if (tp.state === 'run') {
-        const p = tp.grp.position;
-        _v.set(sub.pos.x - p.x, 0, sub.pos.z - p.z);
-        const dist = _v.length(); _v.normalize();
-        p.x += _v.x * 46 * dt; p.z += _v.z * 46 * dt; p.y = -3;
-        tp.grp.quaternion.setFromUnitVectors(_zAxis, _v);
-        tp.wakeT -= dt;
-        if (tp.wakeT <= 0) {
-          tp.wakeT = 0.1;
-          A.G.fx.trail(_w.set(p.x, 0.5, p.z), 3.6, 0xffffff, 1.7);
-          if (Math.random() < 0.3) A.G.fx.splash(_w, 0.45);
-        }
-        if (dist < 26 || t > 10.15) {
-          tp.state = 'dead';
-          A.G.scene.remove(tp.grp);
-          _w.set(p.x, 1, p.z);
-          A.G.fx.splash(_w, 2.3);
-          A.G.fx.explosion(_w, 0.9);
-        }
-      }
-      if (tp.crumple >= 0) {
-        tp.crumple += dt;
-        const k = t01(tp.crumple, 0.55);
-        tp.ch.scale.set(1.05 + k * 0.15, (1 - k) * 0.9 + 0.06, 1.05 + k * 0.15);
-        if (tp.crumple > 1.4) { A.G.scene.remove(tp.ch); tp.crumple = -1; }
-      }
-    }
+    stepTorps(A, dt, sub, 10.15);
   },
   teardown(A) {
     const D = A.data;
@@ -1069,6 +1127,465 @@ const Torpedo = {
       A._chase(dt, camPos, camera,
         sub.pos.x + 120, 12, sub.pos.z + 260,
         sub.pos.x + 20, 6, sub.pos.z, 3.2, 52 - t01(t - 8.6, 2.4) * 14);
+    }
+  },
+};
+
+// shared torp-chute physics: every weapon in A.data.torps opens its
+// retarder chute, brakes to splashdown, then homes on the live sub with a
+// wake — killAt is the scene's backstop cut time
+function stepTorps(A, dt, sub, killAt) {
+  for (const tp of A.data.torps) {
+    if (tp.state === 'chute') {
+      // canopy cracks open, then brakes the fall to a soft splashdown
+      tp.open = Math.min(1, tp.open + dt / 0.4);
+      const s = 0.25 + 0.8 * tp.open;
+      tp.ch.scale.set(s, 0.3 + 0.7 * tp.open, s);
+      tp.ch.rotation.z = Math.sin(A.G.time * 1.6 + tp.seed) * 0.12;
+      tp.ch.rotation.x = Math.cos(A.G.time * 1.3 + tp.seed) * 0.1;
+      tp.vel.x = damp(tp.vel.x, 12, 1.1, dt);
+      tp.vel.z = damp(tp.vel.z, 0, 1.1, dt);
+      tp.vel.y = damp(tp.vel.y, -26, 1.4, dt);
+      tp.grp.position.addScaledVector(tp.vel, dt);
+      tp.grp.quaternion.setFromUnitVectors(_zAxis, _w.copy(tp.vel).normalize());
+      tp.ch.position.copy(tp.grp.position); tp.ch.position.y += 5.6;
+      if (tp.grp.position.y <= 0.5) {
+        tp.state = 'run';
+        tp.grp.position.y = -3;
+        A.G.fx.splash(_v.copy(tp.grp.position).setY(0.5), 1.1);
+        A.G.audio.splash(1.0);
+        tp.crumple = 0;
+        tp.ch.position.y = 1.4;   // the spent canopy collapses on the sea
+      }
+    } else if (tp.state === 'run') {
+      const p = tp.grp.position;
+      _v.set(sub.pos.x - p.x, 0, sub.pos.z - p.z);
+      const dist = _v.length(); _v.normalize();
+      p.x += _v.x * 40 * dt; p.z += _v.z * 40 * dt; p.y = -3;
+      tp.grp.quaternion.setFromUnitVectors(_zAxis, _v);
+      tp.wakeT -= dt;
+      if (tp.wakeT <= 0) {
+        tp.wakeT = 0.07;
+        A.G.fx.trail(_w.set(p.x, 0.5, p.z), 6.5, 0xffffff, 2.6);
+        if (Math.random() < 0.3) A.G.fx.splash(_w, 0.45);
+      }
+      if (dist < 82 || A.t > killAt) {   // the sub-carrier's beam is 128m: detonate at her waterline, not under the hull
+        tp.state = 'dead';
+        A.G.scene.remove(tp.grp);
+        _w.set(p.x, 1, p.z);
+        A.G.fx.splash(_w, 2.3);
+        A.G.fx.explosion(_w, 1.7);
+        A.G.audio.splash(1.2);
+        A.G.audio.explosion(A.G.camera.position.distanceTo(_w));
+      }
+    }
+    if (tp.crumple >= 0) {
+      tp.crumple += dt;
+      const k = t01(tp.crumple, 0.55);
+      tp.ch.scale.set(1.05 + k * 0.15, (1 - k) * 0.9 + 0.06, 1.05 + k * 0.15);
+      if (tp.crumple > 1.4) { A.G.scene.remove(tp.ch); tp.crumple = -1; }
+    }
+  }
+}
+
+// ---------------- scene: Air Force One with the Eagle watch ----------------
+const AirForceOne = {
+  name: 'af1', dur: 12,
+  setup(A) {
+    A.G.world.setTimeOfDay('day');
+    const af1 = A._spawn('b747', { ab: false, gear: false, name: 'AIR FORCE ONE' });
+    const e1 = A._spawn('f15', { ab: false, gear: false, name: 'ESCORT 1' });
+    const e2 = A._spawn('f15', { ab: false, gear: false, name: 'ESCORT 2' });
+    af1.speed = e1.speed = e2.speed = 220;
+    A.data = { af1, e1, e2, C: new THREE.Vector3(12000, 2600, 16000), hdg: Math.PI * 0.32 };
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t, h = D.hdg;
+    A._spec('turbofan', 0.8);
+    const fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);
+    const px = D.C.x + fx * 220 * t, pz = D.C.z + fz * 220 * t, py = D.C.y + Math.sin(t * 0.5) * 12;
+    // right = (cos h, 0, sin h): an Eagle welded to each wingtip, stepped
+    // down and a touch back
+    A._place(D.af1, px, py, pz, h, 0, Math.sin(t * 0.4) * 0.02);
+    A._place(D.e1, px + rx * 40 - fx * 14, py - 7, pz + rz * 40 - fz * 14, h, 0, 0.03);
+    A._place(D.e2, px - rx * 40 - fx * 14, py - 7, pz - rz * 40 - fz * 14, h, 0, -0.03);
+  },
+  cam(A, dt, camPos, camera) {
+    // a full lap round the formation, opening on the rear quarter and
+    // closing the whole way — the escorts hold station through frame
+    const D = A.data, t = A.t, k = t01(t, 12), h = D.hdg;
+    const fx = Math.sin(h), fz = -Math.cos(h), rx = Math.cos(h), rz = Math.sin(h);
+    const phi = Math.PI - 0.5 + k * Math.PI * 1.76;   // ~317 degrees: ends on the front-right money shot, short of the rear-right blind spot
+    const r = (160 - k * 55) * (1 + 0.3 * Math.abs(Math.sin(phi)));   // breathe out abeam so the near escort holds frame
+    const ox = fx * Math.cos(phi) * r + rx * Math.sin(phi) * r;
+    const oz = fz * Math.cos(phi) * r + rz * Math.sin(phi) * r;
+    // screen-space look bias, stable all the way round the lap (a formation-
+    // space bias flips sign as the camera circles): push the frame contents
+    // right, clear of the menu — same trick as Furball and BridgeRun
+    _v.set(fx * 12 - ox, 0, fz * 12 - oz).normalize();
+    _w.set(-_v.z, 0, _v.x);
+    A._chase(dt, camPos, camera,
+      D.af1.pos.x + ox, D.af1.pos.y + 26 - k * 16, D.af1.pos.z + oz,
+      D.af1.pos.x + fx * 12 - _w.x * 38, D.af1.pos.y + 2, D.af1.pos.z + fz * 12 - _w.z * 38, 3, 54 - k * 4);
+  },
+};
+
+// ---------------- scene: the Seahawk's dip turns into an attack ----------------
+const HeloTorp = {
+  name: 'helotorp', dur: 10,
+  setup(A) {
+    A.G.world.setTimeOfDay('dusk');
+    const sub = A.G.world.enemySub;
+    sub.group.visible = true;
+    const h = new Helicopter(A.G.scene, A.G.world, {
+      type: 'seahawk', spun: true, cruiseAlt: 60,
+      pos: new THREE.Vector3(sub.pos.x - 240, 60, sub.pos.z + 130),   // on station almost at once — the drop must happen over the hover
+      heading: Math.PI / 2,
+    });
+    h.order({ kind: 'goto', wp: { x: sub.pos.x - 170, y: 46, z: sub.pos.z + 90 } });
+    A.data = { h, sub, torps: [], dropped: false, beat: -1 };
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t;
+    A._spec('prop', 0.65);
+    // hover on her quarter, tracking the creep
+    D.h.wp.x = D.sub.pos.x - 170; D.h.wp.z = D.sub.pos.z + 90;
+    D.h.update(dt, A.G);
+    const hdx = D.h.pos.x - (D.sub.pos.x - 170), hdz = D.h.pos.z - (D.sub.pos.z + 90);
+    if (t > 1.7 && !D.dropped && (hdx * hdx + hdz * hdz < 6400 || t > 3.5)) {
+      D.dropped = true;
+      // weapon away and a wall of flares in the same beat
+      Torpedo._drop(A, { pos: D.h.pos, fwd: (o) => D.h.fwd(o) });
+      const tp = D.torps[D.torps.length - 1], f = D.h.fwd(_v);
+      tp.vel.set(f.x * 8, -1, f.z * 8);       // a drop, not a launch
+      for (let i = 0; i < 8; i++) {
+        _w.copy(D.h.pos).add(_v.set(rand(-16, 16), rand(-8, 2), rand(-16, 16)));
+        A.G.fx.flash(_w, 4, 0xffc860, 0.5);
+        A.G.fx.smoke(_w, 1.1, 0.9, 0xffd080);
+      }
+    }
+    stepTorps(A, dt, D.sub, 9.0);
+  },
+  teardown(A) {
+    const D = A.data;
+    for (const tp of D.torps) { A.G.scene.remove(tp.grp); A.G.scene.remove(tp.ch); }
+    A.G.scene.remove(D.h.model);
+    A.G.world.enemySub.group.visible = false;
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, t = A.t, h = D.h;
+    const b = t < 2.4 ? 0 : t < 6.5 ? 1 : 2;
+    if (D.beat !== b) {
+      if (D.beat >= 0 && A.G.flashCut) A.G.flashCut(0.12);
+      D.beat = b;
+      const tp = D.torps[0];
+      if (b === 1 && tp) camPos.set(tp.grp.position.x - 24, tp.grp.position.y + 11, tp.grp.position.z + 30);
+      else if (b === 2) camPos.set(D.sub.pos.x - 40, 12, D.sub.pos.z + 220);
+      camera.position.copy(camPos);
+    }
+    if (b === 0) {
+      // rear three-quarter on the hover, swinging toward the nose, closing —
+      // the drop and the flare wall happen mid-sweep
+      const k = t01(t, 2.4);
+      const phi = Math.PI - 0.6 + k * 2.3;
+      const f = h.fwd(_w), rx = Math.cos(h.heading), rz = Math.sin(h.heading);
+      const r = 42 - k * 14;
+      const ox = (f.x * Math.cos(phi) + rx * Math.sin(phi)) * r;
+      const oz = (f.z * Math.cos(phi) + rz * Math.sin(phi)) * r;
+      _v.set(-ox, 0, -oz).normalize();   // camera-to-helo: bias the look along camera-right, clear of the menu
+      A._chase(dt, camPos, camera,
+        h.pos.x + ox, h.pos.y + 9, h.pos.z + oz,
+        h.pos.x + _v.z * 6, h.pos.y - 2, h.pos.z - _v.x * 6, 3.4, 56 - k * 10);
+    } else if (b === 1) {
+      // ride the weapon down under its canopy — look biased camera-right, clear of the menu
+      const tp = D.torps[0];
+      if (tp) {
+        const run = tp.state === 'run';
+        if (run) {
+          // she's swimming: high behind the weapon, wake stretching ahead to the target
+          _v.set(D.sub.pos.x - tp.grp.position.x, 0, D.sub.pos.z - tp.grp.position.z).normalize();
+          A._chase(dt, camPos, camera,
+            tp.grp.position.x - _v.x * 50 - _v.z * 24, 42, tp.grp.position.z - _v.z * 50 + _v.x * 24,
+            tp.grp.position.x + _v.x * 14 + _v.z * 8, 0, tp.grp.position.z + _v.z * 14 - _v.x * 8, 4.5, 42);
+        } else {
+          _v.set(24, 0, -30).normalize();
+          A._chase(dt, camPos, camera,
+            tp.grp.position.x - 24, tp.grp.position.y + 11, tp.grp.position.z + 30,
+            tp.grp.position.x + _v.z * 6, tp.grp.position.y, tp.grp.position.z - _v.x * 6, 4.5, 46 - t01(t - 2.4, 4.1) * 10);
+        }
+      }
+    } else {
+      // low off her beam on the weapon's approach side: the wake closes and the sea erupts
+      A._chase(dt, camPos, camera,
+        D.sub.pos.x - 40, 12, D.sub.pos.z + 220,
+        D.sub.pos.x - 75, 3, D.sub.pos.z + 45, 3.2, 52 - t01(t - 6.5, 2.4) * 14);
+    }
+  },
+};
+
+// ---------------- scene: door gunner vs the fast boat ----------------
+const HeloGun = {
+  name: 'helogun', dur: 10.5,
+  setup(A) {
+    A.G.world.setTimeOfDay('day');
+    // hover at 300 ft over open water, right side to the threat axis
+    const h = new Helicopter(A.G.scene, A.G.world, {
+      type: 'seahawk', spun: true,
+      pos: new THREE.Vector3(-20000, 91, 8000),
+      heading: 0,                       // nose north; the gun looks east
+    });
+    const boat = A._spawn('boat', { ab: false, gear: false, name: 'GO-FAST' });
+    boat.speed = 45;
+    boat.pos.set(-19450, 0.6, 8000);   // 550 m east, charging the gun line
+    // door gun: a short barrel bolted to the right-hand door
+    const gun = new GunSystem(A.G);
+    const barrel = new THREE.Mesh(
+      HeloGun.bGeo || (HeloGun.bGeo = (() => { const g = new THREE.CylinderGeometry(0.09, 0.09, 2.2, 6); g.rotateZ(Math.PI / 2); return g; })()),
+      HeloGun.bMat || (HeloGun.bMat = new THREE.MeshBasicMaterial({ color: 0x1c2024 })));
+    barrel.position.set(-1.7, -0.6, 0.3);   // model right is -x
+    h.model.add(barrel);
+    const shooter = { pos: new THREE.Vector3(), fwd: new THREE.Vector3(), vel: new THREE.Vector3(), stores: { gun: 99999 }, isPlayer: false };
+    A.data = {
+      h, boat, gun, shooter, barrel, beat: -1, flashT: 0, splashT: 0, aimT: 0,
+      aim: new THREE.Vector3(30, 0, -14),
+    };
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t, h = D.h, boat = D.boat;
+    A._spec('prop', 0.55);
+    A.G.audio.setGatling((t % 1.2) < 0.7 && t > 1.2);   // the bursts bark
+    // rock-steady hover at 300 ft (parked holds the spot; we keep the rotor lit)
+    h.rpm = 1;
+    h.update(dt, A.G);
+    h.model.position.y += Math.sin(A.G.time * 1.1) * 0.5;   // hover breathe
+    // the go-fast runs straight at the gun, throwing a rooster tail
+    const gx = h.pos.x + 1.7, gz = h.pos.z + 0.3;   // gun world (heading 0: right = +x)
+    const dx = gx - boat.pos.x, dz = gz - boat.pos.z;
+    const dist = Math.hypot(dx, dz);
+    const bh = Math.atan2(dx, -dz);
+    A._place(boat, boat.pos.x + Math.sin(bh) * 45 * dt, 0.6, boat.pos.z - Math.cos(bh) * 45 * dt, bh, 0, 0);
+    D.splashT -= dt;
+    if (D.splashT <= 0) {   // bow spray + wake
+      D.splashT = 0.13;
+      A.G.fx.trail(_w.set(boat.pos.x - Math.sin(bh) * 4, 0.4, boat.pos.z + Math.cos(bh) * 4), 2.6, 0xffffff, 1.3);
+      if (Math.random() < 0.35) A.G.fx.splash(_v.set(boat.pos.x + Math.sin(bh) * 4, 0.5, boat.pos.z - Math.cos(bh) * 4), 0.5);
+    }
+    // the gunner walks his bursts onto the boat — the aim point wanders
+    // tight as the run closes
+    D.aimT -= dt;
+    if (D.aimT <= 0) {
+      D.aimT = 0.45;
+      const spread = 42 * (1 - t01(t, 9.6)) + 4;
+      const a = Math.random() * Math.PI * 2, rr = (0.35 + Math.random() * 0.65) * spread;
+      D.aim.set(boat.pos.x + Math.cos(a) * rr, 0, boat.pos.z + Math.sin(a) * rr);
+    }
+    // bursts: 0.7 s on, 0.5 s off
+    D.shooter.pos.set(gx, h.pos.y - 1.4, gz);
+    D.shooter.fwd.set(D.aim.x - gx, D.aim.y - (h.pos.y - 1.4), D.aim.z - gz).normalize();
+    if ((t % 1.2) < 0.7 && t > 1.2) {
+      D.gun.fire(dt, D.shooter, []);
+      D.flashT -= dt;
+      if (D.flashT <= 0) {
+        D.flashT = 0.09;
+        A.G.fx.flash(D.shooter.pos, 3, 0xffc860, 0.08);
+      }
+      // rounds striking the sea around the boat
+      if (Math.random() < 0.55) A.G.fx.splash(_v.set(D.aim.x + rand(-6, 6), 0.5, D.aim.z + rand(-6, 6)), 0.55);
+    }
+    D.gun.update(dt);
+  },
+  teardown(A) {
+    const D = A.data;
+    for (const tr of D.gun.tracers) A.G.scene.remove(tr.mesh);
+    D.h.model.remove(D.barrel);
+    A.G.scene.remove(D.h.model);
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, t = A.t, h = D.h, boat = D.boat;
+    const b = t < 8.6 ? 0 : 1;
+    if (D.beat !== b) {
+      if (D.beat >= 0 && A.G.flashCut) A.G.flashCut(0.12);
+      D.beat = b;
+      if (b === 1) {
+        const bh = Math.atan2(h.pos.x - boat.pos.x, -(h.pos.z - boat.pos.z));
+        camPos.set(boat.pos.x - Math.sin(bh) * 3.5, 2.6, boat.pos.z + Math.cos(bh) * 3.5);
+      }
+      camera.position.copy(camPos);
+    }
+    if (b === 0) {
+      // a full lap round the gunship, tight and closing — the door gun and
+      // its tracer stream stitched down toward the charging go-fast
+      const k = t01(t, 8.6);
+      const phi = Math.PI - 0.5 + k * Math.PI * 2;
+      const r = 46 - k * 18;
+      const gx = h.pos.x + 1.7, gz = h.pos.z + 0.3;
+      const cx = h.pos.x + Math.sin(phi) * r, cz = h.pos.z + Math.cos(phi) * r;
+      _v.set(boat.pos.x - gx, 0, boat.pos.z - gz).normalize();   // gun-to-boat line
+      // look down the tracer lane early, swing back onto the gun as the orbit
+      // comes round the boat side — else the lane lead drags her out of frame
+      const lead = (24 - k * 10) * (1 - k * k);
+      const lx = gx + _v.x * lead, lz = gz + _v.z * lead;
+      // screen-space bias off the true view axis: frame contents shift right, clear of the menu
+      _w.set(lx - cx, 0, lz - cz).normalize();
+      const rx = -_w.z, rz = _w.x;
+      A._chase(dt, camPos, camera,
+        cx, h.pos.y + 10 - k * 6, cz,
+        lx - rx * 12, h.pos.y - 1 - k * 2, lz - rz * 12, 3, 56 - k * 8);
+    } else {
+      // the go-fast's bow: the Seahawk hangs dead ahead at 300 ft and the
+      // tracers rip past overhead
+      const bh = Math.atan2(h.pos.x - boat.pos.x, -(h.pos.z - boat.pos.z));
+      A._chase(dt, camPos, camera,
+        boat.pos.x - Math.sin(bh) * 3.5, 2.6, boat.pos.z + Math.cos(bh) * 3.5,
+        h.pos.x, h.pos.y, h.pos.z, 7, 52);
+    }
+  },
+};
+
+// ---------------- scene: SAR — the group brings its pilot home ----------------
+const Rescue = {
+  name: 'rescue', dur: 18,
+  setup(A) {
+    A.G.world.setTimeOfDay('day');
+    const c = A.G.world.carrier;
+    // already under the canopy, ninety seconds into the float down
+    const start = new THREE.Vector3(c.pos.x + 700, 120, c.pos.z - 420);
+    const chute = new Chute(A.G.scene, start, new THREE.Vector3(4, -2, 0), 0);
+    chute.t = 1.7; chute.canopy.scale.set(1, 0.72, 1); chute.lines.visible = true;
+    // the alert helo is already off the deck and bending on
+    const h = new Helicopter(A.G.scene, A.G.world, {
+      type: 'seahawk', spun: true, cruiseAlt: 55, cruiseSpeed: 115,
+      pos: new THREE.Vector3(c.pos.x + 330, 55, c.pos.z - 200),
+      heading: Math.PI / 2,
+    });
+    // no goto order — the update loop hand-flies the whole profile
+    // winch wire, hidden until the hoist
+    const wg = new THREE.BufferGeometry();
+    wg.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0, 0, 0, 0], 3));
+    const wire = new THREE.Line(wg, Rescue.wMat || (Rescue.wMat = new THREE.LineBasicMaterial({ color: 0x101418 })));
+    wire.visible = false; wire.frustumCulled = false;
+    A.G.scene.add(wire);
+    A.data = { c, chute, h, wire, phase: 'float', beat: -1, grabY: 0 };
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t, ch = D.chute, h = D.h;
+    A._spec('prop', 0.55);
+    if (D.phase === 'float') {
+      ch.update(dt);                        // the long float down
+      // hand-flown inbound: bore in for a spot over the pilot — the stock
+      // goto loiters and the scene clock can't wait on it
+      _v.set(ch.group.position.x - h.pos.x, 55 - h.pos.y, ch.group.position.z - h.pos.z);
+      const d0 = _v.length();
+      if (d0 > 0.01) {
+        _v.normalize();
+        h.pos.addScaledVector(_v, Math.min(d0, 85 * dt));
+        h.heading = damp(h.heading, Math.atan2(_v.x, -_v.z), 1.2, dt);
+      }
+      h.rpm = 1;
+      h.update(dt, A.G);
+      // on station overhead: switch to a driven hover above the pilot
+      const dx = ch.group.position.x - h.pos.x, dz = ch.group.position.z - h.pos.z;
+      if (Math.hypot(dx, dz) < 60 && h.pos.y < 75) { D.phase = 'hover'; h.mode = 'parked'; }
+    } else {
+      // hand-flown from here: hold station over the pilot, winch him up,
+      // then bend on for the boat
+      let tx, ty, tz;
+      if (D.phase === 'hover') {
+        ch.update(dt);                      // he keeps floating while the helo positions
+        tx = ch.group.position.x; ty = ch.group.position.y + 15; tz = ch.group.position.z;
+        const d = Math.hypot(tx - h.pos.x, tz - h.pos.z);
+        if (d < 4 && Math.abs(h.pos.y - ty) < 2.5) {
+          D.phase = 'hoist';
+          D.grabY = h.pos.y;                // hold this altitude on the winch — else helo and pilot ladder-climb forever
+          ch.landed = true;                 // freeze the chute's own physics
+          ch.canopy.visible = false; ch.lines.visible = false;
+          D.wire.visible = true;
+        }
+      } else if (D.phase === 'hoist') {
+        tx = ch.group.position.x; ty = D.grabY; tz = ch.group.position.z;
+        ch.group.position.y += (h.pos.y - 9 - ch.group.position.y) * Math.min(1, 1.3 * dt);
+        ch.group.rotation.set(0, 0, 0);
+        if (ch.group.position.y > h.pos.y - 9.6) D.phase = 'home';
+      } else {
+        // straight leg back to the carrier, pilot on the wire
+        const c = D.c;
+        tx = c.pos.x + 40; ty = 42; tz = c.pos.z;
+      }
+      const sp = D.phase === 'home' ? 34 : 26;
+      _v.set(tx - h.pos.x, ty - h.pos.y, tz - h.pos.z);
+      const d = _v.length();
+      if (d > 0.01) {
+        _v.normalize();
+        const step = Math.min(d, sp * dt);
+        h.pos.addScaledVector(_v, step);
+        h.heading = damp(h.heading, Math.atan2(_v.x, -_v.z), 1.2, dt);
+      }
+      h.rpm = 1;                            // parked would spool down — keep her lit
+      h.update(dt, A.G);                    // parked with no anchor holds position
+      if (D.phase !== 'hover') {            // pilot rides the wire once grabbed
+        ch.group.position.x = h.pos.x; ch.group.position.z = h.pos.z;
+        if (D.phase === 'home') ch.group.position.y = h.pos.y - 9.6;
+      }
+      const p = D.wire.geometry.attributes.position;
+      p.setXYZ(0, h.pos.x, h.pos.y - 1.5, h.pos.z);
+      p.setXYZ(1, ch.group.position.x, ch.group.position.y + 2.2, ch.group.position.z);
+      p.needsUpdate = true;
+    }
+  },
+  teardown(A) {
+    const D = A.data;
+    A.G.scene.remove(D.chute.group); A.G.scene.remove(D.h.model); A.G.scene.remove(D.wire);
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, t = A.t, ch = D.chute, h = D.h;
+    const b = t < 4.5 ? 0 : t < 8 ? 1 : t < 13 ? 2 : 3;
+    const p = ch.group.position;
+    if (D.beat !== b) {
+      if (D.beat >= 0 && A.G.flashCut) A.G.flashCut(0.12);
+      D.beat = b;
+      if (b === 1) {
+        _v.set(h.pos.x - p.x, 0, h.pos.z - p.z).normalize();
+        camPos.set(p.x - _v.x * 25 - _v.z * 55, 14, p.z - _v.z * 25 + _v.x * 55);
+      } else if (b === 2) camPos.set(h.pos.x + 26, h.pos.y + 2, h.pos.z + 26);
+      else if (b === 3) {
+        _v.set(D.c.pos.x - h.pos.x, 0, D.c.pos.z - h.pos.z).normalize();
+        _w.set(-_v.z, 0, _v.x);
+        camPos.set(h.pos.x - _v.x * 55 + _w.x * 30, h.pos.y + 16, h.pos.z - _v.z * 55 + _w.z * 30);
+      }
+      camera.position.copy(camPos);
+    }
+    if (b === 0) {
+      // slow orbit of the float down, closing in
+      const k = t01(t, 4.5);
+      const phi = 2.4 + k * 2.2;
+      A._chase(dt, camPos, camera,
+        p.x + Math.sin(phi) * (58 - k * 20), p.y + 6, p.z + Math.cos(phi) * (58 - k * 20),
+        p.x, p.y + 2, p.z, 3.2, 56 - k * 10);
+    } else if (b === 1) {
+      // side-on tracking shot: the pilot foreground, the Seahawk swelling
+      // inbound beyond him — the pair shoved right, clear of the menu
+      _v.set(h.pos.x - p.x, 0, h.pos.z - p.z).normalize();      // chute -> helo line
+      _w.set(-_v.z, 0, _v.x);                                   // camera right
+      A._chase(dt, camPos, camera,
+        p.x - _v.x * 25 - _v.z * 55, 14, p.z - _v.z * 25 + _v.x * 55,
+        p.x + _v.x * 30 - _w.x * 42, (p.y + h.pos.y) / 2, p.z + _v.z * 30 - _w.z * 42, 3.4, 50 - t01(t - 4.5, 3.5) * 10);
+    } else if (b === 2) {
+      // tight circle on the hoist: the pilot comes up to the door
+      const k = t01(t - 8, 5);
+      const phi = 0.8 + k * 1.8;
+      const cx = h.pos.x + Math.sin(phi) * 30, cz = h.pos.z + Math.cos(phi) * 30;
+      _v.set(h.pos.x - cx, 0, h.pos.z - cz).normalize();
+      _w.set(-_v.z, 0, _v.x);
+      A._chase(dt, camPos, camera, cx, h.pos.y + 2, cz,
+        h.pos.x - _w.x * 8, h.pos.y - 5, h.pos.z - _w.z * 8, 3.6, 46 - k * 8);
+    } else {
+      // off their trailing quarter: helo, pilot on the wire, the boat beyond
+      const c = D.c;
+      _v.set(c.pos.x - h.pos.x, 0, c.pos.z - h.pos.z).normalize();
+      _w.set(-_v.z, 0, _v.x);
+      A._chase(dt, camPos, camera,
+        h.pos.x - _v.x * 55 + _w.x * 30, h.pos.y + 16, h.pos.z - _v.z * 55 + _w.z * 30,
+        h.pos.x + _v.x * 60 - _w.x * 34, 30, h.pos.z + _v.z * 60 - _w.z * 34, 2.6, 48 - t01(t - 13, 5) * 8);
     }
   },
 };
@@ -1125,6 +1642,7 @@ const CityBuzz = {
   },
   update(A, dt) {
     const D = A.data, t = A.t, f = D.dir, r = D.right;
+    A._spec('jet', 0.95);
     const bank = Math.sin(t * 0.85) * 0.16;
     const cx = D.P0.x + f.x * 300 * t, cz = D.P0.z + f.z * 300 * t;
     // tight diamond — lead, wingmen stepped back on the beams, slot in the wash
@@ -1181,4 +1699,4 @@ const CityBuzz = {
   },
 };
 
-const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, MissileCam, Eagle, Airliner, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun];
+const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, HeloTorp, HeloGun, Rescue, MissileCam, Eagle, Airliner, AirForceOne, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun];

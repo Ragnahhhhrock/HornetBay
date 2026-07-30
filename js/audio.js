@@ -1,7 +1,8 @@
 // audio.js — engine/SFX built around samples captured from the original Amiga
 // game (eng_idle/eng_mil loops, gear servo, missile whoosh, explosion boom).
-// No music: the original plays its theme only on the title screens, and the
-// user asked for none here. Warning tones are synthesized to match.
+// No music in the cockpit — the anthem lives on the site pages and the menu
+// (js/anthem.js); the sim keeps the soundscape to itself. Warning tones are
+// synthesized to match.
 import { clamp, lerp } from './util.js';
 
 export class AudioEngine {
@@ -42,6 +43,13 @@ export class AudioEngine {
       } catch (e) { /* sample missing — synth fallbacks still work */ }
     }));
     this._buildEngineLoop();
+    // voices built before the decode finished lack the recorded jet pair —
+    // fade whatever is live and let specTick rebuild with full buffers
+    if (this._spec) {
+      const t = this.ctx.currentTime;
+      for (const k of Object.keys(this._spec.v)) this._spec.v[k].out.gain.setTargetAtTime(0, t, 0.1);
+      this._spec = null;
+    }
   }
 
   // ---------- continuous engine: two recorded loops crossfaded by thrust ----------
@@ -217,6 +225,12 @@ export class AudioEngine {
     this._tone(90, 1.1, 0.5 * v, 'sine', 28);
   }
   chaff() { this._noiseHit(0.3, 0.25, 6000, 2, 2000); }
+  // something heavy hits the sea: the white-noise column of the splash
+  // collapsing, over a low whoomph — torpedoes, buoys, ditched airframes
+  splash(vol = 1) {
+    this._noiseHit(0.65, 0.5 * vol, 1100, 0.7, 160);
+    this._tone(110, 0.35, 0.22 * vol, 'sine', 45);
+  }
   gear() { this._play('gear', 0.8); }
   hook() { this._tone(160, 0.25, 0.25, 'square', 80); }
   trap() { this._noiseHit(0.7, 0.6, 800, 0.8, 100); this._tone(120, 0.5, 0.4, 'sawtooth', 45); }
