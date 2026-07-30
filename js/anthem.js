@@ -1,6 +1,7 @@
-/* anthem.js — The Hornet Bay Anthem: an original heroic march as an
-   Amiga-flavoured chiptune, looping seamlessly (no gap at the seam — the last
-   note releases exactly as the downbeat of the next lap attacks).
+/* anthem.js — The Hornet Bay Anthem, the full studio recording, looping
+   seamlessly (the file is trimmed to the music — no silence at the seam — and
+   looped sample-accurate through WebAudio, so the last bar falls straight back
+   into the first).
    Plays in the background on every non-game page (homepage menu, blog, store,
    print bay, assets). Browsers gate audio behind a user gesture: the first
    click or key anywhere on the page wakes the band. A small player is pinned
@@ -9,68 +10,12 @@
    the soundscape; back at the menu, show() brings the player back.          */
 (function () {
   'use strict';
-  var N2S = { C: 0, 'C#': 1, Db: 1, D: 2, 'D#': 3, Eb: 3, E: 4, F: 5, 'F#': 6, Gb: 6, G: 7, 'G#': 8, Ab: 8, A: 9, 'A#': 10, Bb: 10, B: 11 };
-  function freq(n) {
-    var m = /^([A-G][#b]?)(\d)$/.exec(n);
-    return 440 * Math.pow(2, (N2S[m[1]] + (parseInt(m[2], 10) + 1) * 12 - 69) / 12);
-  }
-  var BPM = 88, SPB = 60 / BPM;
-  // The Hornet Bay Anthem — sixteen bars of 4/4 in A minor, [note, beats].
-  // Two strains: the call (bars 1-8) and the answer an octave up (9-16),
-  // closing on the dominant so the loop falls straight back into bar 1.
-  var MEL = [
-    ['A4', 1], ['E5', .5], ['D5', .5], ['C5', 1], ['B4', .5], ['A4', .5],   // 1  Am
-    ['G4', 1], ['A4', .5], ['B4', .5], ['C5', 2],                          // 2  Am
-    ['A4', 1], ['C5', .5], ['F5', .5], ['E5', 1], ['D5', .5], ['C5', .5],   // 3  F
-    ['B4', 1.5], ['C5', .5], ['D5', 1], ['E5', 1],                         // 4  E
-    ['A4', 1], ['E5', .5], ['D5', .5], ['C5', 1], ['B4', .5], ['A4', .5],   // 5  Am
-    ['A4', 1.5], ['G4', .5], ['F4', 1], ['E4', 1],                         // 6  F
-    ['D5', 1], ['E5', .5], ['F5', .5], ['G5', 2],                          // 7  G
-    ['E5', 1.5], ['D5', .5], ['B4', 1], ['C5', .5], ['B4', .5],             // 8  E
-    ['E5', 2], ['A5', 1.5], ['G5', .5],                                    // 9  Am
-    ['A5', 1], ['G5', .5], ['E5', .5], ['C5', 2],                          // 10 Am
-    ['F5', 2], ['A5', 1.5], ['G5', .5],                                    // 11 F
-    ['G5', 1], ['F5', .5], ['D5', .5], ['B4', 2],                          // 12 G
-    ['C5', 2], ['E5', 1.5], ['D5', .5],                                    // 13 Am
-    ['C5', 1], ['A4', .5], ['C5', .5], ['F5', 2],                          // 14 F
-    ['D5', 1.5], ['E5', .5], ['F5', 1], ['G5', 1],                         // 15 G
-    ['B4', 1.5], ['G#4', .5], ['A4', 1], ['E4', 1]                         // 16 E -> back to 1
-  ];
-  // one chord per 4-beat bar; the bass marches root - fifth - root - fifth
-  var CHORDS = ['Am', 'Am', 'F', 'E', 'Am', 'F', 'G', 'E', 'Am', 'Am', 'F', 'G', 'Am', 'F', 'G', 'E'];
-  var ROOT = { Am: 'A2', F: 'F2', G: 'G2', E: 'E2' };
-  var REST = 0;                                  // seamless: no gap between loops
-  var LOOP_B = 0, i;
-  for (i = 0; i < MEL.length; i++) LOOP_B += MEL[i][1];
+  var SRC = '/audio/hornet-bay-anthem.mp3';
 
-  // flatten to timed events: {t (beats), f, d (beats), bass}
-  var EV = [];
-  var tb = 0;
-  for (i = 0; i < MEL.length; i++) {
-    EV.push({ t: tb, f: freq(MEL[i][0]), d: MEL[i][1], bass: false });
-    tb += MEL[i][1];
-  }
-  for (i = 0; i < CHORDS.length; i++) {
-    var r = freq(ROOT[CHORDS[i]]);
-    EV.push({ t: i * 4, f: r, d: 1.05, bass: true });
-    EV.push({ t: i * 4 + 1, f: r * 1.4983, d: 0.9, bass: true });
-    EV.push({ t: i * 4 + 2, f: r, d: 0.95, bass: true });
-    EV.push({ t: i * 4 + 3, f: r * 1.4983, d: 0.9, bass: true });
-  }
-  EV.sort(function (a, b) { return a.t - b.t; });
-  // seamless seam: the final lead and bass notes ring a third of a beat PAST
-  // the loop point, so the downbeat of the next lap lands on their release —
-  // no silence, no click, ever
-  for (i = EV.length - 1; i >= 0; i--) {
-    if (!EV[i].seamed && EV[i].t + EV[i].d > LOOP_B - 0.75) {
-      EV[i].d = LOOP_B - EV[i].t + 0.3;
-      EV[i].seamed = true;
-    }
-  }
-
-  var ctx = null, master = null, timer = null;
-  var playing = false, paused = false, visible = true;
-  var evIdx = 0, loopT0 = 0;
+  var ctx = null, master = null;
+  var buf = null, bufP = null;              // decoded audio + its load promise
+  var src = null;                           // the live BufferSource (one-shot)
+  var playing = false, paused = false, visible = true, wantPlay = false;
   var PREF = 'hb-anthem';
   function prefOn() { try { return localStorage.getItem(PREF) !== 'off'; } catch (e) { return true; } }
   function setPref(v) { try { localStorage.setItem(PREF, v); } catch (e) {} }
@@ -88,61 +33,40 @@
     return true;
   }
 
-  function note(f, t, d, bass) {
-    var o = ctx.createOscillator(), g = ctx.createGain();
-    o.type = bass ? 'triangle' : 'square';
-    o.frequency.value = f;
-    var peak = bass ? 0.05 : 0.15;
-    g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(peak, t + 0.014);
-    g.gain.setValueAtTime(peak, t + Math.max(0.02, d - 0.07));
-    g.gain.exponentialRampToValueAtTime(0.0001, t + d);
-    o.connect(g); g.connect(master);
-    o.start(t); o.stop(t + d + 0.02);
-    if (!bass) {   // a hair of detuned chorus fattens the lead, Amiga-style
-      var o2 = ctx.createOscillator(), g2 = ctx.createGain();
-      o2.type = 'square';
-      o2.frequency.value = f * 1.004;
-      g2.gain.setValueAtTime(0.0001, t);
-      g2.gain.linearRampToValueAtTime(0.05, t + 0.014);
-      g2.gain.setValueAtTime(0.05, t + Math.max(0.02, d - 0.07));
-      g2.gain.exponentialRampToValueAtTime(0.0001, t + d);
-      o2.connect(g2); g2.connect(master);
-      o2.start(t); o2.stop(t + d + 0.02);
-    }
-  }
-
-  function tick() {
-    if (!playing || paused || !ctx || ctx.state !== 'running') return;
-    var ahead = ctx.currentTime + 0.35;
-    for (;;) {
-      var ev = EV[evIdx];
-      var t = loopT0 + ev.t * SPB;
-      if (t >= ahead) break;
-      note(ev.f, t, ev.d * SPB * (ev.bass ? 0.95 : 0.9), ev.bass);
-      evIdx++;
-      if (evIdx >= EV.length) {
-        evIdx = 0;
-        loopT0 += (LOOP_B + REST) * SPB;
-      }
-    }
+  function load() {
+    if (bufP) return bufP;
+    bufP = fetch(SRC)
+      .then(function (r) { return r.arrayBuffer(); })
+      .then(function (ab) { return ctx.decodeAudioData(ab); })
+      .then(function (b) {
+        buf = b;
+        if (wantPlay && !playing) startEngine();   // arrived after the gesture
+        return b;
+      })
+      .catch(function () { bufP = null; });        // let a later play() retry
+    return bufP;
   }
 
   function startEngine() {
     if (!ensure()) return false;
-    if (timer) clearInterval(timer);
-    evIdx = 0;
-    loopT0 = ctx.currentTime + 0.08;
-    paused = false; playing = true;
+    wantPlay = true;
+    if (!buf) { load(); syncUI(); return true; }   // first fetch: start when ready
+    if (src) { try { src.stop(); } catch (e) {} }
+    src = ctx.createBufferSource();
+    src.buffer = buf;
+    src.loop = true;                               // sample-accurate, no gap at the seam
+    src.connect(master);
     master.gain.cancelScheduledValues(ctx.currentTime);
     master.gain.setTargetAtTime(1, ctx.currentTime, 0.05);
-    timer = setInterval(tick, 100);
+    src.start();
+    paused = false; playing = true;
     syncUI();
     return true;
   }
 
   function silence() {
-    if (timer) { clearInterval(timer); timer = null; }
+    wantPlay = false;
+    if (src) { try { src.stop(); } catch (e) {} src = null; }
     if (ctx && master) master.gain.setTargetAtTime(0, ctx.currentTime, 0.04);
     playing = false; paused = false;
     syncUI();
@@ -204,7 +128,7 @@
     play: function () { setPref('on'); if (!playing || paused) startEngine(); },
     pause: function () {
       if (!playing) return;
-      if (paused) { paused = false; if (ctx) ctx.resume(); loopT0 = Math.max(loopT0, ctx.currentTime + 0.05); }
+      if (paused) { paused = false; if (ctx) ctx.resume(); }
       else { paused = true; if (ctx) ctx.suspend(); }
       syncUI();
     },
@@ -216,7 +140,7 @@
     },
     hide: function () { visible = false; syncUI(); },
     get playing() { return playing && !paused; },
-    _debug: function () { return { playing: playing, paused: paused, evIdx: evIdx, ctx: ctx ? ctx.state : 'none', pref: prefOn() }; }
+    _debug: function () { return { playing: playing, paused: paused, loaded: !!buf, dur: buf ? buf.duration : 0, ctx: ctx ? ctx.state : 'none', pref: prefOn() }; }
   };
   window.HBAnthem = HBAnthem;
 
