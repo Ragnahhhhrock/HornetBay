@@ -15,7 +15,7 @@ const SKIN = 0x2a3240;   // trousers / float coat dark
 
 function _mat(c) { return new THREE.MeshLambertMaterial({ color: c }); }
 
-function buildFigure(shirt) {
+export function buildFigure(shirt) {
   const g = new THREE.Group();
   const col = SHIRT[shirt] || SHIRT.white;
   const legs = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.8, 0.2), _mat(SKIN));
@@ -383,13 +383,13 @@ export function poseSalute(g, k) {
   u.elbowR.rotation.z = -0.05 - k * 1.15;        // glove in to the visor
 }
 
-export function buildSaberFigure() {
-  const g = buildFigure('white');
+export function buildSaberFigure(shirt = 'white') {
+  const g = buildFigure(shirt);
   // swap the right-hand wand for the saber
   const piv = g.userData.armR;
   piv.remove(piv.children[1]);
-  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.6, 0.018), new THREE.MeshBasicMaterial({ color: 0xe8ecf2 }));
-  blade.position.y = -0.82;                       // extends past the fist
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.95, 0.015), new THREE.MeshBasicMaterial({ color: 0x23282e }));
+  blade.position.y = -1.03;                       // extends past the fist
   piv.add(blade);
   const guard = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.035, 0.06), new THREE.MeshBasicMaterial({ color: 0xc8a038 }));
   guard.position.y = -0.56;

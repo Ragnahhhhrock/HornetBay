@@ -9,7 +9,7 @@ import { Missile, GunSystem } from './weapons.js';
 import { Helicopter } from './rotors.js';
 import { Chute } from './flight.js';
 import { makeGlowTexture } from './models.js';
-import { buildPilotFigure, poseSalute, buildSaberFigure, poseSaber } from './crew.js';
+import { buildFigure, buildPilotFigure, poseSalute, buildSaberFigure, poseSaber } from './crew.js';
 import { flightQuat, clamp, lerp, damp, rand } from './util.js';
 
 let _abGlowTex = null;
@@ -1850,10 +1850,85 @@ const FinalLaunch = {
   },
 };
 
+// the CdG photograph, restaged: two yellow shirts and a dress saber held high
+// behind the jet, the blast deflector up, a grey day — a still life, not a loop
+const FinalLaunchPhoto = {
+  name: 'finallaunchphoto', dur: 8,
+  setup(A) {
+    A.G.world.setTimeOfDay('day');
+    const c = A.G.world.carrier;
+    const j = A._spawn('f18', { ab: false, gear: true, name: 'REX' });
+    j.speed = 0;
+    deckD(c, 0, 0, 1, _w);
+    const h = headingOf(_w);
+    deckP(c, -13, c.deckY + 2.2, 30, _v);
+    A._place(j, _v.x, _v.y, _v.z, h, 0, 0);
+    if (c.jbd) {                                 // deflector up behind him — restaged abeam for the photo
+      const p = c.jbd[1].piv;
+      A._jbdSave = { x: p.position.x, y: p.position.y, z: p.position.z, ry: p.rotation.y };
+      p.position.set(-8, c.deckY - 0.3, 24);     // beyond the jet from the camera, like the CdG shot
+      p.rotation.y = 0.85;                       // yaw the face toward the port beam
+      c.jbd[1].want = 1;
+    }
+    const dewand = (g) => {
+      for (const k of ['armL', 'armR']) { const p = g.userData[k]; if (p && p.children[1]) p.remove(p.children[1]); }
+    };
+    const sab = buildSaberFigure('yellow');       // the saber man, blade skyward
+    if (sab.userData.armL.children[1]) sab.userData.armL.remove(sab.userData.armL.children[1]);  // dewand the free hand
+    sab.position.set(-25.8, c.deckY, 23.9); sab.rotation.y = 0.99;
+    poseSaber(sab, 1);
+    const mate = buildFigure('yellow'); dewand(mate);   // a hand on his shoulder
+    mate.position.set(-25.9, c.deckY, 23.0); mate.rotation.y = 0.92;
+    mate.userData.armL.rotation.x = 1.15;
+    const grn = buildFigure('green'); dewand(grn);
+    grn.position.set(-25.6, c.deckY, 20.8); grn.rotation.y = 0.75;
+    const wht = buildFigure('white'); dewand(wht);
+    wht.position.set(-26.0, c.deckY, 20.7); wht.rotation.y = 0.77;
+    for (const f of [sab, mate, grn, wht]) c.group.add(f);
+    A.data = { j, figs: [sab, mate, grn, wht], h, steamed: false };
+  },
+  teardown(A) {
+    const c = A.G.world.carrier, D = A.data;
+    for (const f of D.figs || []) c.group.remove(f);
+    if (c.jbd) {
+      c.jbd[1].want = 0;
+      if (A._jbdSave) {
+        const p = c.jbd[1].piv;
+        p.position.set(A._jbdSave.x, A._jbdSave.y, A._jbdSave.z);
+        p.rotation.y = A._jbdSave.ry;
+      }
+    }
+  },
+  update(A, dt) {
+    const D = A.data, c = A.G.world.carrier;
+    A._spec('jet', 0.35);
+    deckP(c, -13, c.deckY + 2.2, 30, _v);
+    A._place(D.j, _v.x, _v.y, _v.z, D.h, 0, 0);
+    if (c.jbd) c.jbd[1].want = 1;
+    poseSaber(D.figs[0], 1);
+    D.figs[0].userData.armR.rotation.x = Math.PI; // blade dead vertical, like the photo
+    D.figs[0].userData.armR.rotation.z = 0;
+    if (!D.steamed && A.t > 1.2) {                // one wisp off the cat track
+      D.steamed = true;
+      deckP(c, -13, c.deckY + 1, 20, _v);
+      A.G.fx.smoke(_v, 1.2, 2.2, 0xdfe8f2);
+    }
+  },
+  cam(A, dt, camPos, camera) {
+    const c = A.G.world.carrier;
+    if (c.jbd) c.jbd[1].piv.rotation.x = -0.15;  // nearly vertical for the photo — runs after the world's own update
+    deckP(c, -33, c.deckY + 0.7, 26, _v);
+    deckP(c, -13, c.deckY + 0.7, 26, _w);
+    camPos.copy(_v);   // pinned — a photograph, not a move
+    A._chase(dt, camPos, camera, _v.x, _v.y, _v.z, _w.x, _w.y, _w.z, 4.2, 52);
+  },
+};
+
 // the reel is the default loop; ?scene=final-launch pins the director to the ceremony
 let ACTIVE_SCENES = SCENES;
 {
   const pick = new URLSearchParams(location.search).get('scene');
   if (pick === 'final-launch') ACTIVE_SCENES = [FinalLaunch];
+  if (pick === 'final-launch-photo') ACTIVE_SCENES = [FinalLaunchPhoto];
   if (new URLSearchParams(location.search).get('flog')) window.__flog = [];
 }
