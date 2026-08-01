@@ -280,13 +280,18 @@ export class Intro {
   }
   _briefText(c, w, h) {
     const lines = (this.briefLines || []).join('\n').slice(0, Math.floor(this.typed)).split('\n');
+    // size the type to the window and the length of the brief — short briefs read
+    // large, long ones shrink to fit, never smaller than the old fixed 15px
+    const total = (this.briefLines || []).length || 1;
+    const px = clamp(Math.min(w / 35, (h - 42) / (total * 1.28)), 14, 23);
+    const lh = px * 1.28;
     c.textAlign = 'left';
-    c.font = 'bold 15px "Courier New", monospace';
-    let y = 26;
+    c.font = `bold ${px}px "Courier New", monospace`;
+    let y = 8 + px;
     for (const ln of lines) {
       c.fillStyle = ln.startsWith('-') ? '#ffe23a' : '#7dff6a';
       c.fillText(ln, 24, y);
-      y += 19;
+      y += lh;
     }
     if (Math.floor(this.t * 2.5) % 2 === 0) { c.fillStyle = '#7dff6a'; c.fillText('█', 24, y); }
     c.textAlign = 'center';
