@@ -326,3 +326,80 @@ export class DeckCrew {
     }
   }
 }
+
+// ---------------- the final-launch ceremony figures ----------------
+// Pilots in flight suits and helmets for the guard of honor, and the carrier's
+// commander with the saber he drops to signal the shot. Same blocky deck-crew
+// house style, but the pilot's right arm has an elbow so the salute genuinely
+// touches the helmet, and the commander trades wands for a blade.
+const SUIT = 0x4d5a3c;          // flight-suit olive
+const VEST = 0x8a7a52;          // survival vest tan
+const HELMET = 0xb8bcc2;        // bone-dome gray
+const VISOR = 0x141a22;
+
+export function buildPilotFigure() {
+  const g = new THREE.Group();
+  const legs = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.8, 0.2), _mat(SUIT));
+  legs.position.y = 0.4; g.add(legs);
+  const torso = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.62, 0.26), _mat(SUIT));
+  torso.position.y = 1.11; g.add(torso);
+  const vest = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.4, 0.3), _mat(VEST));
+  vest.position.y = 1.18; g.add(vest);
+  // bone dome with the visor down
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.17, 8, 6), _mat(HELMET));
+  head.position.y = 1.6; head.scale.y = 1.1; g.add(head);
+  const visor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.07, 0.1), _mat(VISOR));
+  visor.position.set(0, 1.58, 0.13); g.add(visor);
+  // left arm: plain sleeve, hangs at the side
+  const armL = new THREE.Group();
+  armL.position.set(-0.28, 1.4, 0);
+  const armLm = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.6, 0.11), _mat(SUIT));
+  armLm.position.y = -0.28; armL.add(armLm);
+  g.add(armL);
+  // right arm: shoulder + elbow, so the salute reaches the brow
+  const shoulderR = new THREE.Group();
+  shoulderR.position.set(0.28, 1.4, 0);
+  const upper = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.34, 0.11), _mat(SUIT));
+  upper.position.y = -0.16; shoulderR.add(upper);
+  const elbowR = new THREE.Group();
+  elbowR.position.y = -0.33;
+  const fore = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.32, 0.1), _mat(SUIT));
+  fore.position.y = -0.15; elbowR.add(fore);
+  const glove = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.1, 0.11), _mat(VEST));
+  glove.position.y = -0.32; elbowR.add(glove);
+  shoulderR.add(elbowR);
+  g.add(shoulderR);
+  g.userData = { armL, shoulderR, elbowR };
+  poseSalute(g, 0);
+  return g;
+}
+
+// k: 0 = at attention, 1 = hand to the brow
+export function poseSalute(g, k) {
+  const u = g.userData;
+  u.shoulderR.rotation.x = 0.10 + k * 0.95;      // upper arm comes up forward
+  u.shoulderR.rotation.z = -0.08 - k * 0.62;     // and out
+  u.elbowR.rotation.x = 0.10 + k * 1.55;         // forearm folds up
+  u.elbowR.rotation.z = -0.05 - k * 1.15;        // glove in to the visor
+}
+
+export function buildSaberFigure() {
+  const g = buildFigure('white');
+  // swap the right-hand wand for the saber
+  const piv = g.userData.armR;
+  piv.remove(piv.children[1]);
+  const blade = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.6, 0.018), new THREE.MeshBasicMaterial({ color: 0xe8ecf2 }));
+  blade.position.y = -0.82;                       // extends past the fist
+  piv.add(blade);
+  const guard = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.035, 0.06), new THREE.MeshBasicMaterial({ color: 0xc8a038 }));
+  guard.position.y = -0.56;
+  piv.add(guard);
+  return g;
+}
+
+// k: 0 = saber lowered at the side, 1 = blade straight to the sky
+export function poseSaber(g, k) {
+  const u = g.userData;
+  u.armR.rotation.x = 0.10 + k * 2.95;
+  u.armR.rotation.z = -0.08 - k * 0.12;
+}

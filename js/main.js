@@ -2278,7 +2278,7 @@ if (auto && warpT > 0) {
     stepGame(step);
     G.input.postUpdate();   // mirror the real frame loop, or justPressed sticks
     if (recN > 0 && i % recN === 0) {
-      updateCamera(step);
+      updateCamera(step * recN);   // cover every sim step, or damps run at half rate
       renderer.render(scene, camera);
       if (!recCtx) { const c = document.createElement('canvas'); c.width = 1280; c.height = 720; recCtx = c.getContext('2d'); }
       recCtx.drawImage($('gl'), 0, 0, 1280, 720);

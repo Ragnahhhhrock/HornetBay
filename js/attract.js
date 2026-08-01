@@ -9,6 +9,7 @@ import { Missile, GunSystem } from './weapons.js';
 import { Helicopter } from './rotors.js';
 import { Chute } from './flight.js';
 import { makeGlowTexture } from './models.js';
+import { buildPilotFigure, poseSalute, buildSaberFigure, poseSaber } from './crew.js';
 import { flightQuat, clamp, lerp, damp, rand } from './util.js';
 
 let _abGlowTex = null;
@@ -76,7 +77,7 @@ export class DemoDirector {
   // rides ('jet' | 'prop' | 'turbofan'); nothing called = silence
   _spec(kind, rpm = 0.7) { this._svKind = kind; this._svRpm = rpm; }
   _teardown() {
-    if (this.idx >= 0 && SCENES[this.idx].teardown) SCENES[this.idx].teardown(this);
+    if (this.idx >= 0 && ACTIVE_SCENES[this.idx].teardown) ACTIVE_SCENES[this.idx].teardown(this);
     for (const a of this.actors) a.dispose();
     this.actors = [];
     for (const m of this.missiles) if (!m.dead) m._die();
@@ -87,14 +88,14 @@ export class DemoDirector {
   }
   _next() {
     this._teardown();
-    this.idx = (this.idx + 1) % SCENES.length;
+    this.idx = (this.idx + 1) % ACTIVE_SCENES.length;
     this.t = 0;
-    SCENES[this.idx].setup(this);
+    ACTIVE_SCENES[this.idx].setup(this);
     if (this.G.flashCut) this.G.flashCut(0.22);
   }
   update(dt) {
     this.t += dt;
-    const s = SCENES[this.idx];
+    const s = ACTIVE_SCENES[this.idx];
     s.update(this, dt);
     this.G.audio.specTick(this._svKind || null, this._svRpm || 0);
     this._svKind = null;
@@ -109,7 +110,7 @@ export class DemoDirector {
     if (this.t >= s.dur) this._next();
   }
   driveCamera(dt, camPos, camera) {
-    SCENES[this.idx].cam(this, dt, camPos, camera);
+    ACTIVE_SCENES[this.idx].cam(this, dt, camPos, camera);
   }
   // smooth camera helper: damp toward a point, look at a point
   _chase(dt, camPos, camera, tx, ty, tz, lx, ly, lz, rate = 2.2, fov = 58) {
@@ -1728,3 +1729,131 @@ const CityBuzz = {
 };
 
 const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, HeloTorp, HeloGun, Rescue, MissileCam, Eagle, AirForceOne, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun];   // airliner pulled from the reel
+
+// ---------------- the final-launch ceremony (standalone: ?scene=final-launch) ----------------
+// A long-standing tradition, borrowed from the French Navy: for a naval
+// aviator's last catapult launch the squadron forms a guard of honor along
+// the cat track — flight suits and bone domes at a salute — and the carrier's
+// commander signals the shot by dropping a saber.
+const FinalLaunch = {
+  name: 'finallaunch', dur: 18,
+  setup(A) {
+    A.G.world.setTimeOfDay('day');
+    const c = A.G.world.carrier;
+    const j = A._spawn('f18', { ab: false, gear: true, name: 'REX' });
+    j.speed = 0;
+    // the guard of honor: twelve pilots lining the cat-1 track, island side
+    const guard = [];
+    for (let i = 0; i < 12; i++) {
+      const p = buildPilotFigure();
+      p.position.set(-4.5, c.deckY, 40 + i * 2.1);
+      p.rotation.y = -Math.PI / 2;                // face the track
+      c.group.add(p); guard.push(p);
+    }
+    // the commander at the shooter's place, saber at his side
+    const cmdr = buildSaberFigure();
+    cmdr.position.set(-8.2, c.deckY, 33.5);
+    cmdr.rotation.y = -Math.PI / 2;
+    c.group.add(cmdr);
+    A.data = { j, guard, cmdr, sal: 0, sab: 0, launched: false, lit: false, wanded: false, steamT: 0 };
+  },
+  teardown(A) {
+    const c = A.G.world.carrier, D = A.data;
+    for (const p of D.guard || []) c.group.remove(p);
+    if (D.cmdr) c.group.remove(D.cmdr);
+  },
+  update(A, dt) {
+    const D = A.data, c = A.G.world.carrier, t = A.t, Y = c.deckY + 2.2;
+    A._spec('jet', t < 5.0 ? 0.35 : 1.05);        // idle, then the blower
+    deckD(c, 0, 0, 1, _w);
+    const h = headingOf(_w);
+    // the saber: skyward at 3.2s, and its fall at 6.5 IS the launch signal
+    const sabTgt = t < 3.2 ? 0 : (t < 6.5 ? 1 : 0.12);
+    D.sab += (sabTgt - D.sab) * Math.min(1, dt * (t < 6.5 ? 3.0 : 16));
+    poseSaber(D.cmdr, D.sab);
+    // the guard snaps to a salute and holds it until he's away
+    D.sal += ((t >= 4.8 ? 1 : 0) - D.sal) * Math.min(1, dt * 9);
+    for (const p of D.guard) poseSalute(p, D.sal);
+    // the colored shirts join the honors: every spare wand high through the shot
+    if (t >= 4.8 && !D.wanded) {
+      D.wanded = true;
+      for (const m of c.crew.members)
+        if (!m.busy && (m.role === 'shooter2' || m.role === 'idle'))
+          m.play([['identifyGate', 6.0]]);
+    }
+    if (t >= 5.0 && !D.lit) { D.lit = true; A._ab(D.j, true); }
+    if (t < 6.5) {                              // tension on the cat
+      deckP(c, -13, Y, 30, _v);
+      A._place(D.j, _v.x, _v.y, _v.z, h, 0, 0);
+      D.steamT -= dt;
+      if (D.steamT <= 0) {
+        D.steamT = 0.22;
+        deckP(c, -13, c.deckY + 1, 24, _v);
+        A.G.fx.smoke(_v, 0.9, 1.4, 0xdfe8f2);
+      }
+    } else if (t < 8.6) {                       // the shot: 0 -> 78 m/s in 128 m
+      if (!D.launched) { D.launched = true; deckP(c, -13, Y, 32, _v); A.G.fx.flash(_v, 10, 0xffa030, 0.3); A.G.audio.catapult(); }
+      const u = (t - 6.5) / 2.1;
+      deckP(c, -13, Y, 30 + 128 * u * u, _v);
+      A._place(D.j, _v.x, _v.y, _v.z, h, 0.02, 0);
+      D.j.speed = 78 * u;
+    } else {                                    // off the bow, zooming into the climb
+      const u = t - 8.6;
+      const zoom = t01(t - 13, 2.5);
+      const climb = (0.19 + zoom * 0.07) * Math.min(1, u * 1.6);
+      deckP(c, -13, Y + Math.sin(climb) * 78 * u * 0.9, 158 + 78 * u, _v);
+      A._place(D.j, _v.x, _v.y, _v.z, h, climb, 0);
+      D.j.speed = 78;
+      if (t > 10.6 && D.j.model.userData.gear) D.j.model.userData.gear.visible = false;
+    }
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, c = A.G.world.carrier, t = A.t, j = D.j;
+    if (t < 2.5) {
+      // beat one: the Enterprise, whole — off her port beam, pushing in
+      const k = t01(t, 2.5);
+      deckP(c, -310 + k * 28, 66 - k * 6, -140 + k * 30, _v);
+      deckP(c, 0, c.deckY + 6, 30, _w);
+      camPos.copy(_v);   // pinned, no damp — the warp camera starts far away
+      A._chase(dt, camPos, camera, _v.x, _v.y, _v.z, _w.x, _w.y, _w.z, 1.4, 50);
+    } else if (t < 6.5) {
+      // beat two: cut to the deck — from the guard's side, the line of pilots
+      // fronting the lens with the jet and the saber commander beyond
+      const k = t01(t - 2.5, 4);
+      deckP(c, -2 + k * 3, c.deckY + 4.0 - k * 1.0, 14 + k * 14, _v);
+      deckP(c, -11 + k * 3, c.deckY + 1.6 - k * 0.1, 32 + k * 6, _w);
+      if (!D.snap2) { D.snap2 = true; camPos.copy(_v); }
+      A._chase(dt, camPos, camera, _v.x, _v.y, _v.z, _w.x, _w.y, _w.z, 1.6, 56);
+    } else {
+      // the shot and the climb: chase cam orbiting right — astern through the
+      // roll, round his starboard quarter past the line of saluting pilots,
+      // then parked off his nose as he zooms, the Enterprise spread out behind
+      const h = j.heading;
+      const fx = Math.sin(h), fz = -Math.cos(h);
+      const rx = Math.cos(h), rz = Math.sin(h);
+      const k = t01(t - 6.5, 6);                // the swing
+      const k2 = t01(t - 11.5, 3.5);            // the climb-out pull
+      const a = (0.12 + k * 0.85) * Math.PI;    // port-astern -> starboard -> ahead
+      const r = 30 + Math.sin(Math.min(k * 1.5, 1) * Math.PI) * 12 + k2 * 16;
+      const cx = j.pos.x - fx * Math.cos(a) * r + rx * Math.sin(a) * r;
+      const cz = j.pos.z - fz * Math.cos(a) * r + rz * Math.sin(a) * r;
+      const cy = j.pos.y + 3.5 - k * 7 + k2 * 14;
+      if (!D.snap3) { D.snap3 = true; camPos.set(cx, cy, cz); }
+      A._chase(dt, camPos, camera,
+        cx, cy, cz,
+        j.pos.x, j.pos.y + 1 - k * 4 - k2 * 1.5, j.pos.z, 4.2, 58 - k * 12 + k2 * 8);
+      if (window.__flog && window.__flog.length < 1200)
+        window.__flog.push([+t.toFixed(2), +j.pos.x.toFixed(1), +j.pos.y.toFixed(1), +j.pos.z.toFixed(1),
+          +camPos.x.toFixed(1), +camPos.y.toFixed(1), +camPos.z.toFixed(1),
+          +cx.toFixed(1), +cy.toFixed(1), +cz.toFixed(1), +k.toFixed(2), +k2.toFixed(2), +j.heading.toFixed(3)]);
+    }
+  },
+};
+
+// the reel is the default loop; ?scene=final-launch pins the director to the ceremony
+let ACTIVE_SCENES = SCENES;
+{
+  const pick = new URLSearchParams(location.search).get('scene');
+  if (pick === 'final-launch') ACTIVE_SCENES = [FinalLaunch];
+  if (new URLSearchParams(location.search).get('flog')) window.__flog = [];
+}
