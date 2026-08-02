@@ -235,41 +235,6 @@ export class AudioEngine {
   hook() { this._tone(160, 0.25, 0.25, 'square', 80); }
   trap() { this._noiseHit(0.7, 0.6, 800, 0.8, 100); this._tone(120, 0.5, 0.4, 'sawtooth', 45); }
   radioClick() { this._noiseHit(0.04, 0.18, 3500, 3); }
-  // traffic on the net: squelch opens, a burst of band-passed garble with a
-  // voice cadence, squelch closes — then, when the browser can speak, the
-  // actual words read flat and fast like a controller on the frequency
-  radioChatter(text) {
-    if (this.ctx) {
-      const c = this.ctx, t0 = c.currentTime;
-      this.radioClick();                                  // squelch open
-      const syl = 3 + Math.floor(Math.random() * 4);      // 3–6 noise syllables
-      let t = t0 + 0.05;
-      for (let i = 0; i < syl; i++) {
-        const dur = 0.05 + Math.random() * 0.09;
-        const s = c.createBufferSource(); s.buffer = this._noiseBuffer(dur + 0.05);
-        const bp = c.createBiquadFilter(); bp.type = 'bandpass';
-        bp.frequency.value = 1100 + Math.random() * 900; bp.Q.value = 5;
-        const g = c.createGain();
-        g.gain.setValueAtTime(0, t);
-        g.gain.linearRampToValueAtTime(0.20, t + 0.015);
-        g.gain.setTargetAtTime(0, t + dur, 0.02);
-        s.connect(bp); bp.connect(g); g.connect(this.sfx);
-        s.start(t); s.stop(t + dur + 0.08);
-        t += dur + 0.03 + Math.random() * 0.05;
-      }
-      setTimeout(() => this.radioClick(), (t - t0) * 1000);   // squelch close
-    }
-    this._speakRadio(text);
-  }
-  _speakRadio(text) {
-    if (!text || !('speechSynthesis' in window)) return;
-    try {
-      if (speechSynthesis.speaking && speechSynthesis.pending) speechSynthesis.cancel();  // never backlog the net
-      const u = new SpeechSynthesisUtterance(text.replace(/(\d)-(\d)/g, '$1 $2'));        // "1-1" reads as "one one"
-      u.rate = 1.12; u.pitch = 0.65; u.volume = 0.95;
-      speechSynthesis.speak(u);
-    } catch (e) { /* speech is a bonus — the chatter alone carries the cue */ }
-  }
   // console-style pause chirp: falling two notes = held, rising = released.
   // HOLD actually silences the sim: the whole audio graph suspends once the
   // chirp has played out, so engines, lock tones, gatling, rain — everything —

@@ -156,7 +156,7 @@ const G = {
   msg(text, kind = 'info') {
     this.messages.unshift({ text, kind, t: this.time });
     if (this.messages.length > 6) this.messages.pop();
-    if (kind === 'radio' && this.audio) this.audio.radioChatter(text);   // every call on the net crackles, then speaks
+    // radio net is text-only: calls still print to the ticker, the chatter audio is gone
   },
   radio(text) { this.msg(text, 'radio'); },
   addScore(n) { this.score += n; },
