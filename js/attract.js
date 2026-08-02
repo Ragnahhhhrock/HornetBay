@@ -1924,11 +1924,91 @@ const FinalLaunchPhoto = {
   },
 };
 
+// ---------------- thumbnail stage (?scene=thumb:<type>[:variant]) ----------------
+// one generic pinned scene that poses a single subject for the school/mission
+// board thumbnails: spawn it (or find it in the world), hold it still, and park
+// the camera at a hero angle. Air subjects show the nose 35° off the lens;
+// ships and the bridge are shot broadside.
+const THUMB_SPECS = {
+  mig29:   { alt: 500, dist: 28, h: 5,  az: 42 },
+  su27:    { alt: 500, dist: 32, h: 6,  az: 42 },
+  f16:     { alt: 500, dist: 27, h: 5,  az: 42 },
+  f18:     { alt: 500, dist: 28, h: 5,  az: 42, ab: true },
+  s3:      { alt: 500, dist: 28, h: 5,  az: 48 },
+  b707:    { alt: 700, dist: 86, h: 12, az: 42 },
+  b747:    { alt: 700, dist: 66, h: 9,  az: 42 },
+  dc10:    { alt: 700, dist: 54, h: 8,  az: 42 },
+  tu95:    { alt: 700, dist: 58, h: 9,  az: 48 },
+  seahawk: { alt: 120, dist: 26, h: 4,  az: 48 },
+  balloon: { alt: 1400, dist: 72, h: 10, az: 35 },
+  cruise:  { alt: 30,  dist: 15, h: -10, az: 70, fov: 44 },
+  raft:    { surface: true, dist: 10, h: 4,  az: 40 },
+  sub:     { surface: true, dist: 90, h: 14, az: 80, profile: true },
+  'carrier':   { world: 'carrier', dist: 330, h: 48, az: 128, fov: 46 },
+  'carrier:b': { world: 'carrier', dist: 300, h: 40, az: 202, fov: 46 },
+  bridge:     { world: 'bridge', dist: 380, h: 60, az: 100, fov: 46 },
+  cruiseship: { world: 'cruiseship', dist: 270, h: 40, az: 118, fov: 48 },
+};
+const ThumbStage = {
+  name: 'thumb', dur: 1e9,
+  setup(A) {
+    const parts = (new URLSearchParams(location.search).get('scene') || '').split(':');
+    const type = parts[1] || 'mig29', key = parts.slice(1).join(':');
+    const spec = THUMB_SPECS[key] || THUMB_SPECS[type] || THUMB_SPECS.mig29;
+    const G = A.G, D = A.data;
+    D.spec = spec; D.type = type;
+    G.world.setTimeOfDay('day');
+    if (!spec.world) {
+      const c = G.world.carrier;
+      D.ctr = new THREE.Vector3(c.pos.x + 4000, spec.surface ? 0.5 : spec.alt, c.pos.z + 4000);
+      D.j = A._spawn(type, {
+        pos: D.ctr.clone(), heading: 0, speed: 0, gear: false, ab: !!spec.ab,
+        surface: !!spec.surface, mode: 'straight', noEvade: true,
+      });
+      const a = spec.az * Math.PI / 180;
+      D.camX = D.ctr.x + Math.sin(a) * spec.dist;
+      D.camZ = D.ctr.z + Math.cos(a) * spec.dist;
+      // nose toward the lens (models are nose-+z), then ~35° off (broadside for profiles)
+      const nose = Math.atan2(D.camX - D.ctr.x, D.camZ - D.ctr.z);
+      D.hdg = nose + (spec.profile ? Math.PI / 2 : (spec.off ?? -0.55));
+    }
+  },
+  update(A, dt) {
+    const D = A.data;
+    if (D.j) A._place(D.j, D.ctr.x, D.ctr.y, D.ctr.z, D.hdg, 0, 0);
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, spec = D.spec, G = A.G;
+    let cx, cy, cz, lx, ly, lz;
+    if (spec.world === 'carrier') {
+      const c = G.world.carrier, a = c.heading + spec.az * Math.PI / 180;
+      cx = c.pos.x + Math.sin(a) * spec.dist; cz = c.pos.z + Math.cos(a) * spec.dist;
+      cy = c.deckY + spec.h;
+      lx = c.pos.x; ly = c.deckY * 0.7; lz = c.pos.z;
+    } else if (spec.world === 'bridge') {
+      const a = spec.az * Math.PI / 180;
+      cx = Math.sin(a) * spec.dist; cz = Math.cos(a) * spec.dist; cy = spec.h;
+      lx = 0; ly = 60; lz = 0;
+    } else if (spec.world === 'cruiseship') {
+      const s = D.ship || (D.ship = G.world.ships.all.find(v => v.name === 'MS BAY MONARCH'));
+      const r = s ? s.pos : G.world.carrier.pos, sh = s ? (s.heading || 0) : 0;
+      const a = sh + spec.az * Math.PI / 180;
+      cx = r.x + Math.sin(a) * spec.dist; cz = r.z + Math.cos(a) * spec.dist; cy = spec.h;
+      lx = r.x; ly = 12; lz = r.z;
+    } else {
+      cx = D.camX; cy = D.ctr.y + spec.h; cz = D.camZ;
+      lx = D.ctr.x; ly = D.ctr.y + 1; lz = D.ctr.z;
+    }
+    A._chase(dt, camPos, camera, cx, cy, cz, lx, ly, lz, 30, spec.fov || 48);
+  },
+};
+
 // the reel is the default loop; ?scene=final-launch pins the director to the ceremony
 let ACTIVE_SCENES = SCENES;
 {
   const pick = new URLSearchParams(location.search).get('scene');
   if (pick === 'final-launch') ACTIVE_SCENES = [FinalLaunch];
   if (pick === 'final-launch-photo') ACTIVE_SCENES = [FinalLaunchPhoto];
+  if (pick && pick.startsWith('thumb:')) ACTIVE_SCENES = [ThumbStage];
   if (new URLSearchParams(location.search).get('flog')) window.__flog = [];
 }

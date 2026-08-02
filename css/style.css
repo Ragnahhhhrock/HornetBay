@@ -130,6 +130,13 @@ html.fakeland-ccw #mobile-warn { transform:translate(-50%,-50%) rotate(90deg); }
   color:#7f96b8; margin-top:5px; white-space:normal; }
 .mbtn:hover:not(:disabled) .hook { color:#081020; }
 .mbtn.locked .hook { color:#5a6b80; }
+/* the objective portrait on the school/mission boards — a still straight out
+   of the sim, one for every sortie */
+.mbtn .mthumb { float:left; width:64px; height:64px; object-fit:cover; margin:1px 14px 2px 0;
+  border:1px solid rgba(47,95,159,.8); image-rendering:pixelated; background:#04101f; }
+.mbtn:hover:not(:disabled) .mthumb { border-color:#081020; }
+.mbtn.locked .mthumb { opacity:.75; filter:grayscale(.45); }
+.mbtn .chips, .mbtn .hook { margin-left:78px; }
 /* course headers inside the flight-school board */
 .mhead { color:#ffb437; font-size:15px; letter-spacing:3px; margin:16px 0 6px 2px; }
 .msub { color:#6e84a3; font-size:12.5px; letter-spacing:2px; margin:2px 0 10px 2px; }

@@ -239,6 +239,8 @@ function buildMenu(mode = 'main') {
     else b.classList.add('locked');
     list.appendChild(b);
   };
+  // every sortie on the school/mission boards wears a portrait of its objective
+  const mthumb = (id) => `<img class="mthumb" src="/shots/thumbs/${id}.jpg" alt="" loading="lazy">`;
   // every sub-menu: RETURN TO MAIN MENU pinned to the top of the list
   const addTopReturn = () => {
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
@@ -275,8 +277,8 @@ function buildMenu(mode = 'main') {
       // keys every keyboard actually has: 1-9, 0, then A-F for the back six —
       // F1-F12 stay bound as silent aliases for pilots who learned the board
       const key = '1234567890ABCDEF'[i];
-      if (locked) addBtn(key, def.title + diff + chips + hook, 'LOCKED', null);
-      else addBtn(key, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      if (locked) addBtn(key, mthumb(id) + def.title + diff + chips + hook, 'LOCKED', null);
+      else addBtn(key, mthumb(id) + def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
       if (i < 12) list.lastChild.dataset.fkey = `F${i + 1}`;
     });
     addBtn('U', 'ENTER UNLOCK CODE', save.allAccess ? 'ALL ACCESS ACTIVE' : 'SKIP THE SYLLABUS', openAllAccessUnlock);
@@ -304,8 +306,8 @@ function buildMenu(mode = 'main') {
       const diff = diffBadge(id);
       const chips = `<span class="chips">${(MISSION_TAGS[id] || []).map(t => `<span class="chip">${t}</span>`).join('')}</span>`;
       const hook = `<span class="hook">${MISSION_HOOKS[id] || ''}</span>`;
-      if (locked) addBtn(key, def.title + diff + chips + hook, 'LOCKED', null);
-      else addBtn(key, def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
+      if (locked) addBtn(key, mthumb(id) + def.title + diff + chips + hook, 'LOCKED', null);
+      else addBtn(key, mthumb(id) + def.title + diff + chips + hook, save.done[id] ? 'COMPLETE' : '', () => startBriefing(id));
     };
     addHead('BASIC FLIGHT MANEUVERS');
     row('1', 't1'); row('2', 't2');
