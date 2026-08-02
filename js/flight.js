@@ -60,7 +60,7 @@ export class Player {
     this.fuel = this.cfg.fuel; this.damage = 0; this.gForce = 1;
     this.sweepTarget = 0; this.sweep01 = 0;            // F-14 swing wing: 0 spread, 1 swept
     this.stores = this.type === 'f14'
-      ? { aim54: 4, aim9: 2, gun: 675, chaff: 14, flares: 14 }
+      ? { aim54: 2, aim7: 4, aim9: 2, gun: 675, chaff: 14, flares: 14 }   // 1994 fleet fit: Phoenix pair, four Sparrows, two 'Winders
       : this.type === 'a10'
         ? { aim9: 2, gun: 1150, chaff: 14, flares: 14 }   // the Hawg's fight is the gun — 1,150 of 30mm
         : { aim9: 2, aim120: 4, gun: 500, chaff: 14, flares: 14 };

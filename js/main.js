@@ -922,7 +922,7 @@ G.onTrapped = () => {
   const P = G.player;
   P.fuel = P.cfg.fuel;
   P.stores.aim9 = 2; P.stores.gun = P.type === 'f14' ? 675 : P.type === 'a10' ? 1150 : 500;
-  if (P.type === 'f14') P.stores.aim54 = 4; else if (P.type !== 'a10') P.stores.aim120 = 4;
+  if (P.type === 'f14') { P.stores.aim54 = 2; P.stores.aim7 = 4; } else if (P.type !== 'a10') P.stores.aim120 = 4;
   P.stores.chaff = 14; P.stores.flares = 14; P.damage = Math.min(P.damage, 20);
 };
 // sonic boom: crossing Mach 1 shakes the world and cracks the air
@@ -1221,8 +1221,9 @@ function updateCamera(dt) {
 // ---------------- targeting & weapons ----------------
 function updateTargeting(dt) {
   const P = G.player;
-  // build target list — airliners are legitimate radar contacts too, God help them
-  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && (b.kind === 'bandit' || b.kind === 'stolen' || b.kind === 'airliner'));
+  // build target list — airliners are legitimate radar contacts too, God help them.
+  // air-to-air only: surface contacts (the sub, the raft) can be seen, never locked.
+  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && !b.surface && (b.kind === 'bandit' || b.kind === 'stolen' || b.kind === 'airliner'));
   if (G.playerTarget && (G.playerTarget.dead || G.playerTarget.removeMe)) { G.playerTarget = null; G.lockLevel = 0; }
   if (G.input.pressed('KeyT')) {
     if (!targets.length) { G.playerTarget = null; }
@@ -1244,6 +1245,7 @@ function updateTargeting(dt) {
     const ang = P.fwd.angleTo(_v);
     if (wpn === 'aim9') { rngMax = 8500; canLock = dist > 400 && dist < rngMax && ang < 0.6; }
     else if (wpn === 'aim54') { rngMax = 90000; canLock = dist > 1200 && dist < rngMax && ang < 0.9; }   // Phoenix: the AWG-9 reaches out
+    else if (wpn === 'aim7') { rngMax = 26000; canLock = dist > 1000 && dist < rngMax && ang < 0.9; }   // Sparrow: the Tomcat's medium stick
     else { rngMax = 30000; canLock = dist > 900 && dist < rngMax && ang < 0.9; }
   }
   if (canLock) G.lockLevel = Math.min(1, G.lockLevel + dt / 1.1);
@@ -1255,8 +1257,8 @@ function updateTargeting(dt) {
   // SPACE only: ENTER is the weapon selector, exactly like the Amiga original
   if (G.input.pressed('Space') && G.state === 'flying' && !P.dead && !P.ejected) {
     if (wpn === 'gun') { /* gun fires continuously while SPACE is held — handled below */ }
-    else if (wpn === 'aim9' || wpn === 'aim120' || wpn === 'aim54') {
-      if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : wpn === 'aim54' ? 'NO PHOENIX LEFT' : 'NO AMRAAMS LEFT', 'warn');
+    else if (wpn === 'aim9' || wpn === 'aim120' || wpn === 'aim54' || wpn === 'aim7') {
+      if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : wpn === 'aim54' ? 'NO PHOENIX LEFT' : wpn === 'aim7' ? 'NO SPARROWS LEFT' : 'NO AMRAAMS LEFT', 'warn');
       else {
         P.stores[wpn]--;
         const tgt = (G.locked && G.playerTarget) ? G.playerTarget : null;
@@ -1264,7 +1266,7 @@ function updateTargeting(dt) {
         G.audio.missileFire();
         G.shotsFired++;
         stats.missileFired(wpn);
-        G.msg(wpn === 'aim9' ? 'FOX 2!' : wpn === 'aim54' ? 'FOX 3 — PHOENIX AWAY!' : 'FOX 3!', 'good');
+        G.msg(wpn === 'aim9' ? 'FOX 2!' : wpn === 'aim54' ? 'FOX 3 — PHOENIX AWAY!' : wpn === 'aim7' ? 'FOX 1 — SPARROW AWAY, KEEP THE LOCK!' : 'FOX 3!', 'good');
         P._syncVisual(0, {});
       }
     }
@@ -1354,13 +1356,19 @@ function handleDiscreteInput(dt) {
   // 1/2/3 jump straight to a weapon; the voice callout says what's live
   const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
   // cycle order skips anything the jet doesn't carry (the A-10 has no AMRAAM)
-  const wOrder = (P.type === 'f14' ? ['aim54', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'])
+  const wOrder = (P.type === 'f14' ? ['aim54', 'aim7', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'])
     .filter(w => w === 'gun' || (P.stores[w] || 0) > 0);
   if (I.pressed('Enter') || I.pressed('Tab')) selW(wOrder[(wOrder.indexOf(P.weapon) + 1) % wOrder.length]);
   if (!wingOrdersOpen()) {
     if (I.pressed('Digit1')) selW(wOrder[0]);
-    if (I.pressed('Digit2')) selW('aim9');
-    if (I.pressed('Digit3')) selW('gun');
+    if (P.type === 'f14') {
+      if (I.pressed('Digit2')) selW('aim7');
+      if (I.pressed('Digit3')) selW('aim9');
+      if (I.pressed('Digit4')) selW('gun');
+    } else {
+      if (I.pressed('Digit2')) selW('aim9');
+      if (I.pressed('Digit3')) selW('gun');
+    }
   }
   // S — swing the Tomcat's wings (spread <-> swept); noop for fixed wings
   if (I.pressed('KeyS') && P.type === 'f14') {

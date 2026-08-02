@@ -163,6 +163,10 @@ const MISSILE_TYPES = {
   // AIM-54 Phoenix: the big radar-guided stick — three AIM-120s of legs,
   // a truck of a warhead, but it wants a radar lock from much further out
   aim54:  { vmax: 1300, accel: 250, turn: 1.7, life: 90, prox: 40, dmg: 160, ir: false, len: 4.0, dia: 0.38 },
+  // AIM-7M/P Sparrow (the 1994 fleet round): Mach 4 boost-sustain, ~45 km reach,
+  // a 40 kg continuous-rod warhead — SEMI-ACTIVE: it only guides while the
+  // launch radar holds the lock. Break the lock and it goes ballistic.
+  aim7:   { vmax: 1050, accel: 300, turn: 1.6, life: 50, prox: 30, dmg: 130, ir: false, sarh: true, len: 3.7, dia: 0.20 },
   r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false },
   r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true  },
   // shipboard rounds: Klakring's SM-1 area-defence SAM and the sea-skimming Harpoon
@@ -202,7 +206,7 @@ export class Missile {
   fwd(out) { return out.copy(this.vel).normalize(); }
   get speed() { return this.vel.length(); }
   get len() { return this.cfg.len || 3.4; }
-  get name() { return ({ aim9: 'AIM-9', aim120: 'AIM-120', aim54: 'AIM-54', r27: 'R-27', r73: 'R-73', sm1: 'SM-1', harpoon: 'HARPOON' })[this.type] || this.type.toUpperCase(); }
+  get name() { return ({ aim9: 'AIM-9', aim120: 'AIM-120', aim54: 'AIM-54', aim7: 'AIM-7', r27: 'R-27', r73: 'R-73', sm1: 'SM-1', harpoon: 'HARPOON' })[this.type] || this.type.toUpperCase(); }
   get removeMe() { return false; }
   update(dt) {
     const G = this.G, cfg = this.cfg;
@@ -219,6 +223,16 @@ export class Missile {
         else if (!cfg.ir && now - (t.chaffT ?? -99) < 2.5 && Math.random() < 0.7) this._spoof();
         // hard break at close range can defeat it
         else if (dist < 900 && t.gForce && t.gForce > 7.5 && Math.random() < 0.012) this._spoof();
+      }
+    }
+    // semi-active (Sparrow): the round only guides while the shooter's radar
+    // holds the target locked. Half a second of lock flicker is forgiven;
+    // longer and the round goes ballistic for good.
+    if (cfg.sarh && this.owner === G.player && tAlive && !this.spoofed) {
+      if (G.locked && G.playerTarget === t) this._noIll = 0;
+      else {
+        this._noIll = (this._noIll || 0) + dt;
+        if (this._noIll > 0.5) { this.spoofed = true; G.msg('SPARROW LOST — RADAR LOCK BROKEN', 'warn'); }
       }
     }
     if (tAlive && !this.spoofed) {

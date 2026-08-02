@@ -294,23 +294,33 @@ export class HUD {
     if (t && !t.dead) {
       const pr = this.project(t.pos, G.camera, { x: 0, y: 0 });
       const dist = G.player.pos.distanceTo(t.pos);
+      // green means DO NOT FIRE: civilians, friendlies, and anything not (yet)
+      // known hostile. It flips red the moment the contact goes hostile.
+      const civ = !t.hostile;
+      const boxCol = civ ? GREEN : (G.lockLevel >= 1 ? RED : (t.identified === false ? '#bfbfbf' : WHITE));
       c.font = `${11 * s}px "Courier New", monospace`;
       if (pr.visible) {
-        c.strokeStyle = G.lockLevel >= 1 ? RED : (t.identified === false ? '#bfbfbf' : WHITE);
+        c.strokeStyle = boxCol;
         const r = 15 * s;
         c.beginPath();
         c.moveTo(pr.x, pr.y - r); c.lineTo(pr.x + r, pr.y); c.lineTo(pr.x, pr.y + r); c.lineTo(pr.x - r, pr.y);
         c.closePath(); c.stroke();
         if (G.lockLevel > 0.02) {
-          c.strokeStyle = G.lockLevel >= 1 ? RED : AMBER;
+          c.strokeStyle = civ ? GREEN : (G.lockLevel >= 1 ? RED : AMBER);
           c.beginPath(); c.arc(pr.x, pr.y, r + 9 * s, -Math.PI / 2, -Math.PI / 2 + G.lockLevel * Math.PI * 2); c.stroke();
         }
         c.fillStyle = c.strokeStyle;
         c.fillText(`${t.label || t.name} ${(dist / NM).toFixed(1)}NM`, pr.x + r + 6 * s, pr.y - 4 * s);
         c.fillText(`${Math.round(t.speed / KTS)}KT ${Math.round(t.pos.y / FT)}FT`, pr.x + r + 6 * s, pr.y + 10 * s);
         if (G.lockLevel >= 1) {
-          c.fillStyle = RED; c.font = `bold ${14 * s}px "Courier New", monospace`;
-          if (Math.sin(G.time * 10) > -0.4) c.fillText('SHOOT', pr.x - 22 * s, pr.y + r + 22 * s);
+          c.font = `bold ${14 * s}px "Courier New", monospace`;
+          if (civ) {
+            c.fillStyle = GREEN;
+            if (Math.sin(G.time * 10) > -0.4) c.fillText('DO NOT FIRE', pr.x - 44 * s, pr.y + r + 22 * s);
+          } else {
+            c.fillStyle = RED;
+            if (Math.sin(G.time * 10) > -0.4) c.fillText('SHOOT', pr.x - 22 * s, pr.y + r + 22 * s);
+          }
         }
       } else {
         const dir = _v.copy(t.pos).sub(G.player.pos);
@@ -318,21 +328,29 @@ export class HUD {
         const a = wrapAngle(Math.atan2(dir.x, -dir.z) - Math.atan2(f.x, -f.z));
         const R = 170 * s;
         const ax = this.cxw + Math.sin(a) * R, ay = this.cyh - Math.cos(a) * R * 0.7;
-        c.fillStyle = RED;
+        c.fillStyle = civ ? GREEN : RED;
         c.save(); c.translate(ax, ay); c.rotate(a);
         c.beginPath(); c.moveTo(0, -9 * s); c.lineTo(6 * s, 6 * s); c.lineTo(-6 * s, 6 * s); c.closePath(); c.fill();
         c.restore();
       }
-      // red bandit banner cycling HDG -> ALT -> SPD, like the original
-      if (t.identified !== false) {
+      // bandit banner cycling HDG -> ALT -> SPD, like the original — green with
+      // a hold-fire advisory while the contact isn't known hostile
+      if (t.identified !== false || civ) {
         const bHdg = Math.round(((t.heading !== undefined ? t.heading : Math.atan2(t.vel.x, -t.vel.z)) * 180 / Math.PI + 360) % 360);
         const phase = Math.floor(G.time / 2.5) % 3;
         const info = phase === 0 ? `HDG: ${String(bHdg).padStart(3, '0')}`
           : phase === 1 ? `ALT: ${Math.round(t.pos.y / FT)}`
           : `SPD: ${Math.round(t.speed / KTS)}`;
-        c.fillStyle = RED; c.font = `bold ${13 * s}px "Courier New", monospace`;
+        const who = civ
+          ? `${t.kind === 'airliner' ? 'CIVILIAN' : (t.identified === false ? 'UNKNOWN' : 'FRIENDLY')} ${(t.label || t.name || '').toUpperCase()} — DO NOT FIRE`
+          : `${(t.label || 'MIG-29').toUpperCase()} ${info}`;
+        c.fillStyle = civ ? GREEN : RED; c.font = `bold ${13 * s}px "Courier New", monospace`;
         c.textAlign = 'center';
-        c.fillText(`${(t.label || 'MIG-29').toUpperCase()} ${info}`, this.cxw, this._panelTop() - 14 * s);
+        c.fillText(who, this.cxw, this._panelTop() - 14 * s);
+        if (civ) {
+          c.font = `${11 * s}px "Courier New", monospace`;
+          c.fillText(info, this.cxw, this._panelTop() - 30 * s);
+        }
         c.textAlign = 'left';
       }
       // range readout under the horizon: 4-digit + 'IN RNG' inside weapon range
@@ -675,13 +693,16 @@ export class HUD {
       c.fillRect(cx + sx * u - 2.5 * s, cy + sy * u - 4 * s, 5 * s, 8 * s);
     };
     if (P.type === 'f14') {
-      // Tomcat: Phoenix x4 in the tunnel, Sidewinder x2 on the glove pylons
+      // Tomcat 1994 fit: Phoenix x2 in the tunnel, Sparrow x4 on the pallets,
+      // Sidewinder x2 on the glove pylons
       store(-0.46, 0.14, P.stores.aim9 >= 1, P.weapon === 'aim9');
       store( 0.46, 0.14, P.stores.aim9 >= 2, P.weapon === 'aim9');
-      store(-0.30, 0.02, P.stores.aim54 >= 1, P.weapon === 'aim54');
-      store(-0.12, 0.06, P.stores.aim54 >= 2, P.weapon === 'aim54');
-      store( 0.12, 0.06, P.stores.aim54 >= 3, P.weapon === 'aim54');
-      store( 0.30, 0.02, P.stores.aim54 >= 4, P.weapon === 'aim54');
+      store(-0.10, 0.02, P.stores.aim54 >= 1, P.weapon === 'aim54');
+      store( 0.10, 0.02, P.stores.aim54 >= 2, P.weapon === 'aim54');
+      store(-0.30, 0.06, P.stores.aim7 >= 1, P.weapon === 'aim7');
+      store(-0.22, 0.10, P.stores.aim7 >= 2, P.weapon === 'aim7');
+      store( 0.22, 0.10, P.stores.aim7 >= 3, P.weapon === 'aim7');
+      store( 0.30, 0.06, P.stores.aim7 >= 4, P.weapon === 'aim7');
     } else {
       store(-0.46, 0.14, P.stores.aim9 >= 1, P.weapon === 'aim9');
       store( 0.46, 0.14, P.stores.aim9 >= 2, P.weapon === 'aim9');
@@ -694,7 +715,7 @@ export class HUD {
     c.fillStyle = P.weapon !== 'gun' ? GREEN : AMBER;
     c.font = `bold ${9.5 * s}px "Courier New", monospace`;
     c.textAlign = 'center';
-    c.fillText(P.weapon === 'aim120' ? `ARH AM x${P.stores.aim120}` : P.weapon === 'aim54' ? `PHX ARH x${P.stores.aim54}` : P.weapon === 'aim9' ? `IRH AM x${P.stores.aim9}` : `GUN ${P.stores.gun}`, cx, y + hL - 4 * s);
+    c.fillText(P.weapon === 'aim120' ? `ARH AM x${P.stores.aim120}` : P.weapon === 'aim54' ? `PHX ARH x${P.stores.aim54}` : P.weapon === 'aim7' ? `SP SARH x${P.stores.aim7}` : P.weapon === 'aim9' ? `IRH AM x${P.stores.aim9}` : `GUN ${P.stores.gun}`, cx, y + hL - 4 * s);
     c.textAlign = 'left';
   }
 
