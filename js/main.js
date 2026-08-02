@@ -152,7 +152,7 @@ const G = {
   orbit: { yaw: 0, pitch: 0.25, dist: 55, manual: false },
   shakeT: 0, smokeTrail: false,
   xmag: 1.0, towerName: '',
-  timeScale: 1,           // Z cycles 1/2/4/8 — the whole simulation runs faster
+  timeScale: 1,           // Z cycles 1/2/4/8/16 (SHIFT+Z back down) — the whole simulation runs faster
   msg(text, kind = 'info') {
     this.messages.unshift({ text, kind, t: this.time });
     if (this.messages.length > 6) this.messages.pop();
@@ -1404,10 +1404,13 @@ function handleDiscreteInput(dt) {
   }
   // X — straight back to the cockpit from any view, no cycling
   if (I.pressed('KeyX') && (G.view !== 'cockpit' || G.specTarget)) { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
-  // Z — time acceleration: 2x, 4x, 8x, 16x, 32x, then back to normal
+  // Z — time acceleration: 2x, 4x, 8x, 16x, then back to normal.
+  // SHIFT+Z steps back down: 16x > 8x > 4x > 2x — same ring, both directions.
   if (I.pressed('KeyZ') && (G.state === 'flying' || G.state === 'dead')) {
-    const _ts = [1, 2, 4, 8, 16, 32];
-    G.timeScale = _ts[(_ts.indexOf(G.timeScale) + 1) % _ts.length];
+    const _ts = [1, 2, 4, 8, 16];
+    const _dir = (I.down('ShiftLeft') || I.down('ShiftRight')) ? -1 : 1;
+    const _i = _ts.indexOf(G.timeScale);
+    G.timeScale = _ts[(_i < 0 ? 0 : _i + _dir + _ts.length) % _ts.length];
     G.msg(G.timeScale > 1 ? `TIME ACCEL ${G.timeScale}X` : 'TIME ACCEL OFF', 'info');
   }
   // J — spectate: ride along with every other aircraft in the area, in turn.
