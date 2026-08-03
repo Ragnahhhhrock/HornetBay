@@ -350,9 +350,14 @@ function buildMenu(mode = 'main') {
     const bdef = MISSIONS.find(m => m.id === G._backToMission);
     if (bdef) addBtn('M', 'BACK TO MISSION', bdef.title, () => startBriefing(bdef.id));
   }
-  addBtn('1', 'FLIGHT SCHOOL', 'BASIC · ADVANCED · COMBAT', () => buildMenu('school'));
+  // the career shows up on the front door: new pilots get steered to T-1,
+  // students see the school hole, graduates see the campaign tally
+  const schoolDone = SCHOOL_ORDER.filter(id => save.done[id]).length;
+  addBtn('1', 'FLIGHT SCHOOL', !save.qualified ? 'NEW PILOTS START HERE' :
+    (schoolGrad() ? 'GRADUATED — WINGS EARNED' : `${schoolDone} OF ${SCHOOL_ORDER.length} SORTIES IN THE LOGBOOK`), () => buildMenu('school'));
   addBtn('2', 'FREE FLIGHT, NO ENEMY CONFRONTATION', '', () => startFreeFlightMap());
-  addBtn('3', 'MISSIONS', (schoolGrad() || save.allAccess) ? (save.allAccess && !schoolGrad() ? 'ALL ACCESS' : '') : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
+  addBtn('3', 'MISSIONS', (schoolGrad() || save.allAccess) ? (save.allAccess && !schoolGrad() ? 'ALL ACCESS' :
+    `${MISSION_ORDER.filter(id => save.done[id]).length} OF ${MISSION_ORDER.length} DOWN`) : 'GRADUATE FLIGHT SCHOOL FIRST', () => buildMenu('missions'));
   addBtn('4', 'YOUR CURRENT FLIGHT LOG STATISTICS', '', () => buildMenu('log'));
   addBtn('B', 'BLOG', '↗', () => window.open('/blog', '_blank'));
   addBtn('S', 'HORNET BAY STORE', '↗', () => window.open('/store', '_blank'));
@@ -1619,7 +1624,10 @@ function runScript(dt) {
   const _right = new THREE.Vector3(1, 0, 0).applyQuaternion(P.quat);
   const _upY = new THREE.Vector3(0, 1, 0).applyQuaternion(P.quat).y;
   const bankNow = Math.atan2(-_right.y, _upY);
-  const rollTo = (desBank) => clamp((desBank - bankNow) * 1.6, -0.55, 0.55);
+  // plant sign: +I.roll = RIGHT bank = bankNow DECREASES, so the wings-level
+  // loop needs (desBank + bankNow) to close negative feedback — with the plain
+  // difference the controller rolled the jet through inverted on every approach
+  const rollTo = (desBank) => clamp((desBank + bankNow) * 1.6 - P.rollRate * 0.5, -0.55, 0.55);
   if (SCRIPT === 'takeoff') {
     if (scriptT < 0.5) return;
     I.keys.add('KeyW');                       // full power
@@ -1678,6 +1686,7 @@ function runScript(dt) {
       }
       return;
     }
+    if (isTrap && along > 50) { runScript._init = false; return; }   // over the ramp untrapped — wave off and re-enter final
     // steer at a point 900 m ahead on the corridor, on the glidepath
     const lead = Math.max(0, range - 900);
     const tx = aimX - ax * lead, ty = aimY + glideTan * lead, tz = aimZ - az * lead;
@@ -1686,10 +1695,15 @@ function runScript(dt) {
     const desiredH = Math.atan2(d.x, -d.z), curH = Math.atan2(f.x, -f.z);
     const dh = wrapAngle(desiredH - curH);
     I.roll = rollTo(clamp(dh * 1.3, -0.5, 0.5));
-    // vertical channel: command sink rate onto the glidepath (carrier: no flare,
-    // fly the ball into the wires; runway: flare to a gentle 1.2 m/s kiss)
-    const yDes = ty;
-    let vyDes = clamp((yDes - P.pos.y) * 0.10, -9, 5);
+    // vertical channel: glidepath error from the CURRENT position + sink-rate
+    // feedforward (the old lead-point bias let altitude error accumulate — the
+    // jet crossed the ramp 27 m high on every pass). Carrier: no flare, fly
+    // the ball into the wires; runway: flare to a gentle 1.2 m/s kiss.
+    // anchor the path one gear-height above the wires: pos.y is the jet's
+    // center, so an unraised path touches down gearH/glideTan (~25-50 m)
+    // SHORT of the aim point every time — a guaranteed bolter
+    const yErr = (aimY + 3.0 + glideTan * range) - P.pos.y;   // + = low, - = high
+    let vyDes = clamp(-glideTan * Math.max(P.speed, 60) + yErr * 0.25, -10, 5);
     if (!isTrap && range < 500) vyDes = -1.2;
     let pi = clamp(dh * 0.6, -0.3, 0.3) + clamp((vyDes - P.vel.y) * 0.09, -0.5, 0.55);
     I.pitch = clamp(pi, -0.5, 0.6);
@@ -1769,28 +1783,30 @@ function runScript(dt) {
       if (dist < 60 && !runScript._joined) { runScript._joined = G.time; }
     }
   } else if (SCRIPT === 'acro') {
-    // airshow over the bay: loop, aileron roll, Immelmann — timed open-loop
-    // figures on a deterministic clock (warp recording), with recoveries
+    // airshow over the bay: loop, aileron roll, Immelmann — deterministic
+    // clock, closed on the nose vector (gamma lies at low speed) with the
+    // roll integrated — bankNow wraps at ±π so it can never time a figure
     runScript._pt += dt;
     if (!runScript._init) {
-      runScript._init = true; runScript._phase = 0; runScript._pt = 0;
-      G.setPlayerStart({ pos: new THREE.Vector3(9000, 1300, 6000), heading: Math.PI * 1.5, speed: 280 });
+      runScript._init = true; runScript._phase = 0; runScript._pt = 0; runScript._rollAcc = 0;
+      G.setPlayerStart({ pos: new THREE.Vector3(9000, 1300, 6000), heading: Math.PI * 1.5, speed: 320 });
       P.throttle = 1;
       I.keys.add('KeyW'); I.keys.add('ShiftLeft');
     }
     const ph = runScript._phase, t = runScript._pt;
-    const gamma = Math.asin(clamp(P.vel.y / Math.max(P.speed, 1), -1, 1));
-    const next = () => { runScript._phase++; runScript._pt = 0; };
-    if (ph === 0) { I.pitch = 0; I.roll = 0; if (t > 2) next(); }                    // show pass
-    else if (ph === 1) { I.pitch = 0.85; if (gamma > 2.9 || t > 6) next(); }         // loop pull
-    else if (ph === 2) { I.pitch = 0.5; if (gamma > 0 && gamma < 0.25 && P.vel.y < 0) next(); } // complete the loop
-    else if (ph === 3) { I.pitch = clamp((0.05 - gamma) * 3, -0.4, 0.5); I.roll = 0; if (t > 2) next(); }  // breathe
-    else if (ph === 4) { I.pitch = 0.1; I.roll = 0.9; if (Math.abs(bankNow) > 5.8 || t > 3) next(); }      // aileron roll
-    else if (ph === 5) { I.roll = 0; I.pitch = clamp((0.05 - gamma) * 3, -0.4, 0.5); if (t > 2) next(); }  // wings level
-    else if (ph === 6) { I.pitch = 0.85; if (gamma > 2.5 || t > 4) next(); }         // Immelmann up
-    else if (ph === 7) { I.pitch = 0.15; I.roll = 0.9; if (Math.abs(bankNow) < 0.6 && t > 1) next(); }     // roll out on top
-    else { I.roll = 0; I.pitch = clamp((0.1 - gamma) * 3, -0.4, 0.5); I.keys.delete('ShiftLeft'); }        // cruise off
-    if (P.pos.y < 250 && gamma < 0) { I.pitch = 0.55; I.roll = rollTo(0); }          // floor
+    const fwY = P.fwd.y;
+    runScript._rollAcc = (runScript._rollAcc || 0) + P.rollRate * dt;
+    const next = () => { runScript._phase++; runScript._pt = 0; runScript._rollAcc = 0; };
+    if (ph === 0) { I.pitch = 0; I.roll = 0; if (t > 2) next(); }                                         // show pass
+    else if (ph === 1) { I.pitch = 0.7; if (fwY > 0.95 || t > 5) next(); }                                // loop: up over vertical
+    else if (ph === 2) { I.pitch = 0.55; if (fwY < -0.75 || t > 14) next(); }                             // through the top, down the hill
+    else if (ph === 3) { I.pitch = clamp((0.05 - fwY) * 1.6, -0.35, 0.45); I.roll = 0; if (Math.abs(fwY) < 0.1 || t > 8) next(); }  // level out
+    else if (ph === 4) { I.pitch = 0.1; I.roll = 0.9; if (Math.abs(runScript._rollAcc) > 5.8 || t > 4) next(); }                  // aileron roll
+    else if (ph === 5) { I.roll = 0; I.pitch = clamp((0.08 - fwY) * 1.2, -0.3, 0.6); if (t > 2) next(); }                         // wings level
+    else if (ph === 6) { I.pitch = 0.7; if (fwY > 0.9 || t > 4) next(); }                                 // Immelmann up
+    else if (ph === 7) { I.pitch = 0.15; I.roll = 0.9; if (Math.abs(runScript._rollAcc) > 2.8 || t > 2.5) next(); }               // half-roll out on top
+    else { I.roll = 0; I.pitch = clamp((0.1 - fwY) * 1.2, -0.3, 0.6); I.keys.delete('ShiftLeft'); }                             // cruise off
+    if (P.pos.y < 250 && P.vel.y < 0) { I.pitch = 0.55; I.roll = rollTo(0); }                             // floor
   } else if (SCRIPT === 'combat') {
     if (P.onGround) { // do the takeoff first
       if (scriptT < 0.5) return;

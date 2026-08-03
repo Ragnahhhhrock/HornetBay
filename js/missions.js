@@ -213,7 +213,8 @@ export const MISSIONS = [
     'NAVIGATION: OVERFLY THREE BAY LANDMARKS IN ORDER.', '',
     'GOLDEN GATE BRIDGE, DOWNTOWN, ANGEL ISLAND.', '',
     'PASS WITHIN 500 M OF EACH CHECKPOINT.', '',
-    'MIND THE BRIDGE TOWERS. UNDER FIVE MINUTES FOR A BONUS.',
+    'MIND THE BRIDGE TOWERS. UNDER SEVEN MINUTES FOR A BONUS.',
+    'THEN BRING HER HOME — SHE COUNTS WHEN SHE\'S DECKED.',
   ],
   briefing: 'Navigation run: Golden Gate, downtown, Angel Island.',
   loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
@@ -240,9 +241,9 @@ export const MISSIONS = [
         G.waypoint = next.p;
         G.radio('INSTRUCTOR: ' + leg.name + ' DOWN. NEXT, ' + next.name + '.');
       } else {
-        const t = G.time - this.t0, bonus = t < 300 ? 400 : 0;
+        const t = G.time - this.t0, bonus = t < 420 ? 400 : 0;   // ~100 km out-and-back: 420 s means burner discipline, not a fairy tale
         G.addScore(800 + bonus);
-        G.completeMission('TOUR COMPLETE', 'ALL THREE CHECKPOINTS DOWN IN ' + Math.round(t) + ' SECONDS.\n\nSCORE +800' + (bonus ? ' (+' + bonus + ' UNDER FIVE MINUTES)' : ''));
+        G.completeMission('TOUR COMPLETE', 'ALL THREE CHECKPOINTS DOWN IN ' + Math.round(t) + ' SECONDS.\n\nSCORE +800' + (bonus ? ' (+' + bonus + ' UNDER SEVEN MINUTES)' : ''));
       }
     }
   },
@@ -285,7 +286,7 @@ export const MISSIONS = [
   brief: [
     'ADVANCED FLIGHT MANEUVERS — SORTIE 4', '',
     'JOIN ON YOUR INSTRUCTOR AND HOLD FORMATION.', '',
-    'HE FLIES A LAZY CIRCLE OVER THE BAY AT 2,500 M.', '',
+    'HE FLIES A LAZY CIRCLE JUST WEST OF THE BOAT AT 2,500 M.', '',
     'STAY INSIDE 130 M OF HIM FOR 45 SECONDS TOTAL.', '',
     'SMOOTH HANDS. SMALL CORRECTIONS.',
   ],
@@ -293,13 +294,15 @@ export const MISSIONS = [
   loadout: 'UNARMED TRAINING LOAD — CHAFF/FLARES ONLY',
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
+    // the rendezvous circle hangs just west of the boat — the old 47 km
+    // schlep east was five minutes of dead air before the lesson even began
     const wps = [];
     for (let i = 0; i < 8; i++) {
-      const a = (i / 8) * Math.PI * 2;
-      wps.push(V(5000 + Math.cos(a) * 12000, 2500, 5000 + Math.sin(a) * 12000));
+      const a = Math.PI + (i / 8) * Math.PI * 2;
+      wps.push(V(-17000 + Math.cos(a) * 8000, 2500, 8000 + Math.sin(a) * 8000));
     }
     this.lead = G.spawnAI('fa18', {
-      pos: V(17000, 2500, 5000), heading: Math.PI / 2, speed: 180, hp: 9999,
+      pos: V(-25000, 2500, 8000), heading: 0, speed: 180, hp: 9999,
       name: 'F/A-18', label: 'INSTRUCTOR', mode: 'route', noEvade: true,
       waypoints: wps, loop: true, hostile: false,
     });
@@ -371,11 +374,13 @@ export const MISSIONS = [
     if (P.pos.y > 1800) this.lowWarned = false;
     let done = false;
     if (this.idx === 0) {
-      // roll: upright -> inverted -> upright, never pitching hard
+      // roll: upright -> inverted -> upright, never pitching hard — the
+      // roll-rate gate keeps a loop from masquerading as a slow roll, and
+      // the nose gate forgives a roll entered nose-high (students do)
       if (f.state === 0 && upY > 0.6) f.state = 1;
-      else if (f.state === 1 && upY < -0.5 && Math.abs(fwY) < 0.7) f.state = 2;
+      else if (f.state === 1 && upY < -0.5 && Math.abs(fwY) < 0.85 && Math.abs(P.rollRate) > 0.8) f.state = 2;
       else if (f.state === 2 && upY > 0.6) done = true;
-      else if (f.state === 2 && Math.abs(fwY) > 0.8) f.state = 1;   // mushed out — try again
+      else if (f.state === 2 && Math.abs(fwY) > 0.95) f.state = 1;   // mushed out — try again
       if (f.t > 12) { f.state = 0; f.t = 0; }
     } else if (this.idx === 1) {
       // loop: pull up -> inverted over the top -> diving -> recovered level
@@ -852,7 +857,7 @@ export const MISSIONS = [
     'INCOMING CRUISE MISSILE',
     'BEARING 170 AT 30 MILES',
     '680 KNOTS CLOSURE', '',
-    'ETA DELIVERY AT MOFFETT FIELD: 9 MINUTES', '',
+    'ETA DELIVERY AT MOFFETT FIELD: 4 MINUTES', '',
     'SCRAMBLE IMMEDIATELY',
     'INTERCEPT AND DESTROY THE CRUISE MISSILE',
     'BEFORE IT REACHES MOFFETT FIELD', '',
@@ -864,8 +869,10 @@ export const MISSIONS = [
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
     this.moffett = V(10000, 70, 34000);
+    // 505 kts at 200 ft, 33 NM out — a four-minute problem, not the brief's
+    // old nine-minute fairy tale (the geometry never matched the text)
     this.cm = G.spawnAI('cruise', {
-      pos: V(17500, 70, 80000), heading: Math.atan2(this.moffett.x - 17500, -(this.moffett.z - 80000)), speed: 300,
+      pos: V(17500, 70, 95000), heading: Math.atan2(this.moffett.x - 17500, -(this.moffett.z - 95000)), speed: 260,
       name: 'CRUISE MISSILE', label: 'CRUISE MSL', mode: 'straight', noEvade: true, hp: 60,
       terrainFollow: true, hostile: true,
     });
@@ -1806,7 +1813,7 @@ export const MISSIONS = [
       }
       for (const b of this.bandits) if (!b.dead) b.target = G.player;
     }
-    G.waypoint = this.bandits.find(b => !b.dead)?.pos || null;
+    G.waypoint = this.bounced ? (this.bandits.find(b => !b.dead)?.pos || null) : this.sweepPt;   // keep the sweep steer until the bounce
     if (this.mourned && this.bandits.length === 4 && this.bandits.every(b => b.dead)) {
       G.addScore(4000);
       G.completeMission('MISSION COMPLETE',

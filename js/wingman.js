@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { clamp, damp, rand, wrapAngle } from './util.js';
 import { AIAircraft } from './ai.js';
 import { Missile } from './weapons.js';
+import { groundHeight } from './world.js';
 
 const _v = new THREE.Vector3(), _w = new THREE.Vector3();
 
@@ -37,11 +38,14 @@ export class Wingman {
   launch() {
     const G = this.G, P = G.player;
     const type = P.type;
-    // spawn astern and below, already dirty and climbing to join
+    // spawn astern and below, already dirty and climbing to join — but never
+    // below the dirt: the launch gate fires at y>30, and a flat -300 offset
+    // drowned him in the bay on every catapult shot (the VIPER TWO self-death)
     const back = P.fwd.clone().multiplyScalar(-2600);
-    back.y = -300;
+    const spawnPos = P.pos.clone().add(back);
+    spawnPos.y = Math.max(P.pos.y - 300, groundHeight(spawnPos.x, spawnPos.z) + 220, 180);
     this.ai = new AIAircraft(G.scene, G.world, type, {
-      pos: P.pos.clone().add(back),
+      pos: spawnPos,
       heading: P.heading, speed: Math.max(P.speedKts * 0.514444, 140),
       name: this.callsign, label: this.callsign, hp: 130,
       mode: 'route', skill: 1.35, agility: 1.25, gunsOnly: true,
