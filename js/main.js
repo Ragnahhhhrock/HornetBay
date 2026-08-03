@@ -916,6 +916,7 @@ G.onCrashed = (reason) => {
   if (G.crashHandled) return;
   G.crashHandled = true;
   G.player.dead = true;
+  stats.playerDeath(reason || 'crash', G.missionDef ? G.missionDef.id : 'free');   // one death per sortie; ejections counted apart
   G.explode(G.player.pos, 1.4);
   G.fx.shatter(G.player.pos, G.player.vel, 1.3);   // the jet breaks apart on impact
   G.player.model.visible = false;
@@ -981,6 +982,7 @@ G._finishMission = (title, text) => {
   G.over = true;
   stats.flushGA();
   const id = G.missionDef.id;
+  stats.missionComplete(id, G.score);   // funnel: flown -> complete, per mission
   if (id === 'qual' || id === 't1') { save.qualified = true; save.done[id] = true; }
   else if (id !== 'free') { save.done[id] = true; }
   save.best = Math.max(save.best, G.score);
@@ -1002,6 +1004,7 @@ G.failMission = (title, text) => {
   if (G.over) return;
   G.over = true;
   stats.flushGA();
+  stats.missionFailed(G.missionDef ? G.missionDef.id : 'free');
   save.best = Math.max(save.best, G.score); persist();
   setTimeout(() => {
     if (G.state === 'menu') return;   // player bailed to the menu first

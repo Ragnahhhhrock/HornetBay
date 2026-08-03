@@ -22,6 +22,9 @@ const blank = () => ({
   cannon_rounds: 0,                        // 20mm Vulcan rounds
   missile_hits: { aim9: 0, aim120: 0 },    // player missiles that connected, by type
   gun_hits: 0,
+  missions_completed: 0,                   // sorties that made it home (RTB rule applied)
+  missions_failed: 0,                      // objective blown / court martial / gave up
+  deaths: 0,                               // pilots lost — crashes, not ejections
 });
 
 class Stats {
@@ -53,6 +56,18 @@ class Stats {
   missionFlown(id) {
     this.data.missions_flown++; this.persist();
     this.ga('mission_flown', { mission_id: id });
+  }
+  missionComplete(id, score) {
+    this.data.missions_completed++; this.persist();
+    this.ga('mission_complete', { mission_id: id, score: score });
+  }
+  missionFailed(id) {
+    this.data.missions_failed++; this.persist();
+    this.ga('mission_failed', { mission_id: id });
+  }
+  playerDeath(cause, missionId) {
+    this.data.deaths++; this.persist();
+    this.ga('player_death', { cause: cause, mission_id: missionId });
   }
   planeSelect(type) {   // 'f18' | 'f16'
     if (!this.data.plane_selects[type]) this.data.plane_selects[type] = 0;
