@@ -3,6 +3,7 @@
 // data block), and the original's minimal external-view readout bar
 import * as THREE from 'three';
 import { clamp, KTS, FT, NM, wrapAngle, deg } from './util.js';
+import { groundHeight } from './world.js';
 
 const WHITE = '#f2f2f2', GREEN = '#3aff72', AMBER = '#ffb437', RED = '#ff4a3a',
       BLUE = '#8fd0ff', PANEL = '#8f8f8f', DARK = '#0a0a0a', DIM = '#9aa4b2';
@@ -80,6 +81,7 @@ export class HUD {
       this._vectorText(c, G, s);
       this._flightPathMarker(c, G, P);
       this._gunReticle(c, st);
+      this._ccip(c, G, P, s);
       this._targetBox(c, G, s);
       this._waypoint(c, G, s);
       this._warnings(c, G, P, s);
@@ -90,6 +92,7 @@ export class HUD {
     } else {
       this._flightPathMarker(c, G, P);
       this._gunReticle(c, st);
+      this._ccip(c, G, P, s);
       this._targetBox(c, G, s);
       this._waypoint(c, G, s);
       this._messages(c, G, s);
@@ -170,7 +173,8 @@ export class HUD {
     c.textAlign = 'center'; c.font = `${12.5 * s}px "Courier New", monospace`;
     c.fillText(`${P.gForce.toFixed(1)} G`, w * 0.305, h * 0.70);
     const msl = P.weapon === 'gun' ? P.stores.gun : P.stores[P.weapon];
-    c.fillText(`${P.weapon === 'gun' ? 'GU' : 'AM'} ${msl}`, w * 0.695, h * 0.70);
+    const wnm = { gun: 'GUN', aim9: 'SIDWDR', aim120: 'AMRAAM', aim54: 'PHOENIX', aim7: 'SPARROW', mk83: 'MK 83' }[P.weapon] || 'AM';
+    c.fillText(`${wnm} ${msl}`, w * 0.695, h * 0.70);
     if (P.type === 'f14') {
       // swing-wing readout: amber while travelling, green when settled
       const deg = Math.round(20 + (P.sweep01 || 0) * 48);
@@ -286,6 +290,46 @@ export class HUD {
     c.beginPath(); c.moveTo(cx, cy - 30 * s - 18 * s); c.lineTo(cx, cy - 30 * s + 18 * s);
     c.moveTo(cx - 18 * s, cy - 30 * s); c.lineTo(cx + 18 * s, cy - 30 * s); c.stroke();
     c.fillStyle = WHITE; c.fillRect(cx - 1.5, cy - 31.5 * s, 3, 3);
+  }
+
+  // ---------------- CCIP: where the bomb lands, right on the glass ----------------
+  // integrates the exact Bomb ballistic model (gravity only) from the current
+  // state vector, so the pipper never lies. Flashes when the fall lands on a
+  // surface contact — that's the release cue.
+  _ccip(c, G, P, s) {
+    if (P.weapon !== 'mk83' || P.onGround || P.dead || P.ejected) return;
+    const p = P.pos.clone(), v = P.vel.clone();
+    p.y -= 2.2;                           // release point sits 2.2 m below the jet
+    let hit = null;
+    const step = 0.05;
+    for (let t = 0; t < 40; t += step) {
+      v.y -= 9.81 * step;
+      p.addScaledVector(v, step);
+      if (p.y <= Math.max(groundHeight(p.x, p.z), 0.4)) { hit = p; break; }
+    }
+    if (!hit) return;
+    const pr = this.project(hit, G.camera, { x: 0, y: 0 });
+    if (!pr.visible) return;
+    // on a surface contact? then this is the moment — flash the pipper
+    let onTgt = false, tn = null;
+    for (const b of G.bandits) {
+      if (b.dead || b.removeMe || !b.surface) continue;
+      const eff = 60 + (b.blastR || 0);
+      if (Math.hypot(hit.x - b.pos.x, hit.z - b.pos.z) < eff) { onTgt = true; tn = b.name || b.label; break; }
+    }
+    const col = onTgt ? (Math.sin(G.time * 14) > 0 ? GREEN : WHITE) : GREEN;
+    c.strokeStyle = col; c.lineWidth = 1.6 * s;
+    c.beginPath(); c.arc(pr.x, pr.y, 12 * s, 0, Math.PI * 2); c.stroke();
+    c.beginPath();
+    c.moveTo(pr.x - 20 * s, pr.y); c.lineTo(pr.x - 6 * s, pr.y);
+    c.moveTo(pr.x + 6 * s, pr.y); c.lineTo(pr.x + 20 * s, pr.y);
+    c.moveTo(pr.x, pr.y - 20 * s); c.lineTo(pr.x, pr.y - 6 * s);
+    c.moveTo(pr.x, pr.y + 6 * s); c.lineTo(pr.x, pr.y + 20 * s);
+    c.stroke();
+    c.fillStyle = col; c.fillRect(pr.x - 1.5 * s, pr.y - 1.5 * s, 3 * s, 3 * s);
+    c.font = `bold ${11 * s}px "Courier New", monospace`; c.textAlign = 'left';
+    c.fillText(onTgt ? `IN RNG — ${String(tn || 'TARGET').toUpperCase()}` : 'CCIP', pr.x + 24 * s, pr.y - 8 * s);
+    c.lineWidth = 1.2 * s;
   }
 
   // ---------------- target diamond / lock / missile markers ----------------
@@ -689,7 +733,7 @@ export class HUD {
     // hardpoints: wingtip AIM-9 x2, pylon AIM-120 x4 — lit while loaded,
     // blinking when that weapon is selected
     const store = (sx, sy, loaded, sel) => {
-      c.fillStyle = !loaded ? '#0a3016' : (sel && Math.sin(time * 8) > -0.4 ? '#9aff9a' : GREEN);
+      c.fillStyle = !loaded ? '#0a3016' : (sel ? '#eaffea' : GREEN);   // the selected weapon's stations burn solid white-hot
       c.fillRect(cx + sx * u - 2.5 * s, cy + sy * u - 4 * s, 5 * s, 8 * s);
     };
     if (P.type === 'f14') {
@@ -710,12 +754,25 @@ export class HUD {
       store(-0.16, 0.05, P.stores.aim120 >= 2, P.weapon === 'aim120');
       store( 0.16, 0.05, P.stores.aim120 >= 3, P.weapon === 'aim120');
       store( 0.30, 0.10, P.stores.aim120 >= 4, P.weapon === 'aim120');
+      if ((P.stores.mk83 || 0) > 0 || P.weapon === 'mk83') {
+        // the bomb racks: cheek and centerline stations, three pairs + singles
+        store(-0.38, 0.02, P.stores.mk83 >= 1, P.weapon === 'mk83');
+        store( 0.38, 0.02, P.stores.mk83 >= 2, P.weapon === 'mk83');
+        store(-0.24, 0.16, P.stores.mk83 >= 3, P.weapon === 'mk83');
+        store( 0.24, 0.16, P.stores.mk83 >= 4, P.weapon === 'mk83');
+        store(-0.07, 0.12, P.stores.mk83 >= 5, P.weapon === 'mk83');
+        store( 0.07, 0.12, P.stores.mk83 >= 6, P.weapon === 'mk83');
+      }
     }
-    // selection label like the original's 'ARH AM' / 'IRH AM'
-    c.fillStyle = P.weapon !== 'gun' ? GREEN : AMBER;
+    // selection label in inverse video, like a highlighted line on the
+    // original's stores panel: the live weapon is the lit bar, not just text
+    const wsel = P.weapon === 'aim120' ? `ARH AM x${P.stores.aim120}` : P.weapon === 'aim54' ? `PHX ARH x${P.stores.aim54}` : P.weapon === 'aim7' ? `SP SARH x${P.stores.aim7}` : P.weapon === 'aim9' ? `IRH AM x${P.stores.aim9}` : P.weapon === 'mk83' ? `MK 83 x${P.stores.mk83}` : `GUN ${P.stores.gun}`;
+    c.fillStyle = P.weapon !== 'gun' ? '#28c850' : AMBER;
+    c.fillRect(x + 2 * s, y + hL - 12.5 * s, wL - 4 * s, 11 * s);
+    c.fillStyle = '#03130a';
     c.font = `bold ${9.5 * s}px "Courier New", monospace`;
     c.textAlign = 'center';
-    c.fillText(P.weapon === 'aim120' ? `ARH AM x${P.stores.aim120}` : P.weapon === 'aim54' ? `PHX ARH x${P.stores.aim54}` : P.weapon === 'aim7' ? `SP SARH x${P.stores.aim7}` : P.weapon === 'aim9' ? `IRH AM x${P.stores.aim9}` : `GUN ${P.stores.gun}`, cx, y + hL - 4 * s);
+    c.fillText(`▶ ${wsel} ◀`, cx, y + hL - 4 * s);
     c.textAlign = 'left';
   }
 

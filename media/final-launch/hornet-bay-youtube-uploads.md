@@ -1,6 +1,6 @@
 # Hornet Bay — YouTube Upload Sheet
 
-Nineteen showreel clips, ready for the Hornet Bay channel — plus one standalone ceremony film (entry 20, the final-launch sendoff). Each entry: the source file, the portrait Short file, a title, a description, and tags.
+Twenty showreel clips, ready for the Hornet Bay channel — plus one standalone ceremony film (entry 20, the final-launch sendoff). Each entry: the source file, the portrait Short file, a title, a description, and tags.
 
 **Standard footer** — already appended to every description below. Keep it on every upload:
 
@@ -179,6 +179,16 @@ Nineteen showreel clips, ready for the Hornet Bay channel — plus one standalon
   Watch it happen live in the sim → https://hornetbay.com/?scene=final-launch&auto=demo
   From HORNET BAY, the browser carrier-ops sim.
 - **Tags:** fa-18, hornet, final launch, guard of honor, saber sendoff, carrier, catapult, navy cross, uss enterprise, naval aviation, retirement, flight sim, hornet bay
+
+---
+
+## 21 — The Habu at the Gate
+- **File:** `21-sr71-night-run.mp4` · **Short:** `21-sr71-night-run-short.mp4`
+- **Title:** SR-71 Blackbird Night Run — Under the Golden Gate at Full Burner
+- **Description:**
+  NASA 832 comes out of the west in full blower: a spark over the strait, a roar off the water, threads the Golden Gate under the deck, then bends right and winds out toward a thousand knots down the downtown corridor — rooftop height between the towers — before pulling for the stars.
+  From HORNET BAY, the browser carrier-ops sim.
+- **Tags:** sr-71, blackbird, habu, afterburner, golden gate, san francisco, night ops, low pass, flight sim, hornet bay
 
 ---
 

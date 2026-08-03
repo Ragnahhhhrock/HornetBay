@@ -5,7 +5,7 @@ import { World, groundHeight } from './world.js';
 import { Player, PLANES, Chute } from './flight.js';
 import { AirWing } from './airwing.js';
 import { AIAircraft } from './ai.js';
-import { FXPool, Missile, GunSystem } from './weapons.js';
+import { FXPool, Missile, GunSystem, Bomb } from './weapons.js';
 import { HUD } from './hud.js';
 import { Input } from './input.js';
 import { setupTouch } from './touch.js';
@@ -156,7 +156,9 @@ const G = {
   msg(text, kind = 'info') {
     this.messages.unshift({ text, kind, t: this.time });
     if (this.messages.length > 6) this.messages.pop();
-    // radio net is text-only: calls still print to the ticker, the chatter audio is gone
+    // every flashed notification keys the net: a squelch crackle stands in
+    // for the chatter — the call comes over the radio even when it's text
+    if (this.audio) this.audio.radioCrackle();
   },
   radio(text) { this.msg(text, 'radio'); },
   addScore(n) { this.score += n; },
@@ -203,7 +205,7 @@ G.weatherSel = ['clouds', 'rain', 'storm'].includes(save.weather) ? save.weather
 if (save.dayNightForced == null) save.dayNightForced = (save.dayNight === 'day' || save.dayNight === 'night');
 
 // ---------------- menu (original 1-8 structure) ----------------
-const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13', 'm14', 'm15', 'm16'];
+const MISSION_ORDER = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9', 'm10', 'm11', 'm12', 'm13', 'm14', 'm15', 'm16', 'm17', 'm18', 'm19'];
 let menuMode = 'main';
 // every menu screen carries a URL stub (#missions, #m1 …) so any
 // item is a shareable link. setHash stays silent until the boot router has
@@ -315,6 +317,8 @@ function buildMenu(mode = 'main') {
     row('3', 't3'); row('4', 't4'); row('5', 't7');
     addHead('AERIAL COMBAT');
     row('6', 't5'); row('7', 't6');
+    addHead('STRIKE WEAPONS');
+    row('8', 't8');
     addBtn('ESC', 'RETURN TO MAIN MENU', '', () => buildMenu('main'));
     return;
   }
@@ -784,6 +788,14 @@ function launchMission(def, opts = {}) {
   G.world.setTimeOfDay(def.time || 'day');
   G.mission = Object.assign({}, def);
   G.mission.setup(G);
+  // point of origin: a sortie only counts when you bring her back to where
+  // it began. Other decks and fields still rearm & refuel — they just don't
+  // end the mission. Free flight has no origin and no paperwork.
+  G.rtb = null; G._rtbNudge = -99;
+  const _og = G.player.onGround;
+  G.missionOrigin = (def.id === 'free' || !_og) ? null
+    : _og.type === 'carrier' ? { kind: 'carrier', label: 'THE ENTERPRISE' }
+    : { kind: 'runway', ap: _og.rw.name.replace(/\s+\S+$/, ''), label: _og.rw.name.replace(/\s+\S+$/, ''), pos: new THREE.Vector3(_og.rw.x, 0, _og.rw.z) };
   // day/night: the authored time stands unless the pilot explicitly switched
   // (no more MISSION DEFAULT stop — DAY or NIGHT is an override once toggled)
   if (save.dayNightForced) G.world.setTimeOfDay(G.dayNightSel);
@@ -923,6 +935,7 @@ G.onTrapped = () => {
   P.fuel = P.cfg.fuel;
   P.stores.aim9 = 2; P.stores.gun = P.type === 'f14' ? 675 : P.type === 'a10' ? 1150 : 500;
   if (P.type === 'f14') { P.stores.aim54 = 2; P.stores.aim7 = 4; } else if (P.type !== 'a10') P.stores.aim120 = 4;
+  if (G.missionDef && G.missionDef.mk83) P.stores.mk83 = G.missionDef.mk83;   // strike missions reload the bomb racks too
   P.stores.chaff = 14; P.stores.flares = 14; P.damage = Math.min(P.damage, 20);
 };
 // sonic boom: crossing Mach 1 shakes the world and cracks the air
@@ -939,7 +952,31 @@ G.onMachCross = (supersonic) => {
   }
   G.fx.flash(P.pos.clone(), 12, 0xffffff, 0.14);
 };
+// objective done ≠ mission done. The mission is complete only when the pilot
+// returns to the point of origin and puts the jet on that deck or runway.
+// Until then the debrief waits in G.rtb and the waypoint points home.
 G.completeMission = (title, text) => {
+  if (G.over) return;
+  const o = G.missionOrigin;
+  if (o) {
+    const og = G.player.onGround;
+    const atHome = og && ((o.kind === 'carrier' && og.type === 'carrier') ||
+                          (o.kind === 'runway' && og.type === 'runway' && og.rw.name.replace(/\s+\S+$/, '') === o.ap));
+    if (!atHome) {
+      if (!G.rtb) {   // missions re-call every frame — announce once, keep the first debrief
+        G.rtb = { title, text };
+        G.msg(`OBJECTIVE DONE — RTB: LAND AT ${o.label} TO FINISH THE SORTIE`, 'good');
+        G.radio(o.kind === 'carrier'
+          ? 'FLEET COM: GOOD WORK, VIPER — BUT THE SORTIE DOESN\'T COUNT TILL YOU\'RE DECKED. BRING HER HOME.'
+          : `FLEET COM: GOOD WORK, VIPER — NOW RTB. SHE ONLY COUNTS WHEN SHE\'S DOWN AT ${o.label}.`);
+      }
+      return;
+    }
+  }
+  G.rtb = null;
+  G._finishMission(title, text);
+};
+G._finishMission = (title, text) => {
   if (G.over) return;
   G.over = true;
   stats.flushGA();
@@ -1238,7 +1275,7 @@ function updateTargeting(dt) {
   // lock
   const wpn = P.weapon;
   let canLock = false, rngMax = 0;
-  if (G.playerTarget && wpn !== 'gun') {
+  if (G.playerTarget && wpn !== 'gun' && wpn !== 'mk83') {   // dumb bombs never lock — the CCIP does the aiming
     const t = G.playerTarget;
     const dist = P.pos.distanceTo(t.pos);
     _v.copy(t.pos).sub(P.pos).normalize();
@@ -1257,6 +1294,17 @@ function updateTargeting(dt) {
   // SPACE only: ENTER is the weapon selector, exactly like the Amiga original
   if (G.input.pressed('Space') && G.state === 'flying' && !P.dead && !P.ejected) {
     if (wpn === 'gun') { /* gun fires continuously while SPACE is held — handled below */ }
+    else if (wpn === 'mk83') {
+      if (P.onGround) G.msg('WEAPONS HOLD — ON THE DECK', 'warn');
+      else if (P.stores.mk83 <= 0) G.msg('NO BOMBS LEFT', 'warn');
+      else {
+        P.stores.mk83--;
+        G.missiles.push(new Bomb(G, P, 'mk83'));
+        G.audio.missileFire();
+        G.shotsFired++;
+        G.msg('BOMBS AWAY', 'good');
+      }
+    }
     else if (wpn === 'aim9' || wpn === 'aim120' || wpn === 'aim54' || wpn === 'aim7') {
       if (P.stores[wpn] <= 0) G.msg(wpn === 'aim9' ? 'NO SIDEWINDERS LEFT' : wpn === 'aim54' ? 'NO PHOENIX LEFT' : wpn === 'aim7' ? 'NO SPARROWS LEFT' : 'NO AMRAAMS LEFT', 'warn');
       else {
@@ -1357,7 +1405,8 @@ function handleDiscreteInput(dt) {
   const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
   // cycle order skips anything the jet doesn't carry (the A-10 has no AMRAAM)
   const wOrder = (P.type === 'f14' ? ['aim54', 'aim7', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'])
-    .filter(w => w === 'gun' || (P.stores[w] || 0) > 0);
+    .concat((P.stores.mk83 || 0) > 0 ? ['mk83'] : [])   // bombs ride the ring only when a mission loads them
+    .filter(w => w === 'gun' || w === 'mk83' || (P.stores[w] || 0) > 0);
   if (I.pressed('Enter') || I.pressed('Tab')) selW(wOrder[(wOrder.indexOf(P.weapon) + 1) % wOrder.length]);
   if (!wingOrdersOpen()) {
     if (I.pressed('Digit1')) selW(wOrder[0]);
@@ -1369,6 +1418,7 @@ function handleDiscreteInput(dt) {
       if (I.pressed('Digit2')) selW('aim9');
       if (I.pressed('Digit3')) selW('gun');
     }
+    if ((P.stores.mk83 || 0) > 0 && I.pressed('Digit5')) selW('mk83');   // the pickle lives at 5
   }
   // S — swing the Tomcat's wings (spread <-> swept); noop for fixed wings
   if (I.pressed('KeyS') && P.type === 'f14') {
@@ -1965,6 +2015,25 @@ function stepGame(dt) {
       if (P.onGround && P.onGround.type === 'runway' && P.onGround.speedRel === 0 && !G.landedThisSortie) G.landedThisSortie = true;
       updateTargeting(dt);
       if (G.mission && G.mission.update && !G.over) G.mission.update(G, dt);
+      // RTB watch: parked (full stop) at the point of origin closes the sortie;
+      // down anywhere else is a hot pit, not a victory — say so now and then
+      if (G.rtb && !G.over) {
+        const o = G.missionOrigin;
+        G.waypoint = o.kind === 'carrier' ? G.world.carrier.pos : o.pos;
+        const og = P.onGround;
+        if (og && og.speedRel === 0) {
+          const home = (o.kind === 'carrier' && og.type === 'carrier') ||
+                       (o.kind === 'runway' && og.type === 'runway' && og.rw.name.replace(/\s+\S+$/, '') === o.ap);
+          if (home) {
+            const r = G.rtb; G.rtb = null;
+            G.msg('BACK WHERE SHE BEGAN — SORTIE COUNTS', 'good');
+            G._finishMission(r.title, r.text);
+          } else if (G.time - G._rtbNudge > 25) {
+            G._rtbNudge = G.time;
+            G.msg(`DOWN SAFE — BUT ${o.label} IS WHERE THIS SORTIE ENDS`, 'warn');
+          }
+        }
+      }
       // mission pod flag consumed by mission update
     } else {
       // dead: let the wreck fall

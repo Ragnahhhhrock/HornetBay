@@ -1728,7 +1728,147 @@ const CityBuzz = {
   },
 };
 
-const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, HeloTorp, HeloGun, Rescue, MissileCam, Eagle, AirForceOne, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun];   // airliner pulled from the reel
+// ---------------- scene: Habu — the Blackbird's night run over the bridge and the city ----------------
+// Full burners: through the Golden Gate gap on the old demo line at 520, then
+// a right bend onto the downtown corridor winding up to 950 m/s over the
+// rooftops. Six beats — deck, chase, gap shore, bend, rooftop, head-on pull —
+// so the pass reads from the ground and the air both.
+const Habu = {
+  name: 'habu', dur: 22,
+  setup(A) {
+    A.G.world.setTimeOfDay('night');
+    const j = A._spawn('sr71', { ab: true, gear: false, name: 'NASA 832' });
+    j.speed = 520;
+    // the proven bridge-gap line (the BridgeRun route)
+    const d1 = new THREE.Vector3(0.984, 0, -0.180).normalize();
+    const d2 = new THREE.Vector3(6912, 0, 5061).normalize();      // gap -> the downtown cluster itself
+    // rooftop height for the city leg: clear the tallest tower on the track
+    let top = 0;
+    const bm = A.G.world.cityMesh;
+    if (bm) {
+      const M = new THREE.Matrix4(), P = new THREE.Vector3(), Q = new THREE.Quaternion(), S = new THREE.Vector3();
+      for (let i = 0; i < bm.count; i++) {
+        bm.getMatrixAt(i, M); M.decompose(P, Q, S);
+        const along = P.x * d2.x + P.z * d2.z;
+        if (along < 300 || along > 9500) continue;
+        const lat = Math.abs(P.x * -d2.z + P.z * d2.x);
+        if (lat < 130 && P.y + S.y > top) top = P.y + S.y;
+      }
+    }
+    const cityY = Math.max(235, top + 30);
+    // rooftop anchor for the city beat: a tall roof the Habu overflies MID-beat
+    // (the beat runs 15.2-19.3 s ≈ 5.5-7.4 km along; anchor near 6.6 km so the
+    // overhead roar lands in the meat of the shot, not on the cut)
+    let roof = null, rd = 1e9;
+    if (bm) {
+      const M = new THREE.Matrix4(), P = new THREE.Vector3(), Q = new THREE.Quaternion(), S = new THREE.Vector3();
+      for (let i = 0; i < bm.count; i++) {
+        bm.getMatrixAt(i, M); M.decompose(P, Q, S);
+        const along = P.x * d2.x + P.z * d2.z;
+        if (along < 6800 || along > 8200 || P.y + S.y < 120) continue;
+        const lat = P.x * -d2.z + P.z * d2.x;
+        const score = Math.abs(along - 7500) + Math.abs(Math.abs(lat) - 230) * 2;
+        if (score < rd) { rd = score; roof = { x: P.x, z: P.z, top: P.y + S.y }; }
+      }
+    }
+    if (!roof || rd > 900) roof = { x: 5931, z: 4654, top: 150 };   // flanks the corridor @7.5 km
+    // never park the lens inside a taller neighbour
+    roof.camY = roof.top + 14;
+    if (bm) {
+      const M = new THREE.Matrix4(), P = new THREE.Vector3(), Q = new THREE.Quaternion(), S = new THREE.Vector3();
+      const cx = roof.x + 42, cz = roof.z + 42;
+      for (let i = 0; i < bm.count; i++) {
+        bm.getMatrixAt(i, M); M.decompose(P, Q, S);
+        if (Math.abs(P.x - cx) < 90 && Math.abs(P.z - cz) < 90) roof.camY = Math.max(roof.camY, P.y + S.y + 10);
+      }
+    }
+    A.data = { j, d1, d2, cityY, roof, h1: Math.atan2(d1.x, -d1.z), h2: Math.atan2(d2.x, -d2.z),
+               beat: -1, pulled: false, pos: new THREE.Vector3(-5460, 46, 982) };
+  },
+  update(A, dt) {
+    const D = A.data, t = A.t, j = D.j;
+    A._spec('jet', 1.08);                        // both J58s in full blower
+    const p = D.pos;
+    if (t < 10.5) {
+      p.set(-5460 + 520 * t, 46, 982 - 93.5 * t);
+      A._place(j, p.x, p.y, p.z, D.h1, 0, 0);
+    } else {
+      // right bend onto the downtown corridor, windmilling up to the sprint —
+      // then hold the corridor like a localizer, rooftop height
+      const u = Math.min(1, (t - 10.5) / 3.0), k = u * u * (3 - 2 * u);
+      let h = D.h1 + (D.h2 - D.h1) * k;
+      if (u >= 1) {
+        const lat = p.x * -D.d2.z + p.z * D.d2.x;
+        h = D.h2 + clamp(-lat * 0.0006, -0.22, 0.22);
+      }
+      const spd = 520 + 430 * Math.min(1, (t - 10.5) / 3.5);
+      const y = 46 + Math.min(1, Math.max(0, (t - 11.5) / 4.5)) * (D.cityY - 46);
+      p.addScaledVector(_v.set(Math.sin(h), 0, -Math.cos(h)), spd * dt);
+      p.y = t >= 20.8 ? p.y : y;   // the pull owns the last climb
+      if (t >= 20.8) {
+        if (!D.pulled) {
+          D.pulled = true;
+          A.G.fx.flash(j.pos.clone(), 12, 0xffffff, 0.14);
+          for (let i = 0; i < 8; i++) A.G.fx.smoke(_v.copy(j.pos).addScaledVector(j.fwd(_w), 2 - i * 1.8), 0.55, 1.3, 0xf4f8ff);
+        }
+        const cu = Math.min(1, (t - 20.8) / 0.8);
+        const climb = 1.1 * cu * cu;
+        p.addScaledVector(_v.set(Math.sin(D.h2) * Math.cos(climb), Math.sin(climb), -Math.cos(D.h2) * Math.cos(climb)), 950 * dt);
+        A._place(j, p.x, p.y, p.z, D.h2, climb, 0);
+      } else {
+        A._place(j, p.x, p.y, p.z, h, 0.02 * Math.sin(t * 2), -0.35 * k * (1 - k) * 4 * 0.35);
+      }
+    }
+    // ember streak off the tailpipes so the black jet reads at night
+    D.streak = (D.streak || 0) - dt;
+    if (D.streak <= 0) {
+      D.streak = 0.09;
+      j.fwd(_v);
+      A.G.fx.trail(_w.copy(j.pos).addScaledVector(_v, -14), 1.5, 0xffa050, 0.85);
+    }
+  },
+  cam(A, dt, camPos, camera) {
+    const D = A.data, t = A.t, j = D.j;
+    const b = t < 3.4 ? 0 : t < 7.0 ? 1 : t < 10.8 ? 2 : t < 15.6 ? 3 : t < 20.6 ? 4 : 5;
+    if (D.beat !== b) {
+      D.beat = b;
+      if (A.G.flashCut) A.G.flashCut(0.12);
+      if (b === 0) camPos.set(-3747, 26, 736);                      // strait boat, right under the run-in line
+      else if (b === 2) camPos.set(-250, 50, -350);                 // Marin shore, gap framed
+      else if (b === 4) camPos.set(D.roof.x + 42, D.roof.camY, D.roof.z + 42);   // rooftop
+    }
+    if (b === 0) {
+      // ground: it grows from a spark to a roar off the deck
+      A._chase(dt, camPos, camera, -3747, 26, 736, j.pos.x, j.pos.y + 4, j.pos.z, 30, 42);
+    } else if (b === 1) {
+      // air: ride its six with the towers swelling ahead
+      const f = j.fwd(_w), k = t01(t - 3.4, 3.6);
+      A._chase(dt, camPos, camera,
+        j.pos.x - f.x * (88 - k * 26), j.pos.y + 15 - k * 5, j.pos.z - f.z * (88 - k * 26),
+        j.pos.x + f.x * 30, j.pos.y + 3, j.pos.z + f.z * 30, 4.2, 56 - k * 8);
+    } else if (b === 2) {
+      // ground: threading the gap, city glow behind
+      A._chase(dt, camPos, camera, -250, 50, -350, j.pos.x, j.pos.y + 3, j.pos.z, 30, 38);
+    } else if (b === 3) {
+      // air: high on its quarter as it bends right and winds up for downtown
+      const f = j.fwd(_w);
+      A._chase(dt, camPos, camera,
+        j.pos.x - f.x * 75 - f.z * 34, j.pos.y + 26, j.pos.z - f.z * 75 + f.x * 34,
+        j.pos.x + f.x * 60, j.pos.y + 2, j.pos.z + f.z * 60, 30, 46);
+    } else if (b === 4) {
+      // ground: rooftops — burners and a black delta over the lit skyline
+      A._chase(dt, camPos, camera, D.roof.x + 42, D.roof.camY, D.roof.z + 42, j.pos.x, j.pos.y + 2, j.pos.z, 30, 44);
+    } else {
+      // air: head-on — it rips at the lens, then pulls for the stars
+      const f = j.fwd(_w), k = t01(t - 20.6, 1.4);
+      A._chase(dt, camPos, camera,
+        j.pos.x + f.x * (150 - k * 40) + 14, j.pos.y + 6, j.pos.z + f.x * (150 - k * 40) - 10,
+        j.pos.x, j.pos.y + 2, j.pos.z, 10, 44 - k * 12);
+    }
+  },
+};
+
+const SCENES = [Catapult, Screwtops, Furball, Tracers, BattleGroup, Ciws, Trap, Sonobuoy, Torpedo, HeloTorp, HeloGun, Rescue, MissileCam, Eagle, AirForceOne, Jink, Fleet, HeloShip, Harrier, Prowler, Hawg, CityBuzz, BridgeRun, Habu];   // airliner pulled from the reel
 
 // ---------------- the final-launch ceremony (standalone: ?scene=final-launch) ----------------
 // A long-standing tradition, borrowed from the French Navy: for a naval
@@ -1939,6 +2079,10 @@ const THUMB_SPECS = {
   b747:    { alt: 700, dist: 66, h: 9,  az: 42 },
   dc10:    { alt: 700, dist: 54, h: 8,  az: 42 },
   tu95:    { alt: 700, dist: 58, h: 9,  az: 48 },
+  sr71:    { alt: 500, dist: 42, h: 6,  az: 42 },   // burners wash the silhouette out of a still
+  freighter:   { surface: true, dist: 150, h: 26, az: 75 },
+  'freighter:b': { surface: true, dist: 195, h: 46, az: 122 },
+  'freighter:c': { surface: true, dist: 120, h: 13, az: 38 },
   seahawk: { alt: 120, dist: 26, h: 4,  az: 48 },
   balloon: { alt: 1400, dist: 72, h: 10, az: 35 },
   cruise:  { alt: 30,  dist: 15, h: -10, az: 70, fov: 44 },
@@ -2009,6 +2153,7 @@ let ACTIVE_SCENES = SCENES;
   const pick = new URLSearchParams(location.search).get('scene');
   if (pick === 'final-launch') ACTIVE_SCENES = [FinalLaunch];
   if (pick === 'final-launch-photo') ACTIVE_SCENES = [FinalLaunchPhoto];
+  if (pick === 'habu') ACTIVE_SCENES = [Habu];
   if (pick && pick.startsWith('thumb:')) ACTIVE_SCENES = [ThumbStage];
   if (new URLSearchParams(location.search).get('flog')) window.__flog = [];
 }

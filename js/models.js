@@ -1607,8 +1607,98 @@ export function buildModel(type, livery = 0) {
     case 'cruise': return buildCruiseMissile();
     case 'raft': return buildRaft();
     case 'sub': return buildSub();
+    case 'sr71': return buildSR71();
+    case 'freighter': return buildFreighter();
+    case 'fastboat': return buildAttackBoat();
   }
   return buildFA18();
+}
+
+// ---------------- SR-71 Blackbird ----------------
+// 33 m of chined delta in midnight black. The long needle forebody, the
+// blended nacelles and the twin inward-canted tails are the silhouette —
+// keep them readable and nothing else matters.
+export function buildSR71() {
+  const g = new THREE.Group();
+  const BLK = 0x0c0e12, PNL = 0x161a20, GL = 0x1c2c3a;
+  // forebody: needle nose stretching into the chines
+  const nose = cone(0.85, 11, BLK, 10); nose.position.set(0, 0, 10.5); g.add(nose);
+  const fore = cyl(0.85, 1.05, 9, BLK, 10); fore.position.set(0, 0, 0.5); g.add(fore);
+  const aft = cyl(1.05, 0.7, 8, BLK, 10); aft.position.set(0, 0, -8); g.add(aft);
+  // canopy — a low black-glass bump far forward
+  const can = box(0.9, 0.5, 2.2, GL); can.position.set(0, 0.85, 7.2); can.rotation.x = 0.12; g.add(can);
+  // chine slab running the forebody sides into the wing root
+  const chine = new THREE.Mesh(wingGeo([[0.5, 12.5], [2.6, 2.0], [3.1, -4.0], [1.1, -9.0], [0.55, -4.0], [0.5, 6.0]], 0.42), M(PNL));
+  chine.position.y = -0.1; g.add(chine);
+  const chineR = chine.clone(); chineR.scale.x = -1; g.add(chineR);
+  // delta wing: broad, thin, double-delta sweep
+  const wing = new THREE.Mesh(wingGeo([[0.9, 4.5], [8.4, -6.5], [8.4, -8.6], [0.9, -11.5]], 0.34), M(BLK));
+  wing.position.y = -0.05; g.add(wing);
+  const wingR = wing.clone(); wingR.scale.x = -1; g.add(wingR);
+  // engine nacelles blended at mid-wing, spikes proud of the inlets
+  const ab = [];
+  for (const s of [1, -1]) {
+    const nac = cyl(1.05, 1.05, 15, PNL, 10); nac.position.set(s * 2.9, 0.15, -4.5); g.add(nac);
+    const spike = cone(0.5, 2.6, 0x05070a, 8); spike.position.set(s * 2.9, 0.15, 4.2); g.add(spike);
+    const lip = cyl(1.12, 1.12, 0.5, 0x05070a, 10); lip.position.set(s * 2.9, 0.15, 2.9); g.add(lip);
+    // inward-canted tail atop each nacelle
+    const tail = box(0.22, 2.6, 3.4, BLK); tail.position.set(s * 2.9, 1.6, -10.2); tail.rotation.z = -s * 0.28; tail.rotation.x = -0.1; g.add(tail);
+    const f = abFlame(6.5, 0.85); f.position.set(s * 2.9, 0.15, -12.2); g.add(f); ab.push(f);
+  }
+  g.userData = { ab, gear: null, hook: null, stabL: null, stabR: null, stores: {}, type: 'sr71' };
+  return g;
+}
+
+// ---------------- container freighter (the smuggler) ----------------
+// 150 m hull, container stacks amidships, castle aft. Rides pos.y ~ 0 like
+// the sub; big enough to aim at from altitude, slow enough to catch.
+export function buildFreighter() {
+  const g = new THREE.Group();
+  const HULL = 0x2e3438, DECKC = 0x3c4148, SUPER = 0x8a929c, RUST = 0x6e3a2e;
+  const hull = box(22, 9, 138, HULL); hull.position.y = 2.0; g.add(hull);
+  const bow = cone(11, 26, HULL, 4); bow.scale.set(1, 0.82, 1); bow.rotation.z = Math.PI / 4; bow.position.set(0, 2.0, 82); g.add(bow);
+  const deck = box(20.5, 0.8, 132, DECKC); deck.position.set(0, 6.9, 2); g.add(deck);
+  // rust streaks down the flank — she is no greyhound
+  const stripe = box(22.2, 1.1, 136, RUST); stripe.position.y = 5.2; g.add(stripe);
+  // container blocks: five bays of stacked boxes, weathered colors
+  const CC = [0x7a4a28, 0x39556b, 0x5a6b39, 0x6b3939, 0x555f66];
+  for (let b = 0; b < 5; b++) {
+    for (let s = 0; s < 3; s++) {
+      const c = box(6.2, 2.6, 10.5, CC[(b + s) % CC.length]);
+      c.position.set((b % 2 ? 3.4 : -3.4) + (s - 1) * 3.2, 8.6 + (s % 2) * 2.7, 52 - b * 20);
+      g.add(c);
+    }
+  }
+  // castle + funnel aft
+  const castle = box(16, 12, 14, SUPER); castle.position.set(0, 13, -58); g.add(castle);
+  const bridge = box(17.5, 3, 8, 0x9aa2ac); bridge.position.set(0, 20.5, -56); g.add(bridge);
+  const funnel = box(5, 6, 7, RUST); funnel.position.set(0, 25, -62); g.add(funnel);
+  const mast = cyl(0.3, 0.3, 12, 0x22262a, 6); mast.rotation.x = Math.PI / 2; mast.position.set(0, 30, -54); g.add(mast);
+  // kingposts fore and aft of the cargo bays
+  for (const z of [60, -38]) { const kp = cyl(0.5, 0.5, 14, DECKC, 6); kp.rotation.x = Math.PI / 2; kp.position.set(0, 13, z); g.add(kp); }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, type: 'freighter' };
+  return g;
+}
+
+// ---------------- fast attack boat (the escort swarm) ----------------
+// 20 m planing hull with a cannon tub forward and a twin mount aft —
+// the wall of lead has to come from somewhere.
+export function buildAttackBoat() {
+  const g = new THREE.Group();
+  const H = 0x4a545e, DK = 0x2b343c;
+  const hull = new THREE.Mesh(wingGeo([[0, 9.5], [2.6, 4.5], [3.0, -8.5], [-3.0, -8.5], [-2.6, 4.5]], 2.2), M(H));
+  hull.rotation.y = Math.PI; hull.position.y = 0.4; g.add(hull);
+  const cabin = box(3.4, 2.2, 4.2, DK); cabin.position.set(0, 3.0, -0.5); g.add(cabin);
+  const ws = box(3.0, 0.9, 0.2, 0x3a4a55); ws.position.set(0, 4.2, 1.6); ws.rotation.x = -0.3; g.add(ws);
+  const mast = cyl(0.16, 0.16, 4.5, DK, 6); mast.rotation.x = Math.PI / 2; mast.position.set(0, 6.2, -1.2); g.add(mast);
+  // forward cannon: tub + barrel
+  const tub = cyl(1.5, 1.7, 1.0, DK, 8); tub.rotation.x = Math.PI / 2; tub.position.set(0, 2.2, 5.5); g.add(tub);
+  const bar = cyl(0.16, 0.16, 4.6, 0x1a1e22, 6); bar.rotation.x = -0.18; bar.position.set(0, 2.9, 7.6); g.add(bar);
+  // aft twin mount
+  const tub2 = cyl(1.3, 1.5, 0.9, DK, 8); tub2.rotation.x = Math.PI / 2; tub2.position.set(0, 2.1, -6.2); g.add(tub2);
+  for (const s of [1, -1]) { const b2 = cyl(0.12, 0.12, 3.6, 0x1a1e22, 6); b2.rotation.x = -0.5; b2.position.set(s * 0.3, 2.9, -7.6); g.add(b2); }
+  g.userData = { ab: [], gear: null, hook: null, stabL: null, stabR: null, stores: {}, type: 'fastboat' };
+  return g;
 }
 
 // sprite textures for FX

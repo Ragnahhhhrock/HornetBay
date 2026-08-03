@@ -419,6 +419,27 @@ export class AIAircraft {
       if (this.pos.y < -30) { G.explode(this.pos.clone().setY(0), 2.5); this.removeMe = true; }
       return;
     }
+    if (this.type === 'freighter') {
+      // a big hull dies slowly: she takes on a list, settles by the bow,
+      // burns amidships, and goes under forefoot-first
+      this.vel.set(0, 0, 0);
+      this.pos.y -= (0.55 + this.deadT * 0.16) * dt;
+      this.model.rotation.z = Math.min(0.22, this.model.rotation.z + 0.012 * dt);
+      this.model.rotation.x = Math.max(-0.16, this.model.rotation.x - 0.010 * dt);
+      if (Math.random() < 0.6) G.fx.smoke(this.pos.clone().add(_v.set((Math.random() - 0.5) * 40, 10, (Math.random() - 0.5) * 90)), 2.2, 6, 0x2c2620);
+      if (Math.random() < 0.4) G.fx.fire(this.pos.clone().add(_v.set(0, 8, (Math.random() - 0.5) * 60)), 1.2);
+      if (this.pos.y < -26) { G.fx.splash(this.pos.clone().setY(0), 3.2); this.removeMe = true; }
+      return;
+    }
+    if (this.type === 'fastboat') {
+      // small and wooden-hearted: one puff, gone under
+      this.vel.set(0, 0, 0);
+      this.pos.y -= (2.5 + this.deadT * 1.5) * dt;
+      this.model.rotation.z += 0.15 * dt;
+      if (Math.random() < 0.4) G.fx.smoke(this.pos.clone().setY(1), 1.0, 2.5, 0x333333);
+      if (this.pos.y < -6) { G.fx.splash(this.pos.clone().setY(0), 1.6); this.removeMe = true; }
+      return;
+    }
     // flat spin down with smoke & fire
     _e.set(0.9 * dt, 0.2 * dt, this.spinDir * 3.0 * dt, 'XYZ');
     _dq.setFromEuler(_e); this.quat.multiply(_dq).normalize();

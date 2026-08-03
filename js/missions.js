@@ -113,6 +113,64 @@ function _ciwsUpdate(G, dt, missiles) {
   }
 }
 
+// MANPAD teams on decks and boats — shoulder-fired Iglas, deadly low and
+// slow. Each shooter: { ent, cd, fired, max }. Envelope: inside 4.3 km and
+// below 1,350 m. Flares beat the round; altitude beats the shooter.
+function _manpadUpdate(G, dt, shooters) {
+  const P = G.player;
+  if (P.dead || P.ejected || P.onGround) return;
+  for (const s of shooters) {
+    if (s.ent.dead) continue;
+    s.cd -= dt;
+    const d = s.ent.pos.distanceTo(P.pos);
+    if (s.cd <= 0 && d < 4300 && P.pos.y < 1350) {
+      s.cd = rand(9, 15);
+      if ((s.fired || 0) < (s.max || 8)) {
+        s.fired = (s.fired || 0) + 1;
+        G.fireEnemyMissile(s.ent, P, 'igla');
+        G.msg('MANPAD IN THE AIR — FLARES!', 'bad');
+        if (!s._called) { s._called = true; G.radio('SCREWTOPS 601: MISSILE OFF THE DECK — SHOULDER-FIRED, VIPER. FLARES AND CLIMB!'); }
+      }
+    }
+  }
+}
+
+// fast-boat flak batteries — a wall of lead around the target run. Tracers
+// and flashes always fly inside the envelope; damage only lands on the
+// player. If VIPER TWO is in the ring and closer, the gunners take the
+// easier target — that is the diversion the brief promises.
+function _aaaUpdate(G, dt, boats) {
+  const P = G.player;
+  const wm = G.wingman && G.wingman.alive ? G.wingman.ai : null;
+  for (const b of boats) {
+    if (b.dead) continue;
+    let tgt = null, td = 1e9, isW = false;
+    const dp = b.pos.distanceTo(P.pos);
+    if (!P.dead && !P.ejected && dp < 3400 && P.pos.y < 1050) { tgt = P; td = dp; }
+    if (wm && !wm.dead) {
+      const dw = b.pos.distanceTo(wm.pos);
+      if (dw < 3400 && wm.pos.y < 1150 && dw < td * 1.25) { tgt = wm; td = dw; isW = true; }
+    }
+    if (!tgt) continue;
+    if (Math.random() < dt * 22) {
+      const from = b.pos.clone(); from.y += 4;
+      const to = tgt.pos.clone().add(_cv.set((Math.random() - 0.5) * 150, (Math.random() - 0.5) * 80, (Math.random() - 0.5) * 150));
+      G.fx.trail(from.lerp(to, 0.10 + Math.random() * 0.35), 2.0, 0xff9040, 0.4);
+    }
+    if (Math.random() < dt * 6) G.fx.flash(b.pos.clone().setY(b.pos.y + 4), 5, 0xffc080, 0.1);
+    if (!isW) {
+      const pps = clamp(2.0 - td / 1900, 0.12, 1.5);
+      if (Math.random() < pps * dt) {
+        G.onPlayerHit(3 + Math.random() * 5, b);
+        if (G.time - (b._aaaMsg || -30) > 5) { b._aaaMsg = G.time; G.msg('FLAK — THE BOATS ARE SHOOTING', 'warn'); }
+      }
+    } else if (Math.random() < dt * 0.45 && G.time - (b._wmMsg || -30) > 9) {
+      b._wmMsg = G.time;
+      G.radio('VIPER TWO: TAKING THE FIRE OFF YOU, LEAD — PRESS THE RUN!');
+    }
+  }
+}
+
 export const MISSIONS = [
 // ------------------------------------------------ QUALIFICATION
 {
@@ -421,6 +479,56 @@ export const MISSIONS = [
       this.done = true;
       G.addScore(2000);
       G.completeMission('GRADUATED', 'AGGRESSOR SPLASHED.\n\nYou are cleared for the campaign, pilot.\n\nSCORE +2000');
+    }
+  },
+},
+// ------------------------------------------------ T-8 IRON BOMBS
+{
+  id: 't8', num: 108, title: 'T-8 IRON BOMBS', code: 'FLIGHT SCHOOL — STRIKE',
+  time: 'day', planeChoice: true, mk83: 6,
+  brief: [
+    'STRIKE WEAPONS — SORTIE 8', '',
+    'TWO TARGET HULKS ANCHORED ON THE BOMBING RANGE.', '',
+    'SELECT MK 83 (KEY 5). THE CCIP PIPPER DOES THE', '',
+    'MATH: DIVE 20-30 DEGREES ON THE RUN-IN, TRACK', '',
+    'THE PIPPER ONTO THE HULL, PICKLE (SPACE), AND', '',
+    'PULL OUT BY 800 FT — THE BLAST DOES NOT CARE', '',
+    'WHO DROPPED IT. SINK BOTH HULKS TO PASS.', '',
+    'SIX BOMBS. MAKE EACH ONE COUNT.',
+  ],
+  briefing: 'Sink two target hulks with Mk 83 dumb bombs on the range.',
+  loadout: '6× MK 83 · GUNS — BOMBING RANGE',
+  setup(G) {
+    G.player.type = 'f18';                      // the bomb racks are Hornet-only
+    G.setPlayerStart({ onCarrier: true });
+    G.player.stores.mk83 = 6;
+    this.targets = [];
+    const spots = [[-39000, 16000, 'TARGET HULK 1'], [-45500, 21500, 'TARGET HULK 2']];
+    for (const [x, z, nm] of spots) {
+      const h = G.spawnAI('freighter', {
+        pos: V(x, 0, z), heading: 0.8, speed: 0, hp: 380, surface: true, noEvade: true,
+        name: nm, label: 'TARGET', mode: 'straight',
+      });
+      h.kind = 'bandit'; h.identified = true; h.blastR = 80; h.targetSpeed = 0;
+      h.noAA = true;   // school rules: the fleet holds fire — these are the pilot's
+      this.targets.push(h);
+    }
+    G.waypoint = this.targets[0].pos;
+    G.radio('RANGE CONTROL: THE RANGE IS HOT, VIPER — TWO HULKS ANCHORED WEST OF THE BOAT. SIX MARK 83S ON THE RACKS.');
+    G.radio('RANGE CONTROL: KEY 5 FOR THE BOMBS. PIPPER ON THE HULL, PICKLE, PULL OUT HIGH. SPLASH BOTH AND COME HOME.');
+    G.msg('SELECT MK 83 — KEY 5 · CCIP DOES THE MATH', 'info');
+  },
+  update(G, dt) {
+    if (this.done) return;
+    const alive = this.targets.filter(h => !h.dead);
+    if (alive.length) {
+      let best = alive[0], bd = 1e12;
+      for (const h of alive) { const d = h.pos.distanceToSquared(G.player.pos); if (d < bd) { bd = d; best = h; } }
+      G.waypoint = best.pos;
+    } else {
+      this.done = true;
+      G.addScore(1500);
+      G.completeMission('BOMBING PASSED', 'BOTH HULKS ON THE BOTTOM.\n\nThe strike ledger is yours, pilot.\n\nSCORE +1500');
     }
   },
 },
@@ -1903,8 +2011,9 @@ export const MISSIONS = [
       const b = G.spawnAI('mig29', {
         pos: a.pos.clone().add(V(Math.cos(ang) * dist, 2500 + i * 800, Math.sin(ang) * dist)),
         heading: a.heading + Math.PI, speed: 260, hostile: true, name: 'MIG-29', label: 'MIG-29',
-        mode: 'attack', target: a, skill: skillFor(PILOT_RATING.m16), agility: agilityFor(PILOT_RATING.m16),
+        mode: 'attack', skill: skillFor(PILOT_RATING.m16), agility: agilityFor(PILOT_RATING.m16),
       });
+      b.target = a;   // ctor drops opts.target — set it post-spawn
       b.kind = 'bandit'; b.identified = true; b.fireCooldown = rand(8, 14);
       this._wv.push(b);
     }
@@ -1953,6 +2062,369 @@ export const MISSIONS = [
     G.waypoint = this.phase === 'outbound' || this.phase === 'hoist' ? this.raftPos : a.pos;
   },
 },
+// ------------------------------------------------ M17 HABU DESCENDING
+{
+  id: 'm17', num: 17, title: 'HABU DESCENDING', code: 'DECEMBER 3, 1994 — 0610 HRS',
+  time: 'morning', planeChoice: true,
+  brief: [
+    'NORAD STRATEGIC COMMAND — FLASH TRAFFIC', '',
+    'NASA 832, AN SR-71 BLACKBIRD ON A HIGH',
+    'SURVEY OVER THE PACIFIC, HAS LOST ONE',
+    'ENGINE AND IS LOSING THE OTHER BY', 
+    'DEGREES. SHE IS COMING HOME SLOW, LOW,',
+    'AND ALONE — FROM THE WEST, OVER OPEN WATER.', '',
+    'THE SHADOW SUB HAS FIGHTERS UP. A SICK',
+    'BLACKBIRD IS THE INTELLIGENCE PRIZE OF',
+    'THE DECADE, AND THEY MEAN TO FINISH HER', 
+    'BEFORE SHE REACHES THE COAST.', '',
+    'LAUNCH WITH VIPER TWO, RENDEZVOUS WITH',
+    'THE HABU, AND PUT YOURSELVES BETWEEN HER', 
+    'AND EVERYTHING THAT COMES.', '',
+    'SHE MAKES SFO RUNWAY 10L OR SHE DOESN\'T',
+    'COME HOME AT ALL.',
+  ],
+  briefing: 'Escort a wounded SR-71 home across the ocean.',
+  loadout: '2× AIM-9 · 4× AIM-120 · 500× 20MM — ESCORT',
+  setup(G) {
+    G.setPlayerStart({ onCarrier: true });
+    // the Habu: one engine out, one compressor-stalling, descending out of
+    // the west at 330 knots and slowing by stages as the sick motor fades
+    this.habu = G.spawnAI('sr71', {
+      pos: V(-95000, 8100, 6000), heading: Math.PI / 2 + 0.10, speed: 330, hp: 420,
+      name: 'NASA 832', label: 'HABU', mode: 'land', noEvade: true,
+      waypoints: [
+        V(-30000, 4600, 13000),
+        V(-8000, 1500, 19000),    // abeam the Golden Gate
+        V(4000, 700, 19300),      // over the city, long final
+        V(12003, 6, 19652),       // touchdown on 10L
+      ],
+    });
+    this.habu.kind = 'airliner'; this.habu.identified = true; this.habu.souls = 2;
+    this.habu.onEvent = (ev) => { if (ev === 'landed') this.habuDown = true; };
+    this.habuDown = false; this.met = false; this.w2 = false; this.w3 = false;
+    this.t = 0; this.stage = 0; this._wv = [];
+    const sp = G.world.enemySub.pos;
+    this._wave = (n, type, rating, cd) => {
+      for (let i = 0; i < n; i++) {
+        const b = G.spawnAI(type, {
+          pos: V(sp.x - 4000 + i * 3200, 2400 + i * 700, sp.z - 6000 + i * 5200),
+          heading: Math.PI / 2, speed: 310, hostile: true,
+          name: type === 'su27' ? 'SU-27' : 'MIG-29', label: type === 'su27' ? 'SU-27' : 'MIG-29',
+          mode: 'attack', skill: skillFor(rating), agility: agilityFor(rating),
+        });
+        b.target = this.habu;   // ctor drops opts.target — set it post-spawn
+        b.kind = 'bandit'; b.identified = true; b.fireCooldown = cd + i * 9;
+        this._wv.push(b);
+      }
+    };
+    this._wave(2, 'mig29', PILOT_RATING.m17, 26);
+    G.waypoint = this.habu.pos;
+    G.radio('NASA 832: NORAD, EIGHT-THREE-TWO. NUMBER ONE IS OUT AND NUMBER TWO IS ROUGH. WE ARE A VERY FAST GLIDER HAVING A BAD MORNING.');
+    G.radio('FLEET COM: VIPER 1-1, THE HABU IS YOUR SHEPHERD. THE SUB ALREADY HAS TWO BANDITS CLIMBING FOR HER — GO GET BETWEEN THEM.');
+  },
+  update(G, dt) {
+    this.t += dt;
+    const h = this.habu;
+    G.waypoint = this._wv.some(b => !b.dead) ? (this._wv.find(b => !b.dead) || h).pos : h.pos;
+    if (h.dead) {
+      G.failMission('THE HABU IS DOWN',
+        'NASA 832 FELL INTO THE SEA FORTY MILES SHORT\nOF THE COAST. TWO CREW, THIRTY YEARS OF\nPROGRAM HISTORY — ALL OF IT ON THE BOTTOM.\n\nTHE SUB\'S AIR WING IS TOASTING ITSELF.');
+      return;
+    }
+    // the sick engine gives up in stages — each one makes her slower and the
+    // intercept geometry kinder to the bandits
+    const stages = [
+      { t: 25, spd: 250, call: 'NASA 832: NUMBER TWO JUST STALLED AND RELIT. WE\'RE DOWN TO TWO-FIFTY KNOTS. SHE DOESN\'T LIKE IT DOWN HERE.' },
+      { t: 70, spd: 185, call: 'NASA 832: IT\'S GETTING WORSE — ONE-EIGHT-FIVE AND SINKING. WHATEVER YOU\'RE DOING OUT THERE, DO IT FASTER.' },
+      { t: 120, spd: 150, call: 'NASA 832: ONE-FIVE-ZERO, THAT\'S ALL SHE HAS. WE ARE A BLACK PIANO LOOKING FOR A RUNWAY.' },
+    ];
+    if (this.stage < stages.length && this.t > stages[this.stage].t) {
+      this.spdCap = stages[this.stage].spd;
+      G.radio(stages[this.stage].call);
+      for (let i = 0; i < 5; i++) G.fx.smoke(h.pos.clone().add(V(0, 1, -12 - i * 4)), 1.4, 2.5, 0xe8e8e8);
+      G.msg('THE HABU IS SLOWING', 'warn');
+      this.stage++;
+    }
+    // the land-mode autopilot manages its own targetSpeed — enforce the sick
+    // engine as a hard cap on the airframe itself, eased in at 24 m/s/s
+    if (this.spdCap && !h.landed && !h.dead) {
+      if (h.speed > this.spdCap) h.speed = Math.max(this.spdCap, h.speed - 24 * dt);
+      if (h.targetSpeed > h.speed) h.targetSpeed = h.speed;
+    }
+    // the rendezvous that matters: get a wing on her before the bandits do
+    if (!this.met && G.player.pos.distanceTo(h.pos) < 2500) {
+      this.met = true; G.addScore(500);
+      G.msg('RENDEZVOUS — ON THE HABU\'S WING', 'good');
+      G.radio('NASA 832: WE SEE YOU OFF THE LEFT WING, VIPER. NEVER THOUGHT WE\'D BE HAPPY TO SEE A NAVY JET THIS CLOSE. TAKE US HOME.');
+    }
+    if (h.hp < 380 && !this._hit1) { this._hit1 = true; G.radio('NASA 832: WE\'RE HIT — HYDRAULICS ARE GOING. VIPER, THOSE MISSILES ARE GETTING CLOSE!'); }
+    if (!this.w2 && (this._wv.every(b => b.dead) || h.pos.x > -58000)) {
+      this.w2 = true;
+      this._wave(2, 'mig29', PILOT_RATING.m17, 22);
+      G.msg('SECOND INTERCEPT — BANDITS OFF THE SUB', 'warn');
+      G.radio('SCREWTOPS 601: TWO MORE BOGEYS UP FROM THE SUB, NOSED ON THE HABU. THEY SMELL BLOOD, VIPER.');
+    }
+    if (!this.w3 && h.pos.x > -26000) {
+      this.w3 = true;
+      this._wave(2, 'su27', PILOT_RATING.m17 + 10, 18);
+      G.msg('LAST DITCH — FLANKERS COMMITTING', 'bad');
+      G.radio('SCREWTOPS 601: FLANKERS, VIPER — THEY\'VE SENT THE GOOD ONES. NOBODY TOUCHES THAT AIRPLANE.');
+    }
+    if (this.habuDown) {
+      for (const b of this._wv) if (!b.dead) { b.mode = 'route'; b.target = null; b.waypoints = [V(-130000, 9000, -20000)]; }
+      G.addScore(3500);
+      G.completeMission('MISSION COMPLETE',
+        'NASA 832 IS ON THE GROUND AT SFO — ONE ENGINE\nWINDMILLING, BOTH CREW WALKING AWAY.\n\nTHE FASTEST AIRPLANE EVER BUILT JUST NEEDED\nA COUPLE OF HORNETS TO GET HOME.\n\nSCORE +3500 + RENDEZVOUS & KILL BONUSES');
+    }
+  },
+},
+// ------------------------------------------------ M18 DEADLY CARGO
+{
+  id: 'm18', num: 18, title: 'DEADLY CARGO', code: 'JANUARY 19, 1995 — 0540 HRS',
+  time: 'dusk', planeChoice: true, mk83: 6,
+  brief: [
+    'JOINT INTERAGENCY TASK FORCE — MOST SECRET', '',
+    'THE MV DANUBE STAR, 150 METRES OF RUST,', 
+    'IS CARRYING WEAPONS-GRADE URANIUM IN HER',
+    'FORWARD HOLD, BOUND FOR A ROGUE STATE.', '',
+    'SHE HAS IGNORED EVERY ORDER TO HEAVE TO.',
+    'A SHADOW SUB IS SURFACED WEST OF THE', 
+    'GOLDEN GATE TO TAKE THE CARGO OFF HER.', '',
+    'HER CREW MAN SHOULDER-FIRED SAMS ON THE', 
+    'DECKS. COME IN LOW AND THEY WILL REACH', 
+    'FOR YOU. FLARES BEAT IGLAS. ALTITUDE', 
+    'BEATS THEM TOO — BUT SO DOES NOTHING', 
+    'ELSE ABOUT A BOMB RUN.', '',
+    'SINK THE DANUBE STAR BEFORE SHE MAKES',
+    'THE HANDOFF. STRIKE IS HORNET-ONLY:',
+    'SIX MK 83S ON THE RACKS, CCIP ON THE', 
+    'GLASS. THE GUN WORKS ON HULLS TOO.', '',
+    'PUT THE PIPPER ON HER AND PICKLE.',
+  ],
+  briefing: 'Sink the smuggler freighter before she meets the sub.',
+  loadout: '6× MK 83 · 2× AIM-9 · 4× AIM-120 · 500× 20MM — STRIKE',
+  setup(G) {
+    G.player.type = 'f18';                      // strike is Hornet-only — the brief says so
+    G.setPlayerStart({ onCarrier: true });
+    G.player.stores.mk83 = 6;
+    const subP = G.world.enemySub.pos;
+    this.sub = G.spawnAI('sub', {
+      pos: V(subP.x, 0, subP.z), speed: 0, hp: 500, surface: true, noEvade: true,
+      name: 'SHADOW SUB', label: 'SUB', mode: 'straight',
+    });
+    this.sub.kind = 'bandit'; this.sub.identified = true; this.sub.blastR = 45; this.sub.targetSpeed = 0;
+    this.frt = G.spawnAI('freighter', {
+      pos: V(-61000, 0, -19000), heading: Math.atan2(subP.x + 61000, -(subP.z + 19000)),
+      speed: 12.5, hp: 1400, surface: true, noEvade: true,
+      name: 'MV DANUBE STAR', label: 'SMUGGLER', mode: 'route',
+      waypoints: [V(subP.x, 0, subP.z)],
+    });
+    this.frt.kind = 'bandit'; this.frt.identified = true; this.frt.blastR = 80;
+    this.pads = [ { ent: this.frt, cd: 6 }, { ent: this.frt, cd: 14 } ];
+    this.escape = false; this._call = 0;
+    G.waypoint = this.frt.pos;
+    G.radio('USCGC MIDGETT: MV DANUBE STAR, THIS IS THE UNITED STATES COAST GUARD. HEAVE TO AND PREPARE TO BE BOARDED.');
+    G.radio('FLEET COM: SHE\'S NOT STOPPING, VIPER. WEAPONS FREE ON THE HULL — SIX BOMBS, AND THE CLOCK IS THE SUB.');
+    G.msg('SINK THE FREIGHTER BEFORE THE RENDEZVOUS', 'info');
+  },
+  update(G, dt) {
+    const f = this.frt, s = this.sub;
+    G.waypoint = f.pos;
+    _manpadUpdate(G, dt, this.pads);
+    if (f.dead) {
+      G.addScore(3500 + (s.dead ? 1000 : 0));
+      G.completeMission('MISSION COMPLETE',
+        'THE DANUBE STAR IS GOING DOWN BY THE BOW,\nCARGO AND ALL — TWENTY FATHOMS OF WATER\nBETWEEN THAT URANIUM AND ANYONE WHO\nWANTED IT.\n\n' + (s.dead ? 'AND THE SHADOW SUB WENT WITH HER.\n\n' : '') +
+        'THE COAST GUARD CALLS IT A NAVIGATION\nHAZARD NOW. SCORE +3500' + (s.dead ? ' +1000 SUB BONUS' : ''));
+      return;
+    }
+    // the handoff: hull within reach of the waiting sub
+    if (!s.dead && f.pos.distanceTo(s.pos) < 3500) {
+      G.failMission('THE HANDOFF IS MADE',
+        'CRANES SWUNG THE CRATES ACROSS IN THE DARK.\nTHE SUB IS UNDER AND GONE, AND THE CARGO\nWITH IT.\n\nSOMEWHERE DOWN THE ROAD THERE IS A CITY\nTHAT PAYS FOR THIS.');
+      return;
+    }
+    // sinking the sub first doesn't end it — she just runs for open water
+    if (s.dead && !this.escape) {
+      this.escape = true;
+      f.waypoints = [V(-150000, 0, -30000)]; f.wpIndex = 0; f.targetSpeed = 13.5;
+      G.msg('SHE\'S RUNNING FOR OPEN WATER', 'warn');
+      G.radio('FLEET COM: THE SUB\'S DOWN BUT THE FREIGHTER IS LEGGING IT WEST — DO NOT LET HER OVER THE HORIZON.');
+    }
+    if (this.escape && f.pos.x < -125000) {
+      G.failMission('OVER THE HORIZON', 'SHE MADE THE OPEN PACIFIC AND VANISHED\nINTO THE SHIPPING LANES. THE CARGO WILL\nSURFACE AGAIN SOMEWHERE. COUNT ON IT.');
+      return;
+    }
+    // the clock, called out loud
+    const d = f.pos.distanceTo(s.pos);
+    const call = d < 5000 ? 3 : d < 9000 ? 2 : d < 14000 ? 1 : 0;
+    if (call > this._call) {
+      this._call = call;
+      G.radio(call === 3 ? 'FLEET COM: SHE\'S ON TOP OF THE SUB — SECONDS, VIPER!' :
+              call === 2 ? 'FLEET COM: FIVE MILES FROM THE HANDOFF. PUT HER DOWN NOW.' :
+                           'FLEET COM: CLOSING ON THE RENDEZVOUS. YOUR BOMBS ARE THE WHOLE ANSWER.');
+    }
+  },
+},
+// ------------------------------------------------ M19 WALL OF LEAD
+{
+  id: 'm19', num: 19, title: 'WALL OF LEAD', code: 'JANUARY 26, 1995 — 0515 HRS',
+  time: 'night', planeChoice: true, mk83: 6,
+  brief: [
+    'JOINT INTERAGENCY TASK FORCE — MOST SECRET', '',
+    'THEY LEARNED FROM THE DANUBE STAR.', '',
+    'THE MV ARCTIC MERCHANT SAILS THE SAME',
+    'CARGO ON THE SAME ERRAND — BUT TONIGHT',
+    'SHE IS BRISTLING. FOUR FAST ATTACK BOATS', 
+    'BOX HER IN WITH FLAK, FOUR MANPAD TEAMS', 
+    'WAIT ON DECK, AND FIGHTER COVER ORBITS', 
+    'HIGH. A SUB IS SURFACED TO RECEIVE.', '',
+    'GOING IN ALONE AND LOW IS HOW PILOTS', 
+    'GET POSTED MISSING. USE VIPER TWO:', 
+    'HE DRAGS THE FIGHTERS AND SOAKS THE',
+    'GUNLINE — YOU MAKE THE RUN.', '',
+    'SIX MK 83S. CCIP ON THE GLASS. FLARES', 
+    'FOR THE IGLAS. ALTITUDE IS LIFE — UNTIL', 
+    'THE RUN, WHEN LIFE IS LOW AND FAST.', '',
+    'SINK HER BEFORE THE HANDOFF.',
+  ],
+  briefing: 'The smuggler run, defended: boats, flak, MANPADs, fighters.',
+  loadout: '6× MK 83 · 2× AIM-9 · 4× AIM-120 · 500× 20MM — STRIKE PACKAGE',
+  setup(G) {
+    G.player.type = 'f18';
+    G.setPlayerStart({ onCarrier: true });
+    G.player.stores.mk83 = 6;
+    const subP = G.world.enemySub.pos;
+    this.sub = G.spawnAI('sub', {
+      pos: V(subP.x, 0, subP.z), speed: 0, hp: 500, surface: true, noEvade: true,
+      name: 'SHADOW SUB', label: 'SUB', mode: 'straight',
+    });
+    this.sub.kind = 'bandit'; this.sub.identified = true; this.sub.blastR = 45; this.sub.targetSpeed = 0;
+    this.frt = G.spawnAI('freighter', {
+      pos: V(-56000, 0, -16500), heading: Math.atan2(subP.x + 56000, -(subP.z + 16500)),
+      speed: 13, hp: 1700, surface: true, noEvade: true,
+      name: 'MV ARCTIC MERCHANT', label: 'SMUGGLER', mode: 'route',
+      waypoints: [V(subP.x, 0, subP.z)],
+    });
+    this.frt.kind = 'bandit'; this.frt.identified = true; this.frt.blastR = 80;
+    // the gunline: four attack boats boxing her in
+    this.boats = [];
+    for (let i = 0; i < 4; i++) {
+      const a = (i / 4) * Math.PI * 2;
+      const b = G.spawnAI('fastboat', {
+        pos: V(this.frt.pos.x + Math.cos(a) * 700, 0, this.frt.pos.z + Math.sin(a) * 700),
+        heading: a + Math.PI / 2, speed: 17 + i * 1.5, hp: 70, surface: true, hostile: true,
+        name: 'BOG HAMMER ' + (i + 1), label: 'GUNBOAT', mode: 'orbit',
+      });
+      b.kind = 'bandit'; b.identified = true; b.blastR = 9;
+      b.orbitCenter = this.frt.pos.clone(); b.orbitRadius = 460 + i * 190;
+      this.boats.push(b);
+    }
+    this.pads = [ { ent: this.frt, cd: 5, max: 7 }, { ent: this.frt, cd: 12, max: 7 },
+                  { ent: this.boats[0], cd: 9, max: 5 }, { ent: this.boats[3], cd: 16, max: 5 } ];
+    // high cover: a pair of Fulcrums on station, more behind them
+    this.cover = [];
+    const sub = G.world.enemySub.pos;
+    for (let i = 0; i < 2; i++) {
+      const m = G.spawnAI('mig29', {
+        pos: V(this.frt.pos.x - 9000 - i * 3000, 3400 + i * 500, this.frt.pos.z - 5000 + i * 4000),
+        heading: Math.PI / 2, speed: 280, hostile: true, name: 'MIG-29', label: 'MIG-29',
+        mode: 'orbit', skill: skillFor(PILOT_RATING.m19), agility: agilityFor(PILOT_RATING.m19),
+      });
+      m.kind = 'bandit'; m.identified = true; m.orbitCenter = this.frt.pos.clone(); m.orbitRadius = 8000 + i * 2500;
+      this.cover.push(m);
+    }
+    this.hot = false; this.wave2 = false; this.diverted = false; this.escape = false; this._call = 0;
+    G.waypoint = this.frt.pos;
+    G.radio('FLEET COM: SAME ERRAND, WORSE NEIGHBORHOOD. THE MERCHANT HAS A GUNLINE AROUND HER AND FIGHTERS ON TOP.');
+    G.radio('VIPER TWO: I\'LL DRAG THE COVER AND DRAW THE BOATS\' FIRE WHEN YOU CALL THE RUN, LEAD. JUST SAY WHEN.');
+    G.msg('SINK THE FREIGHTER — USE YOUR WINGMAN', 'info');
+  },
+  update(G, dt) {
+    const f = this.frt, s = this.sub;
+    G.waypoint = f.pos;
+    for (const b of this.boats) if (!b.dead) b.orbitCenter.copy(f.pos);
+    for (const m of this.cover) if (!m.dead && m.mode === 'orbit') m.orbitCenter.copy(f.pos);
+    _manpadUpdate(G, dt, this.pads);
+    _aaaUpdate(G, dt, this.boats);
+    // the cover commits once the Hornet is inside their ring
+    if (!this.hot && G.player.pos.distanceTo(f.pos) < 26000) {
+      this.hot = true;
+      for (const m of this.cover) {
+        if (m.dead) continue;
+        m.mode = 'attack'; m.target = Math.random() < 0.55 || !G.wingman ? G.player : G.wingman.ai; m.fireCooldown = rand(6, 11);
+      }
+      G.msg('FIGHTER COVER IS COMMITTING', 'bad');
+      G.radio('SCREWTOPS 601: THE ORBIT PAIR IS NOSE-DOWN ON YOU, VIPER — FIGHT\'S ON.');
+    }
+    // VIPER TWO earns his pay: once the run is on, put him on the fighter
+    // cover and keep him stacked there — the gunline takes the easier target
+    // while the bombs do the talking. Latch: he may still be on the deck when
+    // the trigger first trips, so retry until he takes the order.
+    if (!this.divertAck && (G.missiles.some(m => m.type === 'mk83') || (G.player.weapon === 'mk83' && G.player.pos.distanceTo(f.pos) < 14000))) {
+      this.diverted = true;
+      if (G.wingman && G.wingman.alive) {
+        const tgt = this.cover.find(m => !m.dead);
+        if (tgt) {
+          this.divertAck = true;
+          G.wingman.order = 'ATTACK MY TARGET'; G.wingman.engageT = tgt; G.wingman.state = 'ENGAGE';
+          G.radio('VIPER TWO: ENGAGING THE COVER — GUNLINE\'S MINE TOO IF THEY WANT ME. MAKE THE RUN, LEAD!');
+        }
+      }
+    }
+    // splashed one? there's another — stay on the cover while the run is on
+    if (this.divertAck && G.wingman && G.wingman.alive && G.player.pos.distanceTo(f.pos) < 24000 &&
+        (G.wingman.state === 'WING' || G.wingman.state === 'JOIN')) {
+      const tgt = this.cover.find(m => !m.dead);
+      if (tgt) { G.wingman.engageT = tgt; G.wingman.state = 'ENGAGE'; }
+    }
+    if (!this.wave2 && f.hp < 1100) {
+      this.wave2 = true;
+      const sp = G.world.enemySub.pos;
+      for (let i = 0; i < 2; i++) {
+        const m = G.spawnAI('su27', {
+          pos: V(sp.x - 3000 + i * 2600, 2800 + i * 600, sp.z - 5000 + i * 4400),
+          heading: Math.PI / 2, speed: 300, hostile: true, name: 'SU-27', label: 'SU-27',
+          mode: 'attack', skill: skillFor(PILOT_RATING.m19 + 8), agility: agilityFor(PILOT_RATING.m19 + 8),
+        });
+        m.target = G.player;   // ctor drops opts.target — set it post-spawn
+        m.kind = 'bandit'; m.identified = true; m.fireCooldown = 9 + i * 8;
+      }
+      G.msg('THEY\'RE DESPERATE — FLANKERS LAUNCHING', 'bad');
+      G.radio('FLEET COM: YOU\'VE HURT HER — THE SUB IS LAUNCHING ITS LAST PAIR. FINISH THE FREIGHTER.');
+    }
+    if (f.dead) {
+      G.addScore(4500 + (s.dead ? 1000 : 0));
+      G.completeMission('MISSION COMPLETE',
+        'THE ARCTIC MERCHANT BROKE HER BACK IN THE\nFLAK BURST GLOW AND ROLLED UNDER, CARGO\nAND ALL. THE GUNLINE WENT QUIET.\n\n' + (s.dead ? 'THE SHADOW SUB JOINED HER ON THE BOTTOM.\n\n' : '') +
+        'TWO RUNS LIKE THIS AND THERE WON\'T BE\nA SMUGGLING FLEET LEFT.\nSCORE +4500' + (s.dead ? ' +1000 SUB BONUS' : ''));
+      return;
+    }
+    if (!s.dead && f.pos.distanceTo(s.pos) < 3500) {
+      G.failMission('THE HANDOFF IS MADE',
+        'SHE CAME ALONGSIDE THE SUB UNDER HER OWN\nGUNLINE. THE CRATES WENT ACROSS BEFORE\nYOUR BOMBS COULD STOP THEM.\n\nTHAT CARGO HAS A ZIP CODE NOW.');
+      return;
+    }
+    if (s.dead && !this.escape) {
+      this.escape = true;
+      f.waypoints = [V(-150000, 0, -30000)]; f.wpIndex = 0; f.targetSpeed = 13.5;
+      G.msg('SHE\'S RUNNING FOR OPEN WATER', 'warn');
+      G.radio('FLEET COM: SUB\'S DOWN AND THE MERCHANT IS LEGGING IT — RUN HER DOWN.');
+    }
+    if (this.escape && f.pos.x < -125000) {
+      G.failMission('OVER THE HORIZON', 'SHE OUTRAN YOUR BOMBS TO THE SHIPPING\nLANES. THE CARGO WILL FIND ANOTHER BUYER.');
+      return;
+    }
+    const d = f.pos.distanceTo(s.pos);
+    const call = d < 5000 ? 3 : d < 9000 ? 2 : d < 14000 ? 1 : 0;
+    if (call > this._call) {
+      this._call = call;
+      G.radio(call === 3 ? 'FLEET COM: SHE\'S RAFTING UP WITH THE SUB — NOW, VIPER, NOW!' :
+              call === 2 ? 'FLEET COM: FIVE MILES TO THE HANDOFF. PRESS THE RUN.' :
+                           'FLEET COM: THE CLOCK IS THE SUB, VIPER. GET LOW AND GET IT DONE.');
+    }
+  },
+},
 // ------------------------------------------------ FREE FLIGHT
 {
   id: 'free', num: 99, title: 'FREE FLIGHT', code: 'NO ENEMY ACTIVITY',
@@ -1986,6 +2458,7 @@ export const DIFFICULTY = {
   m1: 20, m2: 25, m3: 40, m4: 45, m5: 60, m6: 45, m7: 60,
   m8: 25, m9: 70, m10: 95, m11: 65, m12: 55, m13: 50,
   m14: 80, m15: 95, m16: 70,
+  m17: 65, m18: 70, m19: 90,
 };
 
 // what the sortie actually asks of you — type and maneuver tags, shown as
@@ -2007,6 +2480,9 @@ export const MISSION_TAGS = {
   m14: ['CARRIER LAUNCH', 'INTERCEPT', 'FLEET DEFENSE'],   // run down the missile carrier
   m15: ['CARRIER LAUNCH', 'INTERCEPT', 'EXPERT'],          // the whole regiment, two axes
   m16: ['CARRIER LAUNCH', 'ESCORT', 'DOGFIGHT'],           // nothing touches the Angel
+  m17: ['CARRIER LAUNCH', 'ESCORT', 'HIGH SPEED'],         // walk the wounded Habu home
+  m18: ['CARRIER LAUNCH', 'MARITIME STRIKE', 'DUMB BOMBS'],// six Mk 83s against the clock
+  m19: ['CARRIER LAUNCH', 'MARITIME STRIKE', 'EXPERT'],    // gunline, MANPADs, top cover
 };
 
 // one-line hooks under the chips — the pitch that makes you press the key
@@ -2027,11 +2503,14 @@ export const MISSION_HOOKS = {
   m14: 'A Bear-H is running at the fleet with two Kitchens on the rails. Kill the archer before the arrows fly.',
   m15: 'Two Bears, four Flankers, eight killers on two axes. The final exam — pass it and become legend.',
   m16: 'A pilot is in the water and the Angel is going in alone. Slow, low, and hovering dead still — nothing touches her.',
+  m17: 'A crippled Habu is falling out of the black sky, too fast to catch and too hurt to run. Meet him at the coast and keep the vultures off.',
+  m18: 'Weapons-grade uranium in a rustbucket\'s forward hold, a sub surfaced to take it off her — and six dumb bombs to stop the handoff.',
+  m19: 'She came back with friends: a gunline on the water, MANPADs on every deck, fighters for top cover. Your wingman draws the fire. You make the run.',
 };
 
 // flight school display data — the same board treatment as the campaign
 Object.assign(DIFFICULTY, {
-  t1: 10, t2: 15, t3: 35, t4: 40, t7: 35, t5: 30, t6: 55,
+  t1: 10, t2: 15, t3: 35, t4: 40, t7: 35, t5: 30, t6: 55, t8: 30,
 });
 Object.assign(MISSION_TAGS, {
   t1: ['CARRIER LAUNCH', 'CARRIER TRAP', 'SOLO'],
@@ -2040,6 +2519,7 @@ Object.assign(MISSION_TAGS, {
   t4: ['CARRIER LAUNCH', 'FORMATION', 'STATION-KEEPING'],
   t5: ['CARRIER LAUNCH', 'GUNNERY', 'FOUR TARGETS'],
   t6: ['CARRIER LAUNCH', 'BFM', '1V1'],
+  t8: ['CARRIER LAUNCH', 'BOMBING', 'CCIP'],
 });
 Object.assign(MISSION_HOOKS, {
   t1: 'One launch, one pattern, one trap — the three things every naval aviator must own. Your first solo starts now.',
@@ -2048,6 +2528,7 @@ Object.assign(MISSION_HOOKS, {
   t4: 'Join on your instructor and glue yourself to his wing for 45 seconds. Smooth hands, small corrections.',
   t5: 'Four target balloons off the coast and a gun full of 20mm. The range is yours, pilot.',
   t6: 'One aggressor, no help, fights on. Splash him and you are cleared for the campaign.',
+  t8: 'Six iron bombs, two dead hulks, one pipper. Learn the CCIP math — the fleet\'s strike missions depend on it.',
 });
 
 // enemy pilot capability, 0-100 — drives skill/agility (and therefore how
@@ -2070,6 +2551,8 @@ export const PILOT_RATING = {
   m14: 75,   // Bear escort veterans
   m15: 92,   // legends — the regiment's demonstration team
   m16: 65,   // vectored onto a hovering helo
+  m17: 55,   // interceptors hunting a sick Blackbird
+  m19: 62,   // the smuggler's fighter cover
   t6: 55,    // your aggressor instructor: rated, but fair
 };
 // rating -> the AI's skill/agility (aces unlock the full maneuver library
@@ -2083,4 +2566,4 @@ export const pilotDescriptor = (r) =>
   r < 90 ? 'ACES — their very best' : 'LEGENDS — they invented the maneuvers';
 
 // the flight-school syllabus, in unlock order
-export const SCHOOL_ORDER = ['t1', 't2', 't3', 't4', 't7', 't5', 't6'];
+export const SCHOOL_ORDER = ['t1', 't2', 't3', 't4', 't7', 't5', 't6', 't8'];

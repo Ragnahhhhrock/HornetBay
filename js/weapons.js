@@ -167,6 +167,10 @@ const MISSILE_TYPES = {
   // a 40 kg continuous-rod warhead — SEMI-ACTIVE: it only guides while the
   // launch radar holds the lock. Break the lock and it goes ballistic.
   aim7:   { vmax: 1050, accel: 300, turn: 1.6, life: 50, prox: 30, dmg: 130, ir: false, sarh: true, len: 3.7, dia: 0.20 },
+  // 9K38 Igla MANPADS: shoulder-fired from the freighter decks and the escort
+  // boats. Short-legged IR — deadly under 4 km and below 1,300 m, useless
+  // above it. Flares beat it; so does altitude.
+  igla:   { vmax: 570, accel: 300, turn: 2.7, life: 15, prox: 20, dmg: 55, ir: true, len: 1.7, dia: 0.07 },
   r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false },
   r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true  },
   // shipboard rounds: Klakring's SM-1 area-defence SAM and the sea-skimming Harpoon
@@ -206,7 +210,7 @@ export class Missile {
   fwd(out) { return out.copy(this.vel).normalize(); }
   get speed() { return this.vel.length(); }
   get len() { return this.cfg.len || 3.4; }
-  get name() { return ({ aim9: 'AIM-9', aim120: 'AIM-120', aim54: 'AIM-54', aim7: 'AIM-7', r27: 'R-27', r73: 'R-73', sm1: 'SM-1', harpoon: 'HARPOON' })[this.type] || this.type.toUpperCase(); }
+  get name() { return ({ aim9: 'AIM-9', aim120: 'AIM-120', aim54: 'AIM-54', aim7: 'AIM-7', r27: 'R-27', r73: 'R-73', sm1: 'SM-1', harpoon: 'HARPOON', igla: 'IGLA' })[this.type] || this.type.toUpperCase(); }
   get removeMe() { return false; }
   update(dt) {
     const G = this.G, cfg = this.cfg;
@@ -360,4 +364,86 @@ export class GunSystem {
       if (t.life <= 0) { this.G.scene.remove(t.mesh); this.tracers.splice(i, 1); }
     }
   }
+}
+
+// ---------------- Mk 83 1,000 lb dumb bomb ----------------
+// No motor, no seeker, no mercy: release velocity plus gravity, nothing else.
+// The CCIP pipper in hud.js integrates this exact model, so where the pipper
+// sits is where the bomb lands. Blast is honest — mind your own frag.
+export const BOMB_TYPES = {
+  mk83: { g: 9.81, blast: 60, dmg: 430, label: 'MK 83' },
+};
+let _bombGeo = null, _bombMat = null, _bombFinMat = null;
+export class Bomb {
+  constructor(G, owner, type = 'mk83') {
+    this.G = G; this.cfg = BOMB_TYPES[type]; this.type = type; this.owner = owner;
+    this.target = null;                     // rides in G.missiles without being a missile
+    this.dead = false; this.spoofed = true; // unguided by definition — never homes
+    if (!_bombGeo) {
+      _bombGeo = new THREE.CylinderGeometry(0.19, 0.15, 2.6, 8); _bombGeo.rotateX(Math.PI / 2);
+      _bombMat = new THREE.MeshLambertMaterial({ color: 0x4a5238, flatShading: true });
+      _bombFinMat = new THREE.MeshLambertMaterial({ color: 0x3a422c, flatShading: true });
+    }
+    this.mesh = new THREE.Group();
+    const body = new THREE.Mesh(_bombGeo, _bombMat); this.mesh.add(body);
+    const nose = new THREE.Mesh(new THREE.ConeGeometry(0.19, 0.5, 8), _bombMat);
+    nose.geometry.rotateX(Math.PI / 2); nose.position.z = 1.5; this.mesh.add(nose);
+    for (let i = 0; i < 4; i++) {
+      const fin = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.5, 0.55), _bombFinMat);
+      fin.position.z = -1.25; fin.rotation.z = i * Math.PI / 2 + Math.PI / 4; this.mesh.add(fin);
+    }
+    this.pos = this.mesh.position;
+    this.pos.copy(owner.pos); this.pos.y -= 2.2;   // off the rack, below the jet
+    this.vel = owner.vel.clone();
+    G.scene.add(this.mesh);
+  }
+  // spectate adapter — O will ride the bomb all the way down
+  fwd(out) { return out.copy(this.vel).normalize(); }
+  get speed() { return this.vel.length(); }
+  get len() { return 3.0; }
+  get name() { return this.cfg.label; }
+  get removeMe() { return false; }
+  update(dt) {
+    const G = this.G;
+    // substeps keep fast, steep deliveries honest
+    const n = Math.max(1, Math.ceil(dt / 0.02)), h = dt / n;
+    for (let i = 0; i < n; i++) {
+      this.vel.y -= this.cfg.g * h;
+      this.pos.addScaledVector(this.vel, h);
+      // direct contact with a surface target detonates on the hull
+      for (const b of G.bandits) {
+        if (b.dead || b.removeMe || !b.surface) continue;
+        const rr = (b.blastR || 8) + 3;
+        if (Math.abs(this.pos.x - b.pos.x) < rr && Math.abs(this.pos.z - b.pos.z) < rr &&
+            this.pos.y < b.pos.y + 14) { this._burst(); return; }
+      }
+      const gh = groundHeight(this.pos.x, this.pos.z);
+      const floor = Math.max(gh, 0.4);
+      if (this.pos.y <= floor) {
+        this.pos.y = floor;
+        if (gh < 0.5) G.fx.splash(this.pos, 2.6);   // water
+        this._burst();
+        return;
+      }
+    }
+    this.mesh.quaternion.setFromUnitVectors(_v.set(0, 0, 1), _d.copy(this.vel).normalize());
+  }
+  _burst() {
+    const G = this.G, R = this.cfg.blast;
+    G.explode(this.pos.clone(), 1.7);
+    for (let i = 0; i < 6; i++) G.fx.smoke(this.pos.clone().add(_v.set((Math.random() - 0.5) * 14, Math.random() * 6, (Math.random() - 0.5) * 14)), 3.5, 7, 0x2c2620);
+    for (const b of G.bandits) {
+      if (b.dead || b.removeMe) continue;
+      const eff = R + (b.blastR || 0);
+      const d = Math.hypot(this.pos.x - b.pos.x, this.pos.z - b.pos.z);
+      if (d > eff) continue;
+      const f = d < eff * 0.45 ? 1 : 1 - 0.85 * (d - eff * 0.45) / (eff * 0.55);
+      b.hit(Math.round(this.cfg.dmg * f), G, this.owner === G.player);
+    }
+    // your own frag is always in the pattern — low releases are for the bold
+    const pd = this.pos.distanceTo(G.player.pos);
+    if (pd < R * 1.1) G.onPlayerHit(Math.round(this.cfg.dmg * 0.4 * (1 - pd / (R * 1.1))), this.owner);
+    this._die();
+  }
+  _die() { this.dead = true; this.G.scene.remove(this.mesh); }
 }
