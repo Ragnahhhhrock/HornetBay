@@ -25,7 +25,7 @@ export class AudioEngine {
   setMusicOn() { /* music removed at user request */ }
 
   async _loadSamples() {
-    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom', 'gatling'];   // the per-weapon voice callouts are gone — 1988 spec: one beep fits all
+    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom', 'gatling', 'voice_gun', 'voice_sidewinder', 'voice_amraam', 'voice_phoenix', 'voice_sparrow', 'voice_mk83'];
     await Promise.all(files.map(async n => {
       try {
         let ab;
@@ -205,10 +205,14 @@ export class AudioEngine {
       this._gatling = null;
     }
   }
-  // spoken weapon callout on ENTER — "GUNS" / "SIDEWINDER" / "AMRAAM"
-  // the Amiga original answered every weapon toggle with one short console
-  // beep — the pilot reads the stores panel, not the intercom
-  weaponSelect() { this._tone(990, 0.07, 0.22, 'square'); this._tone(1980, 0.045, 0.08, 'square'); }
+  // spoken weapon callout on ENTER — the stores panel talks back:
+  // GUNS / SIDEWINDER / AMRAAM / PHOENIX / SPARROW / MK 83. The 1988 beep
+  // stays as the fallback while samples stream in (or if one is missing).
+  weaponSelect(w) {
+    const n = { gun: 'voice_gun', aim9: 'voice_sidewinder', aim120: 'voice_amraam', aim54: 'voice_phoenix', aim7: 'voice_sparrow', mk83: 'voice_mk83' }[w];
+    if (n && this.buf[n]) this._play(n, 1.0);
+    else { this._tone(990, 0.07, 0.22, 'square'); this._tone(1980, 0.045, 0.08, 'square'); }
+  }
   // receiver squelch around a radio call: key-up tick, two static pops
   radioCrackle() {
     this._noiseHit(0.03, 0.20, 4200, 2.5);
