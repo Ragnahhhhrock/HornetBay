@@ -39,7 +39,7 @@ running as a plain static site (no build step, ES modules straight to the browse
    cd /mnt/agents/work/hb-deploy
    GIT_SSH_COMMAND="ssh -i /mnt/agents/work/.ssh/fa18_deploy -o StrictHostKeyChecking=no" git fetch origin -q
    GIT_SSH_COMMAND="ssh -i /mnt/agents/work/.ssh/fa18_deploy -o StrictHostKeyChecking=no" git checkout -B main origin/main -q
-   rsync -a --delete --exclude '.git' --exclude 'media' /mnt/agents/work/fa18/ .
+   rsync -a --delete --exclude '.git' --exclude 'media' --exclude '.social-state.json' /mnt/agents/work/fa18/ .
    git add -A
    git -c user.name="Hornet Bay Dev" -c user.email=maverick@hornetbay.com commit -q -m "…"
    GIT_SSH_COMMAND="ssh -i /mnt/agents/work/.ssh/fa18_deploy -o StrictHostKeyChecking=no" git push origin main -q
@@ -63,6 +63,19 @@ running as a plain static site (no build step, ES modules straight to the browse
   `<span class="hash">`, DTG-style date, tags, and a `/shots/<slug>.jpg` screenshot.
 - Run `python3 journal_add.py` → regenerates `blog/index.html`, JSON-LD, RSS, and all
   slug pages. Slug pages are **directories**: `blog/<slug>/index.html`.
+- **Social auto-post.** A push touching `blog/index.html` triggers
+  `.github/workflows/social.yml` → `social/post_update.py`, which posts the newest
+  entry (title, lede, link, shot) to the Hornet Bay Facebook page
+  (facebook.com/hornetbayflightsim), X and Instagram — whichever secrets exist
+  (`META_PAGE_ID` / `META_PAGE_TOKEN` / `META_IG_USER_ID`, `X_*`, `YT_*`).
+  Dedup lives in `.social-state.json` **on origin/main** — the workflow commits it
+  back with `[skip ci]`. That is why the deploy rsync EXCLUDES `.social-state.json`:
+  fa18's copy must never clobber origin's (it did once, and the record had to be
+  rebuilt by hand). After shipping a journal entry, check the Actions run went green
+  and the slug landed in origin's state file. To post or re-post by hand: Actions →
+  Social auto-post → Run workflow (empty inputs = latest entry). Caveat: the state
+  mark counts an X-skip as success, so "marked" ≠ "Facebook posted" — when in doubt,
+  verify on the page itself.
 - After regenerating, sanity-check the Facebook vanity URL survived
   (`hornetbayflightsim`, never the old `people/Hornet-Bay/61592…` numeric URL).
 
