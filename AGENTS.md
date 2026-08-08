@@ -119,6 +119,14 @@ running as a plain static site (no build step, ES modules straight to the browse
   regenerate from this one voice or consistency breaks (this bit us twice).
 - `audio.js weaponSelect(w)` maps weapon→sample; the 1988 console beep is the fallback.
 - Radio chatter is text-only by decision ("radio goes silent" entry) — no squelch/TTS.
+- The cockpit net carries **mission/player-relevant notifications only** ("quiet on
+  the net" entry): ambient world chatter (SFO airliner movements, P-3 patrol work,
+  the free-flight ASW hunt, carrier cyclic ops, AWACS greetings/picture/civil-traffic
+  notes) routes through `G.chatter()` in `js/main.js`, a deliberate no-op — ambient
+  systems keep calling it so the policy lives in one place. The AWACS **bogey
+  warning** (`js/awacs.js _call`) still breaks squelch, as do wingman calls,
+  mission scripts, and every player-triggered message. To re-enable ambience,
+  make `G.chatter` forward to `G.msg`.
 
 ## Analytics (GA4)
 

@@ -161,6 +161,11 @@ const G = {
     if (this.audio) this.audio.radioCrackle();
   },
   radio(text) { this.msg(text, 'radio'); },
+  // ambient world chatter — airline movements, patrol work, the ASW hunt,
+  // carrier cyclic ops, AWACS small talk — stays off the net. The cockpit
+  // only hears what concerns the mission or the player. Ambient systems
+  // still call this so the policy lives in one place; it drops the call.
+  chatter(text, kind = 'info') { /* the net stays quiet */ },
   addScore(n) { this.score += n; },
 };
 window.G = G; // debug hook

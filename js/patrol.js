@@ -62,7 +62,7 @@ export class P3Patrol {
           this.inspectShip = ship;
           if (G.time - this._msgT > 30) {
             this._msgT = G.time;
-            G.msg(`P-3 ORION: VISUAL INSPECTION PASS ON ${ship.name || 'CONTACT'}`, 'info');
+            G.chatter(`P-3 ORION: VISUAL INSPECTION PASS ON ${ship.name || 'CONTACT'}`, 'info');
           }
         }
       }
