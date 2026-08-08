@@ -109,11 +109,14 @@ running as a plain static site (no build step, ES modules straight to the browse
 
 - SFX in `sfx/*.wav`; engine loops + gatling captured from the Amiga original.
 - Spoken stores callouts (`voice_gun/sidewinder/amraam/phoenix/sparrow/mk83.wav`) are
-  **all one voice by construction**: espeak 1.48 `en+m2 -s 120 -p 50`, then
-  RMS-normalized to ~3000 (peak cap 32000), 22050 Hz mono 16-bit.
-  Rebuild espeak: `sh /mnt/agents/work/tools/build-espeak.sh` (builds into /tmp),
-  `ESPEAK_DATA_PATH=/tmp/espeak-1.48.04-source`. Do NOT re-voice individual files —
-  regenerate the whole set from one recipe or consistency breaks (this bit us once).
+  **all one voice by construction**: the audio-generation plugin's TTS voice
+  `05Cdh2gw2NMzDvykn1nm` (calm middle-aged male, accented — THE canonical voice;
+  the espeak re-cut in 59c8f35 was reverted). Single word per file; `voice_mk83`
+  says **"Bombs"** (never "Mark eighty-three"). 22050 Hz mono 16-bit; keep RMS
+  ~2300-3600, peak ≤ 32000. gun/sidewinder/amraam/sparrow/phoenix are the
+  lossless originals restored from `59c8f35^`; new words must be generated with
+  the same voice ID. Do NOT re-voice individual files with a different voice —
+  regenerate from this one voice or consistency breaks (this bit us twice).
 - `audio.js weaponSelect(w)` maps weapon→sample; the 1988 console beep is the fallback.
 - Radio chatter is text-only by decision ("radio goes silent" entry) — no squelch/TTS.
 
@@ -147,7 +150,9 @@ running as a plain static site (no build step, ES modules straight to the browse
 
 ## Current state / open threads
 
-- Voice set re-cut to a single speaker (commit `59c8f35`, version `9a389d2`).
+- Voice set: original TTS baritone restored for all six callouts; Mk 83 callout now
+  says "Bombs" (reverts the espeak re-cut `59c8f35`). The `?wpn=` test hook now
+  accepts any weapon on the jet's ring (e.g. `?auto=t8&wpn=mk83`).
 - Facebook vanity URL deployed (commit `7bd4ad3`).
 - Waiting on user: re-run GA report ~24 h after custom definitions registered → then
   produce the per-mission completion-funnel analysis and difficulty recommendations.

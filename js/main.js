@@ -2233,8 +2233,12 @@ else if (auto) {
     const [px, pz, ph] = ppos.split(',').map(Number);
     G.setPlayerStart({ pos: new THREE.Vector3(px, ph || 800, pz), heading: params.get('phdg') ? Number(params.get('phdg')) * Math.PI / 180 : Math.PI / 2, speed: 180 });
   }
-  const wpn0 = params.get('wpn');            // test hook: preselect weapon (aim120/aim9/gun)
-  if (wpn0 && G.player && ['aim120', 'aim9', 'gun'].includes(wpn0)) G.player.weapon = wpn0;
+  const wpn0 = params.get('wpn');            // test hook: preselect weapon (must be on the jet's ring)
+  if (wpn0 && G.player) {
+    const ring = (G.player.type === 'f14' ? ['aim54', 'aim7', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'])
+      .concat((G.player.stores.mk83 || 0) > 0 ? ['mk83'] : []);
+    if (ring.includes(wpn0)) G.player.weapon = wpn0;
+  }
   if (params.get('xray') === '1') {
     G.player.model.traverse(o => { if (o.material) { o.material = new THREE.MeshBasicMaterial({ color: 0xff0044 }); } });
     G.player.model.scale.setScalar(4);
