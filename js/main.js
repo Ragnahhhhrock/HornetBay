@@ -1437,7 +1437,7 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyS') && P.type === 'f14') {
     P.sweepTarget = P.sweepTarget ? 0 : 1;
     G.msg(P.sweepTarget ? 'WINGS SWEPT — 68°' : 'WINGS SPREAD — 20°', 'info');
-    G.audio.radioClick();
+    G.audio.wingSweep();
   }
   if (I.pressed('KeyR')) {
     // longest to shortest, like a real scope stepping down — the Tomcat's

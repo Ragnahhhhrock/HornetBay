@@ -1,7 +1,7 @@
 // weapons.js — missiles, gun, countermeasures, explosions, particle FX
 import * as THREE from 'three';
 import { clamp, lerp, rand, randSpread } from './util.js';
-import { makeGlowTexture, makeSmokeTexture } from './models.js';
+import { makeGlowTexture, makeSmokeTexture, missileMesh } from './models.js';
 import { groundHeight } from './world.js';
 import { stats } from './stats.js';
 
@@ -158,39 +158,36 @@ export class FXPool {
 
 // ---------------- missiles ----------------
 const MISSILE_TYPES = {
-  aim120: { vmax: 1050, accel: 260, turn: 1.9, life: 40, prox: 30, dmg: 110, ir: false },
-  aim9:   { vmax: 850,  accel: 320, turn: 3.2, life: 22, prox: 26, dmg: 110, ir: true  },
+  aim120: { vmax: 1050, accel: 260, turn: 1.9, life: 40, prox: 30, dmg: 110, ir: false, burn: 3.0 },
+  aim9:   { vmax: 850,  accel: 320, turn: 3.2, life: 22, prox: 26, dmg: 110, ir: true, burn: 2.2  },
   // AIM-54 Phoenix: the big radar-guided stick — three AIM-120s of legs,
   // a truck of a warhead, but it wants a radar lock from much further out
-  aim54:  { vmax: 1300, accel: 250, turn: 1.7, life: 90, prox: 40, dmg: 160, ir: false, len: 4.0, dia: 0.38 },
+  aim54:  { vmax: 1300, accel: 250, turn: 1.7, life: 90, prox: 40, dmg: 160, ir: false, burn: 4.5, len: 4.0, dia: 0.38 },
   // AIM-7M/P Sparrow (the 1994 fleet round): Mach 4 boost-sustain, ~45 km reach,
   // a 40 kg continuous-rod warhead — SEMI-ACTIVE: it only guides while the
   // launch radar holds the lock. Break the lock and it goes ballistic.
-  aim7:   { vmax: 1050, accel: 300, turn: 1.6, life: 50, prox: 30, dmg: 130, ir: false, sarh: true, len: 3.7, dia: 0.20 },
+  aim7:   { vmax: 1050, accel: 300, turn: 1.6, life: 50, prox: 30, dmg: 130, ir: false, sarh: true, burn: 2.8, len: 3.7, dia: 0.20 },
   // 9K38 Igla MANPADS: shoulder-fired from the freighter decks and the escort
   // boats. Short-legged IR — deadly under 4 km and below 1,300 m, useless
   // above it. Flares beat it; so does altitude.
-  igla:   { vmax: 570, accel: 300, turn: 2.7, life: 15, prox: 20, dmg: 55, ir: true, len: 1.7, dia: 0.07 },
-  r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false },
-  r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true  },
+  igla:   { vmax: 570, accel: 300, turn: 2.7, life: 15, prox: 20, dmg: 55, ir: true, burn: 1.6, len: 1.7, dia: 0.07 },
+  r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false, burn: 2.6 },
+  r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true, burn: 2.0  },
   // shipboard rounds: Klakring's SM-1 area-defence SAM and the sea-skimming Harpoon
-  sm1:     { vmax: 950,  accel: 320, turn: 3.4, life: 40, prox: 30, dmg: 130, ir: false },
-  harpoon: { vmax: 320,  accel: 70,  turn: 1.1, life: 150, prox: 45, dmg: 120, ir: false, len: 4.6, dia: 0.34 },
+  sm1:     { vmax: 950,  accel: 320, turn: 3.4, life: 40, prox: 30, dmg: 130, ir: false, burn: 3.5 },
+  harpoon: { vmax: 320,  accel: 70,  turn: 1.1, life: 150, prox: 45, dmg: 120, ir: false, burn: 3.0, len: 4.6, dia: 0.34 },
 };
-let missileGeo = null, missileMat = null;
-
 export class Missile {
   constructor(G, owner, type, target) {
     const cfg = MISSILE_TYPES[type];
     this.G = G; this.cfg = cfg; this.type = type;
     this.owner = owner; this.target = target;
-    if (!missileGeo) {
-      missileGeo = new THREE.CylinderGeometry(0.16, 0.16, 3.4, 6);
-      missileGeo.rotateX(Math.PI / 2);
-      missileMat = new THREE.MeshBasicMaterial({ color: 0xe8e8e8 });
-    }
-    this.mesh = new THREE.Mesh(missileGeo, missileMat);
-    if (cfg.len) this.mesh.scale.set(cfg.dia / 0.32, cfg.dia / 0.32, cfg.len / 3.4);   // Phoenix is a fat, long round
+    // the round itself: the same per-type body (fins, nozzle, seeker dome) the
+    // jets carry on the rails — and its rocket exhaust, lit while the motor burns
+    this.mesh = missileMesh(type);
+    this.flame = this.mesh.userData.flame || null;
+    if (this.flame) this.flame.visible = true;
+    this.burnT = cfg.burn || 2.2;
     this.pos = this.mesh.position;
     this.pos.copy(owner.pos);
     // Player exposes fwd as a getter, AIAircraft as a method — handle both
@@ -254,9 +251,22 @@ export class Missile {
     if (this.life < cfg.life * 0.25) this.vel.y -= 4 * dt;
     this.pos.addScaledVector(this.vel, dt);
     this.mesh.quaternion.setFromUnitVectors(_v.set(0, 0, 1), this.dir);
+    // rocket motor: the exhaust flame burns bright off the nozzle, then the
+    // round coasts — flame out, the smoke thins to a faint drift
+    this.burnT -= dt;
+    const burning = this.burnT > 0;
+    if (this.flame) {
+      if (burning) {
+        const s = 0.75 + Math.random() * 0.5;
+        this.flame.scale.set(s, s, 0.8 + Math.random() * 0.6);
+      } else this.flame.visible = false;
+    }
     // smoke trail
     this.smokeT -= dt;
-    if (this.smokeT <= 0) { this.smokeT = 0.03; G.fx.trail(this.pos, 1.5, 0xeeeeee, 2.2); }
+    if (this.smokeT <= 0) {
+      this.smokeT = burning ? 0.03 : 0.09;
+      G.fx.trail(this.pos, burning ? 1.6 : 1.0, burning ? 0xeeeeee : 0xbbbbbb, 2.2);
+    }
     // proximity kill
     if (tAlive && !this.spoofed) {
       const dist = this.pos.distanceTo(t.pos);

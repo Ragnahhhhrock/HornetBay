@@ -108,6 +108,15 @@ running as a plain static site (no build step, ES modules straight to the browse
 ## Audio & voice pipeline
 
 - SFX in `sfx/*.wav`; engine loops + gatling captured from the Amiga original.
+  `sweep.wav` (F-14 wing-sweep hydraulics, `audio.wingSweep()` on S) is
+  AI-generated, not Amiga — same 22050 Hz mono spec, RMS ~3000.
+- Missile bodies (`js/models.js missileMesh(type)` + the `AAM_BODY` table) are
+  per-type: fins/nozzle/seeker from reference photos (Sidewinder rollerons,
+  Sparrow mid deltas, Phoenix strakes, AMRAAM clipped fins; Soviet/shipboard
+  rounds in the same idiom). Each carries a hidden `userData.flame` exhaust
+  cone; `weapons.js` lights it while `cfg.burn` seconds remain and thins the
+  smoke trail after burnout. In-flight rounds use the same builder — no bare
+  cylinders.
 - Spoken stores callouts (`voice_gun/sidewinder/amraam/phoenix/sparrow/mk83.wav`) are
   **all one voice by construction**: the audio-generation plugin's TTS voice
   `05Cdh2gw2NMzDvykn1nm` (calm middle-aged male, accented — THE canonical voice;

@@ -33,12 +33,112 @@ function abFlame(len = 3.4, r = 0.5) {
   m.visible = false;
   return m;
 }
-function missileMesh(color = 0xe8e8e8, len = 3, r = 0.14) {
+// ---------------- air-to-air missile bodies ----------------
+// Per-type bodies dressed from the reference photography: right nose, right
+// fin count and placement, the Sidewinder's rolleron discs, the Phoenix's fat
+// motor. A cruciform (X) fin set is a trapezoid planform swept back from the
+// root; every round carries a dark motor nozzle at the tail and a rocket
+// exhaust flame (hidden until the round is in the air and burning).
+const AAM_BODY = {
+  // AIM-9M Sidewinder: dark IR dome, small delta canards behind the guidance
+  // section, big trapezoidal tail fins with rolleron wheels on the tips
+  aim9: {
+    len: 2.9, r: 0.13, body: 0xe8e8e8, noseC: 0x23262b, noseL: 0.42,
+    fins: [
+      { x1: 0.26, zR: [0.82, 0.52], zT: [0.72, 0.56] },              // canards
+      { x1: 0.42, zR: [-0.82, -1.26], zT: [-0.98, -1.28], roll: 0.055 },  // tails + rollerons
+    ],
+  },
+  // AIM-7M Sparrow: pointed radome, big mid-body delta wings, smaller tail fins
+  aim7: {
+    len: 3.7, r: 0.14, body: 0xe4e4e4, noseC: 0xe4e4e4, noseL: 0.75,
+    fins: [
+      { x1: 0.46, zR: [-0.26, -1.04], zT: [-0.54, -0.90] },          // mid deltas
+      { x1: 0.38, zR: [-1.50, -1.84], zT: [-1.62, -1.84] },          // tails
+    ],
+  },
+  // AIM-54A Phoenix: the fat stick — long-chord strake wings amidships, tail fins
+  aim54: {
+    len: 4.0, r: 0.19, body: 0xf0f0f0, noseC: 0xf0f0f0, noseL: 0.90,
+    fins: [
+      { x1: 0.52, zR: [0.62, -1.10], zT: [0.18, -0.92] },            // long strakes
+      { x1: 0.48, zR: [-1.60, -1.98], zT: [-1.72, -1.98] },          // tails
+    ],
+  },
+  // AIM-120 AMRAAM: small clipped mid fins, larger rear fins
+  aim120: {
+    len: 3.6, r: 0.16, body: 0xdadada, noseC: 0xdadada, noseL: 0.80,
+    fins: [
+      { x1: 0.34, zR: [-0.40, -0.88], zT: [-0.54, -0.82] },          // mid fins
+      { x1: 0.42, zR: [-1.40, -1.78], zT: [-1.52, -1.78] },          // rear fins
+    ],
+  },
+  // Soviet / shipboard rounds — plausible silhouettes in the same idiom
+  r27: {
+    len: 3.4, r: 0.13, body: 0xe0e0e0, noseC: 0xe0e0e0, noseL: 0.7,
+    fins: [
+      { x1: 0.42, zR: [-0.30, -1.00], zT: [-0.56, -0.88] },
+      { x1: 0.36, zR: [-1.40, -1.70], zT: [-1.52, -1.70] },
+    ],
+  },
+  r73: {
+    len: 2.9, r: 0.12, body: 0xdcdcdc, noseC: 0x23262b, noseL: 0.42,
+    fins: [
+      { x1: 0.24, zR: [0.78, 0.50], zT: [0.68, 0.54] },
+      { x1: 0.38, zR: [-0.80, -1.20], zT: [-0.94, -1.22] },
+    ],
+  },
+  igla: {
+    len: 1.7, r: 0.055, body: 0x9aa08e, noseC: 0x23262b, noseL: 0.3,
+    fins: [{ x1: 0.16, zR: [-0.55, -0.83], zT: [-0.65, -0.83] }],
+  },
+  sm1: {
+    len: 4.4, r: 0.17, body: 0xe8e8e8, noseC: 0xe8e8e8, noseL: 1.0,
+    fins: [
+      { x1: 0.44, zR: [-0.5, -1.3], zT: [-0.75, -1.15] },
+      { x1: 0.5, zR: [-1.9, -2.18], zT: [-2.0, -2.18] },
+    ],
+  },
+  harpoon: {
+    len: 4.6, r: 0.17, body: 0xd8d8d8, noseC: 0xd8d8d8, noseL: 0.8,
+    fins: [
+      { x1: 0.55, zR: [0.3, -0.5], zT: [0.05, -0.4] },               // wings
+      { x1: 0.42, zR: [-1.9, -2.28], zT: [-2.02, -2.28] },           // tails
+    ],
+  },
+};
+function _aamFinSet(g, P, spec) {
+  const x0 = P.r * 0.6;   // root tucked into the body
+  const geo = wingGeo([[x0, spec.zR[0]], [spec.x1, spec.zT[0]], [spec.x1, spec.zT[1]], [x0, spec.zR[1]]], 0.03);
+  for (let i = 0; i < 4; i++) {
+    const fg = new THREE.Group();
+    fg.add(new THREE.Mesh(geo, M(P.body)));
+    if (spec.roll) {   // Sidewinder rolleron: a metal disc on each tail tip
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(spec.roll, spec.roll, 0.03, 10), M(0x3a3d40));
+      d.rotation.z = Math.PI / 2;                     // disc axis radial
+      d.position.set(spec.x1 - 0.02, 0, spec.zT[1] + 0.01);
+      fg.add(d);
+    }
+    fg.rotation.z = Math.PI / 4 + i * Math.PI / 2;    // X configuration
+    g.add(fg);
+  }
+}
+export function missileMesh(type = 'aim9') {
+  const P = AAM_BODY[type] || AAM_BODY.aim9;
   const g = new THREE.Group();
-  const b = cyl(r, r, len * 0.75, color, 6); g.add(b);
-  const n = cone(r, len * 0.25, 0xc03030, 6); n.position.z = len * 0.5; g.add(n);
-  const f1 = box(0.5, 0.04, 0.4, color); f1.position.z = -len * 0.25; g.add(f1);
-  const f2 = box(0.04, 0.5, 0.4, color); f2.position.z = -len * 0.25; g.add(f2);
+  const bodyL = P.len - P.noseL;
+  const b = cyl(P.r, P.r, bodyL, P.body, 12); b.position.z = -P.len / 2 + bodyL / 2; g.add(b);
+  const n = cone(P.r, P.noseL, P.noseC, 12); n.position.z = P.len / 2 - P.noseL / 2; g.add(n);
+  for (const spec of P.fins) _aamFinSet(g, P, spec);
+  // dark motor nozzle at the tail — where the rocket fire comes out
+  const noz = cyl(P.r * 0.7, P.r * 0.55, 0.1, 0x2c2f33, 10); noz.position.z = -P.len / 2 - 0.03; g.add(noz);
+  // the rocket exhaust itself: an additive flame cone off the nozzle, lit in
+  // weapons.js while the motor burns
+  const fl = abFlame(P.r * 9, P.r * 1.5);
+  fl.position.z = -P.len / 2 - P.r * 4.4;
+  g.add(fl);
+  g.userData.flame = fl;
+  g.userData.len = P.len;
   return g;
 }
 
@@ -131,9 +231,9 @@ export function buildFA18() {
   // weapons (visual)
   const stores = { aim9: [], aim120: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 6.6, -0.1, -1.7); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 6.6, -0.1, -1.7); g.add(m9); stores.aim9.push(m9);
     for (const px of [2.6, 4.4]) {
-      const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * px, -0.55, -1.8); g.add(m120); stores.aim120.push(m120);
+      const m120 = missileMesh('aim120'); m120.position.set(s * px, -0.55, -1.8); g.add(m120); stores.aim120.push(m120);
     }
   }
   g.userData = { ab, gear, hook, stabL, stabR, stores, type: 'f18' };
@@ -191,9 +291,9 @@ export function buildF16() {
   // no tailhook — the F-16 is land-based only
   const stores = { aim9: [], aim120: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 5.4, -0.05, -3.0); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 5.4, -0.05, -3.0); g.add(m9); stores.aim9.push(m9);
     for (const px of [2.2, 3.8]) {
-      const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * px, -0.5, -2.2); g.add(m120); stores.aim120.push(m120);
+      const m120 = missileMesh('aim120'); m120.position.set(s * px, -0.5, -2.2); g.add(m120); stores.aim120.push(m120);
     }
   }
   g.userData = { ab: [f], gear, hook: null, stabL, stabR, stores, type: 'f16' };
@@ -360,9 +460,9 @@ export function buildF14() {
   const stores = { aim9: [], aim54: [] };
   for (const s of [1, -1]) {
     const py = box(0.16, 0.5, 1.2, CD); py.position.set(s * 3.0, -0.35, -0.8); g.add(py);
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 3.0, -0.75, -0.8); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 3.0, -0.75, -0.8); g.add(m9); stores.aim9.push(m9);
     for (const pz of [1.4, -2.4]) {
-      const m54 = missileMesh(0xf0f0f0, 4.0, 0.19); m54.position.set(s * 0.55, -0.85, pz); g.add(m54); stores.aim54.push(m54);
+      const m54 = missileMesh('aim54'); m54.position.set(s * 0.55, -0.85, pz); g.add(m54); stores.aim54.push(m54);
     }
   }
   g.userData = { ab, gear, hook, stabL, stabR, stores, wings, tipX: 9.5, type: 'f14' };
@@ -1293,9 +1393,9 @@ export function buildF15() {
   // air-to-air load: AMRAAMs on the fuselage corners, Sidewinders on the wings
   const stores = { aim9: [], aim120: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 5.6, -0.3, -3.4); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 5.6, -0.3, -3.4); g.add(m9); stores.aim9.push(m9);
     for (const pz of [0.2, -2.2]) {
-      const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * 1.75, -1.05, pz); g.add(m120); stores.aim120.push(m120);
+      const m120 = missileMesh('aim120'); m120.position.set(s * 1.75, -1.05, pz); g.add(m120); stores.aim120.push(m120);
     }
   }
   // subdued USAF: titles aft, tail codes on the fins
@@ -1357,7 +1457,7 @@ export function buildA10() {
   // a pair of Sidewinders on the outboard rails — self-escort only
   const stores = { aim9: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xd8d8d8, 2.9, 0.13); m9.position.set(s * 7.4, -0.75, -0.6); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 7.4, -0.75, -0.6); g.add(m9); stores.aim9.push(m9);
   }
   // subdued USAF titles aft
   const usaf = _nameTex('U.S. AIR FORCE', DK);
