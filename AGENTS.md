@@ -117,6 +117,14 @@ running as a plain static site (no build step, ES modules straight to the browse
   cone; `weapons.js` lights it while `cfg.burn` seconds remain and thins the
   smoke trail after burnout. In-flight rounds use the same builder — no bare
   cylinders.
+- Control surfaces are live on all five player types + MiG-29/Su-27 ("working
+  surfaces" entry): `models.js` `_surfPair/_teSurf` build hinge Groups on the
+  trailing edge (positive `rotation.x` = TE up, +x = left wing), registered as
+  `userData.surf = { ail, flap, flaperon, spoiler }` (per-type subset — the
+  F-16 flies flaperons, the F-14 has spoilers + flaps riding the sweep pivots,
+  no ailerons). Drivers: `flight.js _syncVisual` (player: ailerons follow
+  `inp.roll`, flaps droop with `gearDown`, damped) and `ai.js _syncModel`
+  (AI: ailerons follow smoothed bank rate, flaps with the low-and-slow rule).
 - Spoken stores callouts (`voice_gun/sidewinder/amraam/phoenix/sparrow/mk83.wav`) are
   **all one voice by construction**: the audio-generation plugin's TTS voice
   `05Cdh2gw2NMzDvykn1nm` (calm middle-aged male, accented — THE canonical voice;

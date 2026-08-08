@@ -33,6 +33,30 @@ function abFlame(len = 3.4, r = 0.5) {
   m.visible = false;
   return m;
 }
+// ---------------- hinged control surfaces ----------------
+// A trailing-edge surface is a thin planform chip in a hinge Group parked on
+// its own leading edge; rotation.x deflects it (positive = trailing edge UP).
+// xIn/xOut are span stations and te = [x0,z0, x1,z1] the host wing's trailing
+// edge line, all in wing space; +x is the LEFT wing. flight.js (player stick)
+// and ai.js (bank command) do the waving.
+function _teSurf(xIn, xOut, chord, te, thick, color, y = 0) {
+  const [tx0, tz0, tx1, tz1] = te;
+  const zte = x => tz0 + (x - tx0) * (tz1 - tz0) / (tx1 - tx0);
+  const g = wingGeo([[xIn, zte(xIn) + chord], [xIn, zte(xIn)], [xOut, zte(xOut)], [xOut, zte(xOut) + chord]], thick);
+  g.translate(-xIn, 0, -(zte(xIn) + chord));      // hinge line -> local origin
+  const hinge = new THREE.Group();
+  hinge.add(new THREE.Mesh(g, M(color)));
+  hinge.position.set(xIn, y, zte(xIn) + chord);
+  return hinge;
+}
+// matched left/right pair (left rides at +x); returns [l, r]
+function _surfPair(xIn, xOut, chord, te, thick, color, y = 0) {
+  const l = _teSurf(xIn, xOut, chord, te, thick, color, y);
+  const r = _teSurf(xIn, xOut, chord, te, thick, color, y);
+  r.children[0].scale.x = -1;
+  r.position.x = -xIn;
+  return [l, r];
+}
 // ---------------- air-to-air missile bodies ----------------
 // Per-type bodies dressed from the reference photography: right nose, right
 // fin count and placement, the Sidewinder's rolleron discs, the Phoenix's fat
@@ -213,6 +237,12 @@ export function buildFA18() {
   const sG = wingGeo([[0.3, 0.3], [0.3, -1.8], [3.5, -1.5], [3.5, -0.3]], 0.14);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, 0.1, -6.5); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, 0.1, -6.5); g.add(stabR);
+  // control surfaces — inboard flaps droop with the gear, outboard ailerons
+  // work the stick (driven in flight.js _syncVisual)
+  const TE18 = [0.8, -3.4, 6.6, -2.6];
+  const [flapL, flapR] = _surfPair(1.2, 3.4, 1.0, TE18, 0.1, CD, 0.15);
+  const [ailL, ailR] = _surfPair(3.8, 6.3, 0.85, TE18, 0.1, CD, 0.15);
+  g.add(flapL, flapR, ailL, ailR);
   // gear
   const gear = new THREE.Group();
   const gm = M(0x2c3136);
@@ -236,7 +266,7 @@ export function buildFA18() {
       const m120 = missileMesh('aim120'); m120.position.set(s * px, -0.55, -1.8); g.add(m120); stores.aim120.push(m120);
     }
   }
-  g.userData = { ab, gear, hook, stabL, stabR, stores, type: 'f18' };
+  g.userData = { ab, gear, hook, stabL, stabR, stores, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'f18' };
   addNavLights(g, 6.8, -8.5, 1.0);
   return g;
 }
@@ -277,6 +307,10 @@ export function buildF16() {
   const sG = wingGeo([[0.3, 0.2], [0.3, -1.5], [3.0, -1.3], [3.0, -0.4]], 0.13);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.3, -0.3, -5.6); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.3, -0.3, -5.6); g.add(stabR);
+  // full-span flaperons — one surface per wing does both jobs, Viper style
+  const TE16 = [0.7, -3.2, 5.4, -3.4];
+  const [fpL, fpR] = _surfPair(1.3, 5.2, 1.0, TE16, 0.09, CD, 0.05);
+  g.add(fpL, fpR);
   const gear = new THREE.Group();
   const gm = M(0x2c3136);
   const mkWheel = (x, y, z) => {
@@ -296,7 +330,7 @@ export function buildF16() {
       const m120 = missileMesh('aim120'); m120.position.set(s * px, -0.5, -2.2); g.add(m120); stores.aim120.push(m120);
     }
   }
-  g.userData = { ab: [f], gear, hook: null, stabL, stabR, stores, type: 'f16' };
+  g.userData = { ab: [f], gear, hook: null, stabL, stabR, stores, surf: { flaperon: [fpL, fpR] }, type: 'f16' };
   addNavLights(g, 5.5, -8.0, 0.8);
   return g;
 }
@@ -403,6 +437,8 @@ export function buildF14() {
   // variable-sweep wings on their pivots (20 deg spread -> 68 deg swept)
   const wG = wingGeo([[0, 0.7], [0, -2.5], [6.4, -2.2], [6.4, -0.5]], 0.2);
   const wings = {};
+  const surfF = {}, surfS = {};
+  const TE14 = [0, -2.5, 6.4, -2.2];
   for (const s of [1, -1]) {
     const pivot = new THREE.Group();
     pivot.position.set(s * 3.1, 0.25, 0.4);
@@ -410,8 +446,22 @@ export function buildF14() {
     pivot.add(w);
     // pivot-cap fairing + wingtip rail
     const rail = box(0.35, 0.12, 3.2, CD); rail.position.set(s * 5.6, 0.14, -1.4); pivot.add(rail);
+    // trailing-edge flaps + top-wing roll spoilers ride the pivot and sweep
+    // with the wing — a Tomcat has no ailerons; spoilers do the rolling
+    const fl = _teSurf(0.4, 3.6, 0.85, TE14, 0.09, CD, 0);
+    if (s === -1) { fl.children[0].scale.x = -1; fl.position.x = -0.4; }
+    pivot.add(fl);
+    const sp = new THREE.Group();
+    const spm = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.05, 0.62), M(CD));
+    spm.geometry.translate(1.0, 0, -0.31);   // hinge along the inboard front corner
+    if (s === -1) spm.scale.x = -1;
+    sp.add(spm);
+    sp.position.set(s * 4.0, 0.13, -1.55);
+    pivot.add(sp);
     g.add(pivot);
-    wings[s === 1 ? 'l' : 'r'] = pivot;
+    const side = s === 1 ? 'l' : 'r';
+    wings[side] = pivot;
+    surfF[side] = fl; surfS[side] = sp;
   }
   // twin verticals on the nacelle tops — Jolly Rogers on both outer faces
   const tG = wingGeo([[0, 0.6], [0, -2.9], [3.5, -3.7], [3.5, -3.0]], 0.15);
@@ -465,7 +515,7 @@ export function buildF14() {
       const m54 = missileMesh('aim54'); m54.position.set(s * 0.55, -0.85, pz); g.add(m54); stores.aim54.push(m54);
     }
   }
-  g.userData = { ab, gear, hook, stabL, stabR, stores, wings, tipX: 9.5, type: 'f14' };
+  g.userData = { ab, gear, hook, stabL, stabR, stores, wings, tipX: 9.5, surf: { flap: [surfF.l, surfF.r], spoiler: [surfS.l, surfS.r] }, type: 'f14' };
   addNavLights(g, 9.5, -8.8, 0.6);
   return g;
 }
@@ -549,7 +599,12 @@ export function buildMiG29() {
   const sG = wingGeo([[0.4, 0.2], [0.4, -1.6], [3.4, -1.4], [3.4, -0.6]], 0.14);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.6, 0, -6.6); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.6, 0, -6.6); g.add(stabR);
-  g.userData = { ab, gear: null, hook: null, stabL, stabR, stores: { aim9: [], aim120: [] }, type: 'mig29' };
+  // flaps + ailerons on the trailing edge
+  const TE29 = [1.0, -3.8, 6.2, -3.4];
+  const [flapL, flapR] = _surfPair(1.5, 3.4, 1.0, TE29, 0.1, CD, 0.1);
+  const [ailL, ailR] = _surfPair(3.8, 6.0, 0.85, TE29, 0.1, CD, 0.1);
+  g.add(flapL, flapR, ailL, ailR);
+  g.userData = { ab, gear: null, hook: null, stabL, stabR, stores: { aim9: [], aim120: [] }, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'mig29' };
   addNavLights(g, 5.7, -8.5, 1.0);
   return g;
 }
@@ -1387,6 +1442,11 @@ export function buildF15() {
   const sG = wingGeo([[0.3, 0.3], [0.3, -1.7], [3.7, -1.5], [3.7, -0.3]], 0.15);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, -0.3, -5.9); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, -0.3, -5.9); g.add(stabR);
+  // flaps inboard, ailerons outboard on that big shoulder wing
+  const TE15 = [1.1, -2.9, 6.5, -4.5];
+  const [flapL, flapR] = _surfPair(1.6, 3.6, 1.1, TE15, 0.1, CD, 0.55);
+  const [ailL, ailR] = _surfPair(4.0, 6.2, 0.9, TE15, 0.1, CD, 0.55);
+  g.add(flapL, flapR, ailL, ailR);
   // gear — land-based only, no hook, no catapult bridle
   const gear = _gearSet([[0, -2.0, 4.0], [1.1, -2.0, -1.0], [-1.1, -2.0, -1.0]]);
   g.add(gear);
@@ -1409,7 +1469,7 @@ export function buildF15() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.5), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 1.66, 2.6, -5.6); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab, gear, hook: null, stabL, stabR, stores, type: 'f15' };
+  g.userData = { ab, gear, hook: null, stabL, stabR, stores, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'f15' };
   addNavLights(g, 6.6, -8.6, 0.9);
   return g;
 }
@@ -1451,6 +1511,11 @@ export function buildA10() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.48), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 4.42, 1.6, -6.2); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
+  // big flaps inboard, long ailerons out to the drooped tips
+  const TE10 = [0.9, -1.4, 8.7, -2.3];
+  const [flapL, flapR] = _surfPair(1.4, 4.6, 0.9, TE10, 0.12, CD, -0.15);
+  const [ailL, ailR] = _surfPair(5.0, 8.4, 0.8, TE10, 0.12, CD, -0.15);
+  g.add(flapL, flapR, ailL, ailR);
   // gear — mains hang half-out of their fairings, Hawg style; nose strut offset
   const gear = _gearSet([[0.35, -1.95, 4.2], [2.3, -1.95, -0.7], [-2.3, -1.95, -0.7]], 0.38, 1.3);
   g.add(gear);
@@ -1465,7 +1530,7 @@ export function buildA10() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 0.46), new THREE.MeshBasicMaterial({ map: usaf, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.96, 0.15, -3.9); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab: [], gear, hook: null, stabL, stabR, stores, type: 'a10' };
+  g.userData = { ab: [], gear, hook: null, stabL, stabR, stores, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'a10' };
   addNavLights(g, 8.8, -6.9, 0.9);
   return g;
 }
@@ -1515,6 +1580,11 @@ export function buildSU27() {
   const sG = wingGeo([[0.3, 0.3], [0.3, -1.7], [3.9, -1.6], [3.9, -0.4]], 0.15);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, -0.2, -6.5); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, -0.2, -6.5); g.add(stabR);
+  // flaps + ailerons along the big swept wing's trailing edge
+  const TE27 = [1.1, -3.0, 7.3, -4.7];
+  const [flapL27, flapR27] = _surfPair(1.6, 4.0, 1.1, TE27, 0.1, CD, 0.3);
+  const [ailL27, ailR27] = _surfPair(4.4, 7.0, 0.9, TE27, 0.1, CD, 0.3);
+  g.add(flapL27, flapR27, ailL27, ailR27);
   // gear
   const gear = _gearSet([[0, -2.0, 4.4], [1.25, -2.0, -1.2], [-1.25, -2.0, -1.2]]);
   g.add(gear);
@@ -1528,7 +1598,7 @@ export function buildSU27() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), new THREE.MeshBasicMaterial({ map: bort, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.72, 0.15, 5.6); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab, gear, hook: null, stabL, stabR, stores: {}, type: 'su27' };
+  g.userData = { ab, gear, hook: null, stabL, stabR, stores: {}, surf: { ail: [ailL27, ailR27], flap: [flapL27, flapR27] }, type: 'su27' };
   addNavLights(g, 7.4, -9.6, 0.9);
   return g;
 }
