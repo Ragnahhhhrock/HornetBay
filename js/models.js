@@ -202,11 +202,14 @@ export function buildF16() {
 }
 
 // ---------------- F-14 Tomcat (VF-84 Jolly Rogers, 1978) ----------------
+// fin planform: span x 0..3.5 up the fin, chord z from zLE(x) to zTE(x) — the
+// leading edge sweeps hard aft, so the flag is warped to the fin, not the fin to the flag
+const F14_FIN = { span: 3.5, zLE: x => 0.6 - (3.6 / 3.5) * x, zTE: x => -2.9 - (0.8 / 3.5) * x };
 let _jollyTex = null;
-function jollyRogersDecal(w = 3.6, h = 3.0) {
+function jollyRogersDecal(s) {
   if (!_jollyTex) {
-    const c = document.createElement('canvas'); c.width = 192; c.height = 256;
-    const x = c.getContext('2d');
+    const art = document.createElement('canvas'); art.width = 192; art.height = 256;
+    const x = art.getContext('2d');
     // black fin with the yellow tip band
     x.fillStyle = '#101114'; x.fillRect(0, 0, 192, 256);
     x.fillStyle = '#f0b41c'; x.fillRect(0, 0, 192, 26);
@@ -230,9 +233,48 @@ function jollyRogersDecal(w = 3.6, h = 3.0) {
     x.fillText('AJ', 96, 226);
     x.font = 'bold 22px "Courier New", monospace';
     x.fillText('200', 96, 250);
+    // pre-compensate the chord taper: each canvas row is stretched about the
+    // center by root-chord / chord-at-that-height, so the bilinear fin warp
+    // lands the skull round and the text level instead of squeezing it aft
+    const c = document.createElement('canvas'); c.width = 192; c.height = 256;
+    const xc = c.getContext('2d');
+    for (let row = 0; row < 256; row++) {
+      const span = (1 - row / 256) * F14_FIN.span;                 // canvas top = fin tip
+      const S = F14_FIN.span / (F14_FIN.zLE(span) - F14_FIN.zTE(span));
+      xc.drawImage(art, 0, row, 192, 1, 96 - 96 * S, row, 192 * S, 1);
+    }
     _jollyTex = new THREE.CanvasTexture(c);
   }
-  return new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+  return jollyRogersFlag(s);
+}
+
+// the flag, cut to the fin: a smooth grid warped bilinearly onto the fin
+// outline (inset a touch), texture wrapped over it — yellow band at the tip,
+// AJ/200 at the root, nothing overhanging the leading-edge sweep
+function jollyRogersFlag(s) {
+  const N = 24, M = 24, INSET = 0.96, CX = 1.75, CZ = -2.25;
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i <= N; i++) {
+    const x = (i / N) * F14_FIN.span;
+    const le = F14_FIN.zLE(x), te = F14_FIN.zTE(x);
+    for (let j = 0; j <= M; j++) {
+      const z = le + (te - le) * (j / M);
+      const xi = CX + (x - CX) * INSET, zi = CZ + (z - CZ) * INSET;
+      pos.push(xi, -s * 0.1, zi);                  // just proud of the fin's outer skin
+      const lei = F14_FIN.zLE(xi), tei = F14_FIN.zTE(xi);
+      const u = (zi - lei) / (tei - lei);          // 0 at the leading edge, 1 trailing
+      uv.push(s === 1 ? u : 1 - u, xi / F14_FIN.span);
+    }
+  }
+  for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) {
+    const a = i * (M + 1) + j, b = a + 1, cq = a + M + 1, d = cq + 1;
+    idx.push(a, b, d, a, d, cq);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return new THREE.Mesh(geo,
     new THREE.MeshBasicMaterial({ map: _jollyTex, transparent: true, side: THREE.DoubleSide,
       polygonOffset: true, polygonOffsetFactor: -1 }));
 }
@@ -277,10 +319,9 @@ export function buildF14() {
     const t = new THREE.Mesh(tG, M(0x1a1c20));
     t.rotation.z = Math.PI / 2;
     t.position.set(s * 2.3, 0.4, -3.6); g.add(t);
-    const decal = jollyRogersDecal(3.3, 2.8);
-    decal.rotation.y = s * Math.PI / 2;
-    decal.scale.x = s;                          // un-mirror the skull on the port face
-    decal.position.set(s * (2.3 + 0.09), 2.15, -5.0);
+    const decal = jollyRogersDecal(s);
+    decal.rotation.z = Math.PI / 2;
+    decal.position.copy(t.position);
     g.add(decal);
   }
   // engines, nozzles, the beavertail between them
