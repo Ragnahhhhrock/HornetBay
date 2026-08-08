@@ -893,19 +893,10 @@ G.onAircraftDown = (unit, byPlayer) => {
   if (unit.type === 'cruise') { G.msg('CRUISE MISSILE DESTROYED', 'good'); }
   if (unit.type === 'sub') { G.msg('SHADOW SUB DESTROYED!', 'good'); }
   if (unit.kind === 'airliner') {
-    if (byPlayer) {
-      // the one thing a Navy pilot must never do
-      G.score = Math.max(0, G.score - 5000);
-      G.msg(`COURT MARTIAL! ${unit.label} DOWN — ${unit.souls || 150} SOULS  −5000 PTS`, 'bad');
-      G.radio(`NORAD: VIPER 1-1, YOU JUST SHOT DOWN A CIVILIAN AIRLINER. RTB AND HAND OVER YOUR WINGS.`);
-      G.audio.fail();
-      if (G.missionDef.id !== 'free' && !G.over) {
-        G.failMission('COURT MARTIAL',
-          `${unit.name} WAS A CIVILIAN AIRLINER WITH ${unit.souls || 150} SOULS ABOARD.\nTHERE WERE NO SURVIVORS.\n\nYOUR WINGS ARE FORFEIT. YOUR CAREER IS OVER.`);
-      }
-    } else {
-      G.msg(`${unit.label} CRASHED — ALL SOULS LOST`, 'bad');
-    }
+    // player weapons can no longer touch civil traffic — no lock, no bullet,
+    // no warhead, and with the trigger gone the court martial goes with it.
+    // An airliner only falls now if the world itself takes it down.
+    G.msg(`${unit.label} CRASHED — ALL SOULS LOST`, 'bad');
   }
 };
 G.onPlayerHit = (dmg, byWhom) => {
@@ -1271,9 +1262,11 @@ function updateCamera(dt) {
 // ---------------- targeting & weapons ----------------
 function updateTargeting(dt) {
   const P = G.player;
-  // build target list — airliners are legitimate radar contacts too, God help them.
+  // build target list — hostiles only. Civil traffic and friendlies still paint
+  // the scope as contacts, but the weapon system refuses them: no T-cycle, no
+  // lock, no shot. Civilian lives are not in the target set, full stop.
   // air-to-air only: surface contacts (the sub, the raft) can be seen, never locked.
-  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && !b.surface && (b.kind === 'bandit' || b.kind === 'stolen' || b.kind === 'airliner'));
+  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && !b.surface && (b.kind === 'bandit' || b.kind === 'stolen'));
   if (G.playerTarget && (G.playerTarget.dead || G.playerTarget.removeMe)) { G.playerTarget = null; G.lockLevel = 0; }
   if (G.input.pressed('KeyT')) {
     if (!targets.length) { G.playerTarget = null; }

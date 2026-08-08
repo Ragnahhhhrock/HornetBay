@@ -281,10 +281,13 @@ export class Missile {
         return;
       }
     }
-    // unguided shot (fired with no lock) — still lethal to anything in its path
+    // unguided shot (fired with no lock) — still lethal to anything in its
+    // path, except civil traffic: a player round will not even detonate on
+    // an airliner. It flies on through the sky the airliner owns.
     if (!t && !this.spoofed) {
       for (const b of G.bandits) {
         if (b.dead || b.removeMe || b === this.owner) continue;
+        if (this.owner === G.player && b.kind === 'airliner') continue;
         if (this.pos.distanceTo(b.pos) < cfg.prox) {
           G.explode(this.pos, 0.8);
           b.hit(cfg.dmg, G, this.owner === G.player);
@@ -345,9 +348,11 @@ export class GunSystem {
       tr.add(glow);
       G.scene.add(tr);
       this.tracers.push({ mesh: tr, vel: f.multiplyScalar(1050).add(player.vel), life: 1.4 });
-      // hit check: ray vs targets (cylinder around flight path)
+      // hit check: ray vs targets (cylinder around flight path).
+      // civil traffic is exempt — the Vulcan will not track an airliner.
       for (const t of targets) {
         if (t.dead) continue;
+        if (player.isPlayer && t.kind === 'airliner') continue;
         _d.copy(t.pos).sub(player.pos);
         const dist = _d.length();
         if (dist > 1600 || dist < 30) continue;

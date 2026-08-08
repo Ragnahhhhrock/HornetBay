@@ -136,6 +136,15 @@ running as a plain static site (no build step, ES modules straight to the browse
   warning** (`js/awacs.js _call`) still breaks squelch, as do wingman calls,
   mission scripts, and every player-triggered message. To re-enable ambience,
   make `G.chatter` forward to `G.msg`.
+- Civilian aircraft **cannot be targeted or harmed by the player** ("civilians
+  are not targets" entry): `kind === 'airliner'` is out of the lock list in
+  `main.js updateTargeting`, immune to player damage at the single chokepoint
+  `ai.js AIAircraft.hit` (the `byPlayer` flag), and skipped in the gun ray and
+  unguided-missile proximity loops in `weapons.js`. The old check-fire warning
+  and the court-martial branch went with the trigger — there is nothing left
+  to punish. Enemy fire (`byPlayer = false`) still resolves against
+  airliner-kind friendlies (the defector 747, NAVY 1, the HABU), so escort
+  missions keep their stakes. Airliners still paint the scope as contacts.
 
 ## Analytics (GA4)
 

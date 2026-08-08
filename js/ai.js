@@ -373,14 +373,12 @@ export class AIAircraft {
 
   hit(dmg, G, byPlayer = true) {
     if (this.dead) return;
+    // civilian aircraft cannot be harmed by the player — not by gun, missile,
+    // or bomb. The rounds pass through like the thought never occurred.
+    // (Enemy weapons, byPlayer = false, still resolve normally.)
+    if (byPlayer && this.kind === 'airliner') return;
     this.hp -= dmg;
     if (this.onEvent) this.onEvent('hit', this);
-    // shooting at a civilian airliner draws an immediate radio reprimand
-    if (byPlayer && this.kind === 'airliner' && this.hp > 0 && G.time - (this._cfWarn || -30) > 6) {
-      this._cfWarn = G.time;
-      G.msg('CHECK FIRE! CIVILIAN AIRLINER!', 'warn');
-      if (G.radio) G.radio(`NORAD: VIPER, CHECK FIRE, CHECK FIRE! THAT IS A CIVILIAN AIRLINER!`);
-    }
     if (this.hp <= 0) this.kill(G, false, byPlayer);
     else if (this.hp < 45) this.smoking = true;
   }
