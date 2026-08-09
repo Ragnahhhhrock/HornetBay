@@ -66,7 +66,7 @@ export class Traffic {
       if (ev === 'landed') fl.landedAt = G.time;
     };
     this.flights.push(fl);
-    G.msg(`${dep ? 'SFO DEPARTURE' : 'SFO ARRIVAL'}: ${ai.name} ${dep ? 'ROLLING 01R' : 'ON FINAL 01L'}`, 'info');
+    G.chatter(`${dep ? 'SFO DEPARTURE' : 'SFO ARRIVAL'}: ${ai.name} ${dep ? 'ROLLING 01R' : 'ON FINAL 01L'}`, 'info');
   }
 
   update(dt) {

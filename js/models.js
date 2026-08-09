@@ -33,12 +33,136 @@ function abFlame(len = 3.4, r = 0.5) {
   m.visible = false;
   return m;
 }
-function missileMesh(color = 0xe8e8e8, len = 3, r = 0.14) {
+// ---------------- hinged control surfaces ----------------
+// A trailing-edge surface is a thin planform chip in a hinge Group parked on
+// its own leading edge; rotation.x deflects it (positive = trailing edge UP).
+// xIn/xOut are span stations and te = [x0,z0, x1,z1] the host wing's trailing
+// edge line, all in wing space; +x is the LEFT wing. flight.js (player stick)
+// and ai.js (bank command) do the waving.
+function _teSurf(xIn, xOut, chord, te, thick, color, y = 0) {
+  const [tx0, tz0, tx1, tz1] = te;
+  const zte = x => tz0 + (x - tx0) * (tz1 - tz0) / (tx1 - tx0);
+  const g = wingGeo([[xIn, zte(xIn) + chord], [xIn, zte(xIn)], [xOut, zte(xOut)], [xOut, zte(xOut) + chord]], thick);
+  g.translate(-xIn, 0, -(zte(xIn) + chord));      // hinge line -> local origin
+  const hinge = new THREE.Group();
+  hinge.add(new THREE.Mesh(g, M(color)));
+  hinge.position.set(xIn, y, zte(xIn) + chord);
+  return hinge;
+}
+// matched left/right pair (left rides at +x); returns [l, r]
+function _surfPair(xIn, xOut, chord, te, thick, color, y = 0) {
+  const l = _teSurf(xIn, xOut, chord, te, thick, color, y);
+  const r = _teSurf(xIn, xOut, chord, te, thick, color, y);
+  r.children[0].scale.x = -1;
+  r.position.x = -xIn;
+  return [l, r];
+}
+// ---------------- air-to-air missile bodies ----------------
+// Per-type bodies dressed from the reference photography: right nose, right
+// fin count and placement, the Sidewinder's rolleron discs, the Phoenix's fat
+// motor. A cruciform (X) fin set is a trapezoid planform swept back from the
+// root; every round carries a dark motor nozzle at the tail and a rocket
+// exhaust flame (hidden until the round is in the air and burning).
+const AAM_BODY = {
+  // AIM-9M Sidewinder: dark IR dome, small delta canards behind the guidance
+  // section, big trapezoidal tail fins with rolleron wheels on the tips
+  aim9: {
+    len: 2.9, r: 0.13, body: 0xe8e8e8, noseC: 0x23262b, noseL: 0.42,
+    fins: [
+      { x1: 0.26, zR: [0.82, 0.52], zT: [0.72, 0.56] },              // canards
+      { x1: 0.42, zR: [-0.82, -1.26], zT: [-0.98, -1.28], roll: 0.055 },  // tails + rollerons
+    ],
+  },
+  // AIM-7M Sparrow: pointed radome, big mid-body delta wings, smaller tail fins
+  aim7: {
+    len: 3.7, r: 0.14, body: 0xe4e4e4, noseC: 0xe4e4e4, noseL: 0.75,
+    fins: [
+      { x1: 0.46, zR: [-0.26, -1.04], zT: [-0.54, -0.90] },          // mid deltas
+      { x1: 0.38, zR: [-1.50, -1.84], zT: [-1.62, -1.84] },          // tails
+    ],
+  },
+  // AIM-54A Phoenix: the fat stick — long-chord strake wings amidships, tail fins
+  aim54: {
+    len: 4.0, r: 0.19, body: 0xf0f0f0, noseC: 0xf0f0f0, noseL: 0.90,
+    fins: [
+      { x1: 0.52, zR: [0.62, -1.10], zT: [0.18, -0.92] },            // long strakes
+      { x1: 0.48, zR: [-1.60, -1.98], zT: [-1.72, -1.98] },          // tails
+    ],
+  },
+  // AIM-120 AMRAAM: small clipped mid fins, larger rear fins
+  aim120: {
+    len: 3.6, r: 0.16, body: 0xdadada, noseC: 0xdadada, noseL: 0.80,
+    fins: [
+      { x1: 0.34, zR: [-0.40, -0.88], zT: [-0.54, -0.82] },          // mid fins
+      { x1: 0.42, zR: [-1.40, -1.78], zT: [-1.52, -1.78] },          // rear fins
+    ],
+  },
+  // Soviet / shipboard rounds — plausible silhouettes in the same idiom
+  r27: {
+    len: 3.4, r: 0.13, body: 0xe0e0e0, noseC: 0xe0e0e0, noseL: 0.7,
+    fins: [
+      { x1: 0.42, zR: [-0.30, -1.00], zT: [-0.56, -0.88] },
+      { x1: 0.36, zR: [-1.40, -1.70], zT: [-1.52, -1.70] },
+    ],
+  },
+  r73: {
+    len: 2.9, r: 0.12, body: 0xdcdcdc, noseC: 0x23262b, noseL: 0.42,
+    fins: [
+      { x1: 0.24, zR: [0.78, 0.50], zT: [0.68, 0.54] },
+      { x1: 0.38, zR: [-0.80, -1.20], zT: [-0.94, -1.22] },
+    ],
+  },
+  igla: {
+    len: 1.7, r: 0.055, body: 0x9aa08e, noseC: 0x23262b, noseL: 0.3,
+    fins: [{ x1: 0.16, zR: [-0.55, -0.83], zT: [-0.65, -0.83] }],
+  },
+  sm1: {
+    len: 4.4, r: 0.17, body: 0xe8e8e8, noseC: 0xe8e8e8, noseL: 1.0,
+    fins: [
+      { x1: 0.44, zR: [-0.5, -1.3], zT: [-0.75, -1.15] },
+      { x1: 0.5, zR: [-1.9, -2.18], zT: [-2.0, -2.18] },
+    ],
+  },
+  harpoon: {
+    len: 4.6, r: 0.17, body: 0xd8d8d8, noseC: 0xd8d8d8, noseL: 0.8,
+    fins: [
+      { x1: 0.55, zR: [0.3, -0.5], zT: [0.05, -0.4] },               // wings
+      { x1: 0.42, zR: [-1.9, -2.28], zT: [-2.02, -2.28] },           // tails
+    ],
+  },
+};
+function _aamFinSet(g, P, spec) {
+  const x0 = P.r * 0.6;   // root tucked into the body
+  const geo = wingGeo([[x0, spec.zR[0]], [spec.x1, spec.zT[0]], [spec.x1, spec.zT[1]], [x0, spec.zR[1]]], 0.03);
+  for (let i = 0; i < 4; i++) {
+    const fg = new THREE.Group();
+    fg.add(new THREE.Mesh(geo, M(P.body)));
+    if (spec.roll) {   // Sidewinder rolleron: a metal disc on each tail tip
+      const d = new THREE.Mesh(new THREE.CylinderGeometry(spec.roll, spec.roll, 0.03, 10), M(0x3a3d40));
+      d.rotation.z = Math.PI / 2;                     // disc axis radial
+      d.position.set(spec.x1 - 0.02, 0, spec.zT[1] + 0.01);
+      fg.add(d);
+    }
+    fg.rotation.z = Math.PI / 4 + i * Math.PI / 2;    // X configuration
+    g.add(fg);
+  }
+}
+export function missileMesh(type = 'aim9') {
+  const P = AAM_BODY[type] || AAM_BODY.aim9;
   const g = new THREE.Group();
-  const b = cyl(r, r, len * 0.75, color, 6); g.add(b);
-  const n = cone(r, len * 0.25, 0xc03030, 6); n.position.z = len * 0.5; g.add(n);
-  const f1 = box(0.5, 0.04, 0.4, color); f1.position.z = -len * 0.25; g.add(f1);
-  const f2 = box(0.04, 0.5, 0.4, color); f2.position.z = -len * 0.25; g.add(f2);
+  const bodyL = P.len - P.noseL;
+  const b = cyl(P.r, P.r, bodyL, P.body, 12); b.position.z = -P.len / 2 + bodyL / 2; g.add(b);
+  const n = cone(P.r, P.noseL, P.noseC, 12); n.position.z = P.len / 2 - P.noseL / 2; g.add(n);
+  for (const spec of P.fins) _aamFinSet(g, P, spec);
+  // dark motor nozzle at the tail — where the rocket fire comes out
+  const noz = cyl(P.r * 0.7, P.r * 0.55, 0.1, 0x2c2f33, 10); noz.position.z = -P.len / 2 - 0.03; g.add(noz);
+  // the rocket exhaust itself: an additive flame cone off the nozzle, lit in
+  // weapons.js while the motor burns
+  const fl = abFlame(P.r * 9, P.r * 1.5);
+  fl.position.z = -P.len / 2 - P.r * 4.4;
+  g.add(fl);
+  g.userData.flame = fl;
+  g.userData.len = P.len;
   return g;
 }
 
@@ -113,6 +237,12 @@ export function buildFA18() {
   const sG = wingGeo([[0.3, 0.3], [0.3, -1.8], [3.5, -1.5], [3.5, -0.3]], 0.14);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, 0.1, -6.5); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, 0.1, -6.5); g.add(stabR);
+  // control surfaces — inboard flaps droop with the gear, outboard ailerons
+  // work the stick (driven in flight.js _syncVisual)
+  const TE18 = [0.8, -3.4, 6.6, -2.6];
+  const [flapL, flapR] = _surfPair(1.2, 3.4, 1.0, TE18, 0.1, CD, 0.15);
+  const [ailL, ailR] = _surfPair(3.8, 6.3, 0.85, TE18, 0.1, CD, 0.15);
+  g.add(flapL, flapR, ailL, ailR);
   // gear
   const gear = new THREE.Group();
   const gm = M(0x2c3136);
@@ -131,12 +261,12 @@ export function buildFA18() {
   // weapons (visual)
   const stores = { aim9: [], aim120: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 6.6, -0.1, -1.7); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 6.6, -0.1, -1.7); g.add(m9); stores.aim9.push(m9);
     for (const px of [2.6, 4.4]) {
-      const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * px, -0.55, -1.8); g.add(m120); stores.aim120.push(m120);
+      const m120 = missileMesh('aim120'); m120.position.set(s * px, -0.55, -1.8); g.add(m120); stores.aim120.push(m120);
     }
   }
-  g.userData = { ab, gear, hook, stabL, stabR, stores, type: 'f18' };
+  g.userData = { ab, gear, hook, stabL, stabR, stores, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'f18' };
   addNavLights(g, 6.8, -8.5, 1.0);
   return g;
 }
@@ -177,6 +307,10 @@ export function buildF16() {
   const sG = wingGeo([[0.3, 0.2], [0.3, -1.5], [3.0, -1.3], [3.0, -0.4]], 0.13);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.3, -0.3, -5.6); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.3, -0.3, -5.6); g.add(stabR);
+  // full-span flaperons — one surface per wing does both jobs, Viper style
+  const TE16 = [0.7, -3.2, 5.4, -3.4];
+  const [fpL, fpR] = _surfPair(1.3, 5.2, 1.0, TE16, 0.09, CD, 0.05);
+  g.add(fpL, fpR);
   const gear = new THREE.Group();
   const gm = M(0x2c3136);
   const mkWheel = (x, y, z) => {
@@ -191,22 +325,25 @@ export function buildF16() {
   // no tailhook — the F-16 is land-based only
   const stores = { aim9: [], aim120: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 5.4, -0.05, -3.0); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 5.4, -0.05, -3.0); g.add(m9); stores.aim9.push(m9);
     for (const px of [2.2, 3.8]) {
-      const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * px, -0.5, -2.2); g.add(m120); stores.aim120.push(m120);
+      const m120 = missileMesh('aim120'); m120.position.set(s * px, -0.5, -2.2); g.add(m120); stores.aim120.push(m120);
     }
   }
-  g.userData = { ab: [f], gear, hook: null, stabL, stabR, stores, type: 'f16' };
+  g.userData = { ab: [f], gear, hook: null, stabL, stabR, stores, surf: { flaperon: [fpL, fpR] }, type: 'f16' };
   addNavLights(g, 5.5, -8.0, 0.8);
   return g;
 }
 
 // ---------------- F-14 Tomcat (VF-84 Jolly Rogers, 1978) ----------------
+// fin planform: span x 0..3.5 up the fin, chord z from zLE(x) to zTE(x) — the
+// leading edge sweeps hard aft, so the flag is warped to the fin, not the fin to the flag
+const F14_FIN = { span: 3.5, zLE: x => 0.6 - (3.6 / 3.5) * x, zTE: x => -2.9 - (0.8 / 3.5) * x };
 let _jollyTex = null;
-function jollyRogersDecal(w = 3.6, h = 3.0) {
+function jollyRogersDecal(s) {
   if (!_jollyTex) {
-    const c = document.createElement('canvas'); c.width = 192; c.height = 256;
-    const x = c.getContext('2d');
+    const art = document.createElement('canvas'); art.width = 192; art.height = 256;
+    const x = art.getContext('2d');
     // black fin with the yellow tip band
     x.fillStyle = '#101114'; x.fillRect(0, 0, 192, 256);
     x.fillStyle = '#f0b41c'; x.fillRect(0, 0, 192, 26);
@@ -230,9 +367,48 @@ function jollyRogersDecal(w = 3.6, h = 3.0) {
     x.fillText('AJ', 96, 226);
     x.font = 'bold 22px "Courier New", monospace';
     x.fillText('200', 96, 250);
+    // pre-compensate the chord taper: each canvas row is stretched about the
+    // center by root-chord / chord-at-that-height, so the bilinear fin warp
+    // lands the skull round and the text level instead of squeezing it aft
+    const c = document.createElement('canvas'); c.width = 192; c.height = 256;
+    const xc = c.getContext('2d');
+    for (let row = 0; row < 256; row++) {
+      const span = (1 - row / 256) * F14_FIN.span;                 // canvas top = fin tip
+      const S = F14_FIN.span / (F14_FIN.zLE(span) - F14_FIN.zTE(span));
+      xc.drawImage(art, 0, row, 192, 1, 96 - 96 * S, row, 192 * S, 1);
+    }
     _jollyTex = new THREE.CanvasTexture(c);
   }
-  return new THREE.Mesh(new THREE.PlaneGeometry(w, h),
+  return jollyRogersFlag(s);
+}
+
+// the flag, cut to the fin: a smooth grid warped bilinearly onto the fin
+// outline (inset a touch), texture wrapped over it — yellow band at the tip,
+// AJ/200 at the root, nothing overhanging the leading-edge sweep
+function jollyRogersFlag(s) {
+  const N = 24, M = 24, INSET = 0.96, CX = 1.75, CZ = -2.25;
+  const pos = [], uv = [], idx = [];
+  for (let i = 0; i <= N; i++) {
+    const x = (i / N) * F14_FIN.span;
+    const le = F14_FIN.zLE(x), te = F14_FIN.zTE(x);
+    for (let j = 0; j <= M; j++) {
+      const z = le + (te - le) * (j / M);
+      const xi = CX + (x - CX) * INSET, zi = CZ + (z - CZ) * INSET;
+      pos.push(xi, -s * 0.1, zi);                  // just proud of the fin's outer skin
+      const lei = F14_FIN.zLE(xi), tei = F14_FIN.zTE(xi);
+      const u = (zi - lei) / (tei - lei);          // 0 at the leading edge, 1 trailing
+      uv.push(s === 1 ? u : 1 - u, xi / F14_FIN.span);
+    }
+  }
+  for (let i = 0; i < N; i++) for (let j = 0; j < M; j++) {
+    const a = i * (M + 1) + j, b = a + 1, cq = a + M + 1, d = cq + 1;
+    idx.push(a, b, d, a, d, cq);
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  return new THREE.Mesh(geo,
     new THREE.MeshBasicMaterial({ map: _jollyTex, transparent: true, side: THREE.DoubleSide,
       polygonOffset: true, polygonOffsetFactor: -1 }));
 }
@@ -261,6 +437,8 @@ export function buildF14() {
   // variable-sweep wings on their pivots (20 deg spread -> 68 deg swept)
   const wG = wingGeo([[0, 0.7], [0, -2.5], [6.4, -2.2], [6.4, -0.5]], 0.2);
   const wings = {};
+  const surfF = {}, surfS = {};
+  const TE14 = [0, -2.5, 6.4, -2.2];
   for (const s of [1, -1]) {
     const pivot = new THREE.Group();
     pivot.position.set(s * 3.1, 0.25, 0.4);
@@ -268,8 +446,22 @@ export function buildF14() {
     pivot.add(w);
     // pivot-cap fairing + wingtip rail
     const rail = box(0.35, 0.12, 3.2, CD); rail.position.set(s * 5.6, 0.14, -1.4); pivot.add(rail);
+    // trailing-edge flaps + top-wing roll spoilers ride the pivot and sweep
+    // with the wing — a Tomcat has no ailerons; spoilers do the rolling
+    const fl = _teSurf(0.4, 3.6, 0.85, TE14, 0.09, CD, 0);
+    if (s === -1) { fl.children[0].scale.x = -1; fl.position.x = -0.4; }
+    pivot.add(fl);
+    const sp = new THREE.Group();
+    const spm = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.05, 0.62), M(CD));
+    spm.geometry.translate(1.0, 0, -0.31);   // hinge along the inboard front corner
+    if (s === -1) spm.scale.x = -1;
+    sp.add(spm);
+    sp.position.set(s * 4.0, 0.13, -1.55);
+    pivot.add(sp);
     g.add(pivot);
-    wings[s === 1 ? 'l' : 'r'] = pivot;
+    const side = s === 1 ? 'l' : 'r';
+    wings[side] = pivot;
+    surfF[side] = fl; surfS[side] = sp;
   }
   // twin verticals on the nacelle tops — Jolly Rogers on both outer faces
   const tG = wingGeo([[0, 0.6], [0, -2.9], [3.5, -3.7], [3.5, -3.0]], 0.15);
@@ -277,10 +469,9 @@ export function buildF14() {
     const t = new THREE.Mesh(tG, M(0x1a1c20));
     t.rotation.z = Math.PI / 2;
     t.position.set(s * 2.3, 0.4, -3.6); g.add(t);
-    const decal = jollyRogersDecal(3.3, 2.8);
-    decal.rotation.y = s * Math.PI / 2;
-    decal.scale.x = s;                          // un-mirror the skull on the port face
-    decal.position.set(s * (2.3 + 0.09), 2.15, -5.0);
+    const decal = jollyRogersDecal(s);
+    decal.rotation.z = Math.PI / 2;
+    decal.position.copy(t.position);
     g.add(decal);
   }
   // engines, nozzles, the beavertail between them
@@ -319,12 +510,12 @@ export function buildF14() {
   const stores = { aim9: [], aim54: [] };
   for (const s of [1, -1]) {
     const py = box(0.16, 0.5, 1.2, CD); py.position.set(s * 3.0, -0.35, -0.8); g.add(py);
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 3.0, -0.75, -0.8); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 3.0, -0.75, -0.8); g.add(m9); stores.aim9.push(m9);
     for (const pz of [1.4, -2.4]) {
-      const m54 = missileMesh(0xf0f0f0, 4.0, 0.19); m54.position.set(s * 0.55, -0.85, pz); g.add(m54); stores.aim54.push(m54);
+      const m54 = missileMesh('aim54'); m54.position.set(s * 0.55, -0.85, pz); g.add(m54); stores.aim54.push(m54);
     }
   }
-  g.userData = { ab, gear, hook, stabL, stabR, stores, wings, tipX: 9.5, type: 'f14' };
+  g.userData = { ab, gear, hook, stabL, stabR, stores, wings, tipX: 9.5, surf: { flap: [surfF.l, surfF.r], spoiler: [surfS.l, surfS.r] }, type: 'f14' };
   addNavLights(g, 9.5, -8.8, 0.6);
   return g;
 }
@@ -408,7 +599,12 @@ export function buildMiG29() {
   const sG = wingGeo([[0.4, 0.2], [0.4, -1.6], [3.4, -1.4], [3.4, -0.6]], 0.14);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.6, 0, -6.6); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.6, 0, -6.6); g.add(stabR);
-  g.userData = { ab, gear: null, hook: null, stabL, stabR, stores: { aim9: [], aim120: [] }, type: 'mig29' };
+  // flaps + ailerons on the trailing edge
+  const TE29 = [1.0, -3.8, 6.2, -3.4];
+  const [flapL, flapR] = _surfPair(1.5, 3.4, 1.0, TE29, 0.1, CD, 0.1);
+  const [ailL, ailR] = _surfPair(3.8, 6.0, 0.85, TE29, 0.1, CD, 0.1);
+  g.add(flapL, flapR, ailL, ailR);
+  g.userData = { ab, gear: null, hook: null, stabL, stabR, stores: { aim9: [], aim120: [] }, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'mig29' };
   addNavLights(g, 5.7, -8.5, 1.0);
   return g;
 }
@@ -674,28 +870,27 @@ export function buildMD90(livery = 0) {
 }
 
 // ---------------- cruise missile ----------------
-// Raduga Kh-55 (AS-15 'Kent' — the Bear's long arm): light-gray torpedo body
-// with a rounded ogive nose, pop-out straight wings slung low amidships, the
-// ventral turbofan nacelle with its intake ramp under the tail, a vertical fin
-// over horizontal tailplanes, and a dark exhaust — the Tomahawk's Soviet mirror.
 export function buildCruiseMissile() {
+  // Raduga Kh-55 (AS-15 'Kent' — the Bear's long arm): light-gray torpedo body,
+  // rounded ogive nose, straight pop-out wings low on the belly line, the ventral
+  // turbofan nacelle with its dark intake ramp, conical tail and tall vertical fin.
   const g = new THREE.Group(), LIGHT = 0xd6d9dc, DARK = 0x2c2f33;
   const b = cyl(0.26, 0.24, 4.6, LIGHT, 12); b.position.z = 0.2; g.add(b);
   const nose = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(LIGHT));
   nose.geometry.rotateX(Math.PI / 2); nose.position.z = 2.5; g.add(nose);
   const tail = cone(0.24, 0.7, LIGHT, 12); tail.rotation.y = Math.PI; tail.position.z = -2.45; g.add(tail);
-  const w = box(3.1, 0.05, 0.55, LIGHT); w.position.set(0, -0.04, 0.5); g.add(w);      // pop-out wing pair
-  const nac = cyl(0.15, 0.15, 1.6, LIGHT, 8); nac.position.set(0, -0.34, -0.7); g.add(nac);  // ventral turbofan
-  const ramp = box(0.14, 0.10, 0.34, DARK); ramp.position.set(0, -0.40, 0.14); g.add(ramp);  // intake ramp
-  const noz = cyl(0.12, 0.14, 0.22, DARK, 8); noz.position.set(0, -0.34, -1.56); g.add(noz); // exhaust
-  const finV = box(0.05, 0.75, 0.5, LIGHT); finV.position.set(0, 0.42, -1.95); g.add(finV);  // vertical fin
-  const finH = box(1.5, 0.05, 0.45, LIGHT); finH.position.set(0, 0.06, -2.0); g.add(finH);   // tailplanes
+  const w = box(3.1, 0.05, 0.55, LIGHT); w.position.set(0, -0.04, 0.5); g.add(w);
+  const nac = cyl(0.15, 0.15, 1.6, LIGHT, 8); nac.position.set(0, -0.34, -0.7); g.add(nac);
+  const ramp = box(0.14, 0.10, 0.34, DARK); ramp.position.set(0, -0.40, 0.14); g.add(ramp);
+  const noz = cyl(0.12, 0.14, 0.22, DARK, 8); noz.position.set(0, -0.34, -1.56); g.add(noz);
+  const finV = box(0.05, 0.75, 0.5, LIGHT); finV.position.set(0, 0.42, -1.95); g.add(finV);
+  const finH = box(1.5, 0.05, 0.45, LIGHT); finH.position.set(0, 0.06, -2.0); g.add(finH);
   const f = abFlame(1.4, 0.16); f.position.set(0, -0.34, -1.85); f.visible = true; g.add(f);
   g.userData = { ab: [f], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'cruise' };
   return g;
 }
 
-// ---------------- rescue raft ----------------
+
 export function buildRaft() {
   const g = new THREE.Group();
   const raft = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.55, 8, 12), M(0xe86818));
@@ -1255,15 +1450,20 @@ export function buildF15() {
   const sG = wingGeo([[0.3, 0.3], [0.3, -1.7], [3.7, -1.5], [3.7, -0.3]], 0.15);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, -0.3, -5.9); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, -0.3, -5.9); g.add(stabR);
+  // flaps inboard, ailerons outboard on that big shoulder wing
+  const TE15 = [1.1, -2.9, 6.5, -4.5];
+  const [flapL, flapR] = _surfPair(1.6, 3.6, 1.1, TE15, 0.1, CD, 0.55);
+  const [ailL, ailR] = _surfPair(4.0, 6.2, 0.9, TE15, 0.1, CD, 0.55);
+  g.add(flapL, flapR, ailL, ailR);
   // gear — land-based only, no hook, no catapult bridle
   const gear = _gearSet([[0, -2.0, 4.0], [1.1, -2.0, -1.0], [-1.1, -2.0, -1.0]]);
   g.add(gear);
   // air-to-air load: AMRAAMs on the fuselage corners, Sidewinders on the wings
   const stores = { aim9: [], aim120: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xe8e8e8, 2.9, 0.13); m9.position.set(s * 5.6, -0.3, -3.4); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 5.6, -0.3, -3.4); g.add(m9); stores.aim9.push(m9);
     for (const pz of [0.2, -2.2]) {
-      const m120 = missileMesh(0xd8d8d8, 3.6, 0.16); m120.position.set(s * 1.75, -1.05, pz); g.add(m120); stores.aim120.push(m120);
+      const m120 = missileMesh('aim120'); m120.position.set(s * 1.75, -1.05, pz); g.add(m120); stores.aim120.push(m120);
     }
   }
   // subdued USAF: titles aft, tail codes on the fins
@@ -1277,7 +1477,7 @@ export function buildF15() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.0, 0.5), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 1.66, 2.6, -5.6); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab, gear, hook: null, stabL, stabR, stores, type: 'f15' };
+  g.userData = { ab, gear, hook: null, stabL, stabR, stores, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'f15' };
   addNavLights(g, 6.6, -8.6, 0.9);
   return g;
 }
@@ -1319,13 +1519,18 @@ export function buildA10() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(0.95, 0.48), new THREE.MeshBasicMaterial({ map: code, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 4.42, 1.6, -6.2); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
+  // big flaps inboard, long ailerons out to the drooped tips
+  const TE10 = [0.9, -1.4, 8.7, -2.3];
+  const [flapL, flapR] = _surfPair(1.4, 4.6, 0.9, TE10, 0.12, CD, -0.15);
+  const [ailL, ailR] = _surfPair(5.0, 8.4, 0.8, TE10, 0.12, CD, -0.15);
+  g.add(flapL, flapR, ailL, ailR);
   // gear — mains hang half-out of their fairings, Hawg style; nose strut offset
   const gear = _gearSet([[0.35, -1.95, 4.2], [2.3, -1.95, -0.7], [-2.3, -1.95, -0.7]], 0.38, 1.3);
   g.add(gear);
   // a pair of Sidewinders on the outboard rails — self-escort only
   const stores = { aim9: [] };
   for (const s of [1, -1]) {
-    const m9 = missileMesh(0xd8d8d8, 2.9, 0.13); m9.position.set(s * 7.4, -0.75, -0.6); g.add(m9); stores.aim9.push(m9);
+    const m9 = missileMesh('aim9'); m9.position.set(s * 7.4, -0.75, -0.6); g.add(m9); stores.aim9.push(m9);
   }
   // subdued USAF titles aft
   const usaf = _nameTex('U.S. AIR FORCE', DK);
@@ -1333,7 +1538,7 @@ export function buildA10() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(3.8, 0.46), new THREE.MeshBasicMaterial({ map: usaf, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.96, 0.15, -3.9); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab: [], gear, hook: null, stabL, stabR, stores, type: 'a10' };
+  g.userData = { ab: [], gear, hook: null, stabL, stabR, stores, surf: { ail: [ailL, ailR], flap: [flapL, flapR] }, type: 'a10' };
   addNavLights(g, 8.8, -6.9, 0.9);
   return g;
 }
@@ -1383,6 +1588,11 @@ export function buildSU27() {
   const sG = wingGeo([[0.3, 0.3], [0.3, -1.7], [3.9, -1.6], [3.9, -0.4]], 0.15);
   const stabL = new THREE.Mesh(sG, M(C)); stabL.position.set(0.4, -0.2, -6.5); g.add(stabL);
   const stabR = new THREE.Mesh(sG, M(C)); stabR.scale.x = -1; stabR.position.set(-0.4, -0.2, -6.5); g.add(stabR);
+  // flaps + ailerons along the big swept wing's trailing edge
+  const TE27 = [1.1, -3.0, 7.3, -4.7];
+  const [flapL27, flapR27] = _surfPair(1.6, 4.0, 1.1, TE27, 0.1, CD, 0.3);
+  const [ailL27, ailR27] = _surfPair(4.4, 7.0, 0.9, TE27, 0.1, CD, 0.3);
+  g.add(flapL27, flapR27, ailL27, ailR27);
   // gear
   const gear = _gearSet([[0, -2.0, 4.4], [1.25, -2.0, -1.2], [-1.25, -2.0, -1.2]]);
   g.add(gear);
@@ -1396,7 +1606,7 @@ export function buildSU27() {
     const p = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 0.55), new THREE.MeshBasicMaterial({ map: bort, transparent: true, side: THREE.FrontSide }));
     p.position.set(s * 0.72, 0.15, 5.6); p.rotation.y = s * Math.PI / 2; g.add(p);
   }
-  g.userData = { ab, gear, hook: null, stabL, stabR, stores: {}, type: 'su27' };
+  g.userData = { ab, gear, hook: null, stabL, stabR, stores: {}, surf: { ail: [ailL27, ailR27], flap: [flapL27, flapR27] }, type: 'su27' };
   addNavLights(g, 7.4, -9.6, 0.9);
   return g;
 }

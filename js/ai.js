@@ -373,14 +373,12 @@ export class AIAircraft {
 
   hit(dmg, G, byPlayer = true) {
     if (this.dead) return;
+    // civilian aircraft cannot be harmed by the player — not by gun, missile,
+    // or bomb. The rounds pass through like the thought never occurred.
+    // (Enemy weapons, byPlayer = false, still resolve normally.)
+    if (byPlayer && this.kind === 'airliner') return;
     this.hp -= dmg;
     if (this.onEvent) this.onEvent('hit', this);
-    // shooting at a civilian airliner draws an immediate radio reprimand
-    if (byPlayer && this.kind === 'airliner' && this.hp > 0 && G.time - (this._cfWarn || -30) > 6) {
-      this._cfWarn = G.time;
-      G.msg('CHECK FIRE! CIVILIAN AIRLINER!', 'warn');
-      if (G.radio) G.radio(`NORAD: VIPER, CHECK FIRE, CHECK FIRE! THAT IS A CIVILIAN AIRLINER!`);
-    }
     if (this.hp <= 0) this.kill(G, false, byPlayer);
     else if (this.hp < 45) this.smoking = true;
   }
@@ -460,9 +458,27 @@ export class AIAircraft {
     const u = this.model.userData;
     // gear: down on the ground and on final, up once airborne — the heavies
     // were cruising the bay with their wheels hanging out
+    const agl = this.pos.y - Math.max(0, groundHeight(this.pos.x, this.pos.z));
     if (u.gear) {
-      const agl = this.pos.y - Math.max(0, groundHeight(this.pos.x, this.pos.z));
       u.gear.visible = !this.dead && agl < 100 && this.speed < 95;
+    }
+    // control surfaces: ailerons follow the bank command (the bank rate IS the
+    // stick here — bank>0 is a LEFT bank, so the left aileron rises), flaps
+    // droop in the landing configuration on the same rule as the gear
+    if (u.surf) {
+      const dts = Math.max(dt, 1e-3);
+      const bk = this.bank || 0;
+      const rate = this.dead ? 0 : clamp((bk - (this._bankPrev ?? bk)) / dts / 2.2, -1, 1);
+      this._bankPrev = bk;
+      this._ailSm = damp(this._ailSm ?? 0, rate, 6, dts);
+      this._flap01 = damp(this._flap01 ?? 0, (!this.dead && agl < 100 && this.speed < 95) ? 1 : 0, 2.4, dts);
+      const ail = this._ailSm * 0.42;
+      const flp = this._flap01 * -0.55;
+      const s = u.surf;
+      if (s.ail) { s.ail[0].rotation.x = ail; s.ail[1].rotation.x = -ail; }
+      if (s.flaperon) { s.flaperon[0].rotation.x = ail + flp; s.flaperon[1].rotation.x = -ail + flp; }
+      if (s.flap) { s.flap[0].rotation.x = flp; s.flap[1].rotation.x = flp; }
+      if (s.spoiler) { s.spoiler[0].rotation.x = Math.max(0, ail) * 1.6; s.spoiler[1].rotation.x = Math.max(0, -ail) * 1.6; }
     }
     if (u.ab) for (const f of u.ab) {
       f.visible = !this.dead && this.targetSpeed > 240;

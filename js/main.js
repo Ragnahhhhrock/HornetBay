@@ -161,6 +161,11 @@ const G = {
     if (this.audio) this.audio.radioCrackle();
   },
   radio(text) { this.msg(text, 'radio'); },
+  // ambient world chatter — airline movements, patrol work, the ASW hunt,
+  // carrier cyclic ops, AWACS small talk — stays off the net. The cockpit
+  // only hears what concerns the mission or the player. Ambient systems
+  // still call this so the policy lives in one place; it drops the call.
+  chatter(text, kind = 'info') { /* the net stays quiet */ },
   addScore(n) { this.score += n; },
 };
 window.G = G; // debug hook
@@ -890,19 +895,10 @@ G.onAircraftDown = (unit, byPlayer) => {
   if (unit.type === 'cruise') { G.msg('CRUISE MISSILE DESTROYED', 'good'); }
   if (unit.type === 'sub') { G.msg('SHADOW SUB DESTROYED!', 'good'); }
   if (unit.kind === 'airliner') {
-    if (byPlayer) {
-      // the one thing a Navy pilot must never do
-      G.score = Math.max(0, G.score - 5000);
-      G.msg(`COURT MARTIAL! ${unit.label} DOWN — ${unit.souls || 150} SOULS  −5000 PTS`, 'bad');
-      G.radio(`NORAD: VIPER 1-1, YOU JUST SHOT DOWN A CIVILIAN AIRLINER. RTB AND HAND OVER YOUR WINGS.`);
-      G.audio.fail();
-      if (G.missionDef.id !== 'free' && !G.over) {
-        G.failMission('COURT MARTIAL',
-          `${unit.name} WAS A CIVILIAN AIRLINER WITH ${unit.souls || 150} SOULS ABOARD.\nTHERE WERE NO SURVIVORS.\n\nYOUR WINGS ARE FORFEIT. YOUR CAREER IS OVER.`);
-      }
-    } else {
-      G.msg(`${unit.label} CRASHED — ALL SOULS LOST`, 'bad');
-    }
+    // player weapons can no longer touch civil traffic — no lock, no bullet,
+    // no warhead, and with the trigger gone the court martial goes with it.
+    // An airliner only falls now if the world itself takes it down.
+    G.msg(`${unit.label} CRASHED — ALL SOULS LOST`, 'bad');
   }
 };
 G.onPlayerHit = (dmg, byWhom) => {
@@ -1268,9 +1264,11 @@ function updateCamera(dt) {
 // ---------------- targeting & weapons ----------------
 function updateTargeting(dt) {
   const P = G.player;
-  // build target list — airliners are legitimate radar contacts too, God help them.
+  // build target list — hostiles only. Civil traffic and friendlies still paint
+  // the scope as contacts, but the weapon system refuses them: no T-cycle, no
+  // lock, no shot. Civilian lives are not in the target set, full stop.
   // air-to-air only: surface contacts (the sub, the raft) can be seen, never locked.
-  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && !b.surface && (b.kind === 'bandit' || b.kind === 'stolen' || b.kind === 'airliner'));
+  const targets = G.bandits.filter(b => !b.dead && !b.removeMe && !b.surface && (b.kind === 'bandit' || b.kind === 'stolen'));
   if (G.playerTarget && (G.playerTarget.dead || G.playerTarget.removeMe)) { G.playerTarget = null; G.lockLevel = 0; }
   if (G.input.pressed('KeyT')) {
     if (!targets.length) { G.playerTarget = null; }
@@ -1434,7 +1432,7 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyS') && P.type === 'f14') {
     P.sweepTarget = P.sweepTarget ? 0 : 1;
     G.msg(P.sweepTarget ? 'WINGS SWEPT — 68°' : 'WINGS SPREAD — 20°', 'info');
-    G.audio.radioClick();
+    G.audio.wingSweep();
   }
   if (I.pressed('KeyR')) {
     // longest to shortest, like a real scope stepping down — the Tomcat's
@@ -2263,8 +2261,12 @@ else if (auto) {
     const [px, pz, ph] = ppos.split(',').map(Number);
     G.setPlayerStart({ pos: new THREE.Vector3(px, ph || 800, pz), heading: params.get('phdg') ? Number(params.get('phdg')) * Math.PI / 180 : Math.PI / 2, speed: 180 });
   }
-  const wpn0 = params.get('wpn');            // test hook: preselect weapon (aim120/aim9/gun)
-  if (wpn0 && G.player && ['aim120', 'aim9', 'gun'].includes(wpn0)) G.player.weapon = wpn0;
+  const wpn0 = params.get('wpn');            // test hook: preselect weapon (must be on the jet's ring)
+  if (wpn0 && G.player) {
+    const ring = (G.player.type === 'f14' ? ['aim54', 'aim7', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'])
+      .concat((G.player.stores.mk83 || 0) > 0 ? ['mk83'] : []);
+    if (ring.includes(wpn0)) G.player.weapon = wpn0;
+  }
   if (params.get('xray') === '1') {
     G.player.model.traverse(o => { if (o.material) { o.material = new THREE.MeshBasicMaterial({ color: 0xff0044 }); } });
     G.player.model.scale.setScalar(4);
