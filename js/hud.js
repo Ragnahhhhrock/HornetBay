@@ -66,7 +66,7 @@ export class HUD {
       // spectate: riding another aircraft — no cockpit, no own-ship symbology.
       // notifications print on-screen like the contact titles, below the banner
       this._messages(c, G, s, this.h * 0.165);
-      const slabel = (G.specTarget.cfg ? 'MISSILE VIEW — ' : 'SPECTATE — ') + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
+      const slabel = (G.specTarget.cfg ? 'MISSILE VIEW — ' : G.specMission ? 'MISSION SPECTATE — ' : 'SPECTATE — ') + String(G.specTarget.name || G.specTarget.type || 'CONTACT').toUpperCase();
       c.fillStyle = WHITE; c.font = `${11 * s}px "Courier New", monospace`;
       c.textAlign = 'center'; c.fillText(`${slabel}${G.xmag > 1 ? '  ' + G.xmag.toFixed(1) + ' XMAG' : ''}${G.timeScale > 1 ? '  TIME ' + G.timeScale + 'X' : ''}`, this.cxw, this.h * 0.105);
       c.fillStyle = DIM;

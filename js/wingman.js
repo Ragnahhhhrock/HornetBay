@@ -53,6 +53,7 @@ export class Wingman {
     this.ai.kind = 'wingman';
     this.ai.identified = true;
     this.ai.isWingman = true;
+    this.ai.missionUnit = true;   // VIPER TWO is always part of the cast — first seat on the K ring
     this.state = 'JOIN';
     this._say(`${this.callsign}: AIRBORNE — JOINING YOUR WING`);
     G.bandits.push(this.ai);

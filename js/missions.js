@@ -1425,7 +1425,7 @@ export const MISSIONS = [
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
     this.ship = G.world.ships.all.find(v => v.name === 'MS BAY MONARCH');
-    if (this.ship) this.ship._held = true;   // engines seized, dead in the water
+    if (this.ship) { this.ship._held = true; this.ship.missionUnit = true; }   // engines seized, dead in the water — and the center of the mission cast
     const sp = this.ship ? this.ship.pos : V(5000, 0, -1000);
     this.t = 0; this.boats = []; this.boatWave1 = false; this.boatWave2 = false; this.dropDone = false;
     this.padT = 6; this.padsLeft = 8; this.hoverT = -1; this.sealHome = false;

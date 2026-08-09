@@ -789,10 +789,11 @@ function launchMission(def, opts = {}) {
   G.world.enemySub.group.visible = false;   // m6 spawns its own destructible sub entity
   const _bnr = G.world.carrier.group.getObjectByName('m9banner');   // m9 dresses the island for one sortie only
   if (_bnr) G.world.carrier.group.remove(_bnr);
-  for (const v of G.world.ships.all) v._held = false;   // m11 seizes the Bay Monarch for one sortie only
+  for (const v of G.world.ships.all) { v._held = false; v.missionUnit = false; }   // m11 seizes the Bay Monarch for one sortie only
   G.world.setTimeOfDay(def.time || 'day');
   G.mission = Object.assign({}, def);
-  G.mission.setup(G);
+  G._castFlag = true;                          // everything the script raises from here is mission cast
+  try { G.mission.setup(G); } finally { G._castFlag = false; }
   // point of origin: a sortie only counts when you bring her back to where
   // it began. Other decks and fields still rearm & refuel — they just don't
   // end the mission. Free flight has no origin and no paperwork.
@@ -854,6 +855,7 @@ $('quickstart').addEventListener('click', (e) => {
 G.spawnAI = (type, opts) => {
   const a = new AIAircraft(scene, G.world, type, opts);
   a.label = opts.label || opts.name || type;
+  if (G._castFlag) a.missionUnit = true;   // spawned by the mission script itself — earns a seat on the K ring
   G.bandits.push(a);
   return a;
 };
@@ -1466,10 +1468,10 @@ function handleDiscreteInput(dt) {
   if (I.pressed('KeyV')) {
     const order = ['cockpit', 'cockpitoff', 'chase', 'orbit', 'tower'];
     G.view = order[(order.indexOf(G.view) + 1) % order.length];
-    G.specTarget = null; G.specOrbit = null;   // leaving spectate
+    G.specTarget = null; G.specOrbit = null; G.specMission = false;   // leaving spectate
   }
   // X — straight back to the cockpit from any view, no cycling
-  if (I.pressed('KeyX') && (G.view !== 'cockpit' || G.specTarget)) { G.view = 'cockpit'; G.specTarget = null; G.msg('COCKPIT VIEW', 'info'); }
+  if (I.pressed('KeyX') && (G.view !== 'cockpit' || G.specTarget)) { G.view = 'cockpit'; G.specTarget = null; G.specMission = false; G.msg('COCKPIT VIEW', 'info'); }
   // Z — time acceleration: 2x, 4x, 8x, 16x, then back to normal.
   // SHIFT+Z steps back down: 16x > 8x > 4x > 2x — same ring, both directions.
   if (I.pressed('KeyZ') && (G.state === 'flying' || G.state === 'dead')) {
@@ -1502,28 +1504,53 @@ function handleDiscreteInput(dt) {
       ...(G.heliOps ? G.heliOps.helis : []),
       ...(G._carrierSpec ? [G._carrierSpec] : []),
     ].sort((a, b) => a.pos.distanceTo(P.pos) - b.pos.distanceTo(P.pos));
-    if (!others.length) { G.specTarget = null; G.msg('NO CONTACTS IN THE AREA', 'info'); }
+    if (!others.length) { G.specTarget = null; G.specMission = false; G.msg('NO CONTACTS IN THE AREA', 'info'); }
     else {
       const ring = others.length + 1;                       // contacts + your own cockpit
       const n = (others.indexOf(G.specTarget) + dir + ring) % ring;
       G.specTarget = n === others.length ? null : others[n];
+      G.specMission = false;                                // J rides everyone — not a mission-cast ride
       if (!G.specTarget) G.specOrbit = null;   // back in your own cockpit — orbit resets
       G.msg(G.specTarget ? 'SPECTATING \u2014 ' + (G.specTarget.name || G.specTarget.vtype || G.specTarget.type || 'CONTACT').toUpperCase() + '  (J NEXT · SHIFT+J PREV)' : 'BACK IN YOUR OWN COCKPIT', 'info');
     }
   };
   if (I.pressed('KeyJ')) cycleSpectate((I.down('ShiftLeft') || I.down('ShiftRight')) ? -1 : 1);
+  // K — mission spectate: the same ride-along camera as J, but the ring only
+  // holds the cast of the sortie you're flying — your wingman, whatever the
+  // brief sent up, and anything they launch (the Bear's Kh-55s board the ring
+  // as they leave the rails). Airliners, the air wing and the rest of the
+  // bay's ambient life stay out of the cycle. K next, SHIFT+K previous,
+  // your own cockpit at the seam — same as J.
+  const cycleMissionSpectate = (dir) => {
+    if (!G.missionDef || G.missionDef.id === 'free') { G.msg('FREE FLIGHT — NO MISSION CAST. J RIDES EVERYONE', 'info'); return; }
+    const cast = [
+      ...G.bandits.filter(b => b.missionUnit && !b.dead && !b.removeMe),
+      ...(G.world && G.world.ships ? G.world.ships.all.filter(v => v.missionUnit) : []),
+    ].sort((a, b) => a.pos.distanceTo(P.pos) - b.pos.distanceTo(P.pos));
+    if (!cast.length) { G.specTarget = null; G.specOrbit = null; G.specMission = false; G.msg('MISSION CAST IS GONE — BACK IN YOUR COCKPIT', 'info'); }
+    else {
+      const ring = cast.length + 1;                       // cast + your own cockpit
+      const n = (cast.indexOf(G.specTarget) + dir + ring) % ring;
+      G.specTarget = n === cast.length ? null : cast[n];
+      G.specMission = !!G.specTarget;
+      if (!G.specTarget) G.specOrbit = null;   // back in your own cockpit — orbit resets
+      G.msg(G.specTarget ? 'MISSION SPECTATE — ' + (G.specTarget.name || G.specTarget.vtype || G.specTarget.type || 'CONTACT').toUpperCase() + '  (K NEXT · SHIFT+K PREV)' : 'BACK IN YOUR OWN COCKPIT', 'info');
+    }
+  };
+  if (I.pressed('KeyK')) cycleMissionSpectate((I.down('ShiftLeft') || I.down('ShiftRight')) ? -1 : 1);
   // O — missile view: ride the newest round in flight, with the full spectate
   // camera (SHIFT+arrows / right-drag pan, wheel / [ ] zoom, 0 reframe). O
   // again cycles the rounds in the air, then hands you back your cockpit.
   if (I.pressed('KeyO')) {
     const live = (G.missiles || []).filter(m => !m.dead);
     if (!live.length) {
-      if (G.specTarget && G.specTarget.cfg) { G.specTarget = null; G.specOrbit = null; G.msg('BACK IN YOUR OWN COCKPIT', 'info'); }
+      if (G.specTarget && G.specTarget.cfg) { G.specTarget = null; G.specOrbit = null; G.specMission = false; G.msg('BACK IN YOUR OWN COCKPIT', 'info'); }
       else G.msg('NO MISSILES IN FLIGHT', 'info');
     } else {
       const cur = live.indexOf(G.specTarget);
       const n = (cur + 1) % (live.length + 1);
       G.specTarget = n === live.length ? null : live[n];
+      G.specMission = false;
       G.msg(G.specTarget ? 'MISSILE VIEW — ' + G.specTarget.name + '  (O FOR NEXT / COCKPIT)' : 'BACK IN YOUR OWN COCKPIT', 'info');
     }
   }
@@ -1535,7 +1562,7 @@ function handleDiscreteInput(dt) {
   }
   // spectated contact went down or left the area — back to your own jet
   if (G.specTarget && (G.specTarget.dead || G.specTarget.removeMe)) {
-    G.specTarget = null; G.specOrbit = null; G.msg('CONTACT LOST — BACK IN YOUR COCKPIT', 'info');
+    G.specTarget = null; G.specOrbit = null; G.specMission = false; G.msg('CONTACT LOST — BACK IN YOUR COCKPIT', 'info');
   }
   // view magnification (the original's XMAG) — works in every view
   const XSTEPS = [1, 1.5, 2, 3, 4, 6, 8];
@@ -2033,7 +2060,10 @@ function stepGame(dt) {
       // runway landing detection -> landed flag
       if (P.onGround && P.onGround.type === 'runway' && P.onGround.speedRel === 0 && !G.landedThisSortie) G.landedThisSortie = true;
       updateTargeting(dt);
-      if (G.mission && G.mission.update && !G.over) G.mission.update(G, dt);
+      if (G.mission && G.mission.update && !G.over) {
+        G._castFlag = true;                  // mid-sortie spawns (the Bear's Kh-55s…) join the cast too
+        try { G.mission.update(G, dt); } finally { G._castFlag = false; }
+      }
       // RTB watch: parked (full stop) at the point of origin closes the sortie;
       // down anywhere else is a hot pit, not a victory — say so now and then
       if (G.rtb && !G.over) {
