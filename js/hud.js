@@ -174,22 +174,26 @@ export class HUD {
     c.fillText(`${P.gForce.toFixed(1)} G`, w * 0.305, h * 0.70);
     const msl = P.weapon === 'gun' ? P.stores.gun : P.stores[P.weapon];
     const wnm = { gun: 'GUN', aim9: 'SIDWDR', aim120: 'AMRAAM', aim54: 'PHOENIX', aim7: 'SPARROW', mk83: 'MK 83' }[P.weapon] || 'AM';
-    c.fillText(`${wnm} ${msl}`, w * 0.695, h * 0.70);
+    // the right-hand readout stack grows UP from the glass bottom — the combiner
+    // clip ends at 0.72 and anything drawn lower is cut off by the cockpit panel
+    // (the F-14's SWP line and the wingman line used to spill and get clipped)
+    const stack = [{ text: `${wnm} ${msl}`, color: WHITE }];
     if (P.type === 'f14') {
       // swing-wing readout: amber while travelling, green when settled
-      const deg = Math.round(20 + (P.sweep01 || 0) * 48);
+      const swpDeg = Math.round(20 + (P.sweep01 || 0) * 48);
       const travelling = Math.abs((P.sweepTarget || 0) - (P.sweep01 || 0)) > 0.02;
-      c.fillStyle = travelling ? AMBER : GREEN;
-      c.fillText(`SWP ${deg}°`, w * 0.695, h * 0.73);
-      c.fillStyle = GREEN;
+      stack.push({ text: `SWP ${swpDeg}°`, color: travelling ? AMBER : GREEN });
     }
     // wingman status under the weapons readout — amber when he's in trouble
     if (G.wingman && G.wingman.ai) {
       const line = G.wingman.hudLine();
-      c.fillStyle = line.includes('DEFENSIVE') || line.includes('KIA') ? AMBER : GREEN;
-      c.fillText(line, w * 0.695, h * 0.76);
-      c.fillStyle = GREEN;
+      stack.push({ text: line, color: line.includes('DEFENSIVE') || line.includes('KIA') ? AMBER : GREEN });
     }
+    stack.forEach((row, i) => {
+      c.fillStyle = row.color;
+      c.fillText(row.text, w * 0.695, h * (0.70 - 0.03 * i));
+    });
+    c.fillStyle = GREEN;
     c.textAlign = 'left';
   }
 
