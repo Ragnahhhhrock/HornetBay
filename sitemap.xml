@@ -6,6 +6,7 @@
   <url><loc>https://hornetbay.com/store</loc><priority>0.8</priority></url>
   <url><loc>https://hornetbay.com/print</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/analytics</loc><priority>0.5</priority></url>
+  <url><loc>https://hornetbay.com/blog/safe-and-sound</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/off-the-panel</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/mission-spectate</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/true-to-life-rounds</loc><priority>0.7</priority></url>
@@ -168,9 +169,10 @@
   <url><loc>https://hornetbay.com/blog/crash-shatter</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/hornet-bay-name</loc><priority>0.7</priority></url>
   <url><loc>https://hornetbay.com/blog/flight-dynamics-ejection</loc><priority>0.7</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
+  <url><loc>https://hornetbay.com/blog/tag/missions</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/fix</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/cockpit</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/feature</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/controls</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/weapons</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/graphics</loc><priority>0.6</priority></url>
@@ -180,7 +182,6 @@
   <url><loc>https://hornetbay.com/blog/tag/audio</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/playtest</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/fixes</loc><priority>0.6</priority></url>
-  <url><loc>https://hornetbay.com/blog/tag/missions</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/ui</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/site</loc><priority>0.6</priority></url>
   <url><loc>https://hornetbay.com/blog/tag/content</loc><priority>0.6</priority></url>
