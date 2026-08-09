@@ -25,7 +25,7 @@ export class AudioEngine {
   setMusicOn() { /* music removed at user request */ }
 
   async _loadSamples() {
-    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom', 'gatling', 'sweep', 'voice_gun', 'voice_sidewinder', 'voice_amraam', 'voice_phoenix', 'voice_sparrow', 'voice_mk83'];
+    const files = ['eng_idle', 'eng_mil', 'gear', 'whoosh', 'boom', 'gatling', 'voice_gun', 'voice_sidewinder', 'voice_amraam', 'voice_phoenix', 'voice_sparrow', 'voice_mk83'];
     await Promise.all(files.map(async n => {
       try {
         let ab;
@@ -240,8 +240,6 @@ export class AudioEngine {
     this._tone(110, 0.35, 0.22 * vol, 'sine', 45);
   }
   gear() { this._play('gear', 0.8); }
-  // the Tomcat's swing wing: hydraulics and steel tracks as the gloves move
-  wingSweep() { this._play('sweep', 0.9); }
   hook() { this._tone(160, 0.25, 0.25, 'square', 80); }
   trap() { this._noiseHit(0.7, 0.6, 800, 0.8, 100); this._tone(120, 0.5, 0.4, 'sawtooth', 45); }
   radioClick() { this._noiseHit(0.04, 0.18, 3500, 3); }

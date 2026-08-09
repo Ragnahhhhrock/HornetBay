@@ -108,51 +108,14 @@ running as a plain static site (no build step, ES modules straight to the browse
 ## Audio & voice pipeline
 
 - SFX in `sfx/*.wav`; engine loops + gatling captured from the Amiga original.
-  `sweep.wav` (F-14 wing-sweep hydraulics, `audio.wingSweep()` on S) is
-  AI-generated, not Amiga — same 22050 Hz mono spec, RMS ~3000.
-- Missile bodies (`js/models.js missileMesh(type)` + the `AAM_BODY` table) are
-  per-type: fins/nozzle/seeker from reference photos (Sidewinder rollerons,
-  Sparrow mid deltas, Phoenix strakes, AMRAAM clipped fins; Soviet/shipboard
-  rounds in the same idiom). Each carries a hidden `userData.flame` exhaust
-  cone; `weapons.js` lights it while `cfg.burn` seconds remain and thins the
-  smoke trail after burnout. In-flight rounds use the same builder — no bare
-  cylinders.
-- Control surfaces are live on all five player types + MiG-29/Su-27 ("working
-  surfaces" entry): `models.js` `_surfPair/_teSurf` build hinge Groups on the
-  trailing edge (positive `rotation.x` = TE up, +x = left wing), registered as
-  `userData.surf = { ail, flap, flaperon, spoiler }` (per-type subset — the
-  F-16 flies flaperons, the F-14 has spoilers + flaps riding the sweep pivots,
-  no ailerons). Drivers: `flight.js _syncVisual` (player: ailerons follow
-  `inp.roll`, flaps droop with `gearDown`, damped) and `ai.js _syncModel`
-  (AI: ailerons follow smoothed bank rate, flaps with the low-and-slow rule).
 - Spoken stores callouts (`voice_gun/sidewinder/amraam/phoenix/sparrow/mk83.wav`) are
-  **all one voice by construction**: the audio-generation plugin's TTS voice
-  `05Cdh2gw2NMzDvykn1nm` (calm middle-aged male, accented — THE canonical voice;
-  the espeak re-cut in 59c8f35 was reverted). Single word per file; `voice_mk83`
-  says **"Bombs"** (never "Mark eighty-three"). 22050 Hz mono 16-bit; keep RMS
-  ~2300-3600, peak ≤ 32000. gun/sidewinder/amraam/sparrow/phoenix are the
-  lossless originals restored from `59c8f35^`; new words must be generated with
-  the same voice ID. Do NOT re-voice individual files with a different voice —
-  regenerate from this one voice or consistency breaks (this bit us twice).
+  **all one voice by construction**: espeak 1.48 `en+m2 -s 120 -p 50`, then
+  RMS-normalized to ~3000 (peak cap 32000), 22050 Hz mono 16-bit.
+  Rebuild espeak: `sh /mnt/agents/work/tools/build-espeak.sh` (builds into /tmp),
+  `ESPEAK_DATA_PATH=/tmp/espeak-1.48.04-source`. Do NOT re-voice individual files —
+  regenerate the whole set from one recipe or consistency breaks (this bit us once).
 - `audio.js weaponSelect(w)` maps weapon→sample; the 1988 console beep is the fallback.
 - Radio chatter is text-only by decision ("radio goes silent" entry) — no squelch/TTS.
-- The cockpit net carries **mission/player-relevant notifications only** ("quiet on
-  the net" entry): ambient world chatter (SFO airliner movements, P-3 patrol work,
-  the free-flight ASW hunt, carrier cyclic ops, AWACS greetings/picture/civil-traffic
-  notes) routes through `G.chatter()` in `js/main.js`, a deliberate no-op — ambient
-  systems keep calling it so the policy lives in one place. The AWACS **bogey
-  warning** (`js/awacs.js _call`) still breaks squelch, as do wingman calls,
-  mission scripts, and every player-triggered message. To re-enable ambience,
-  make `G.chatter` forward to `G.msg`.
-- Civilian aircraft **cannot be targeted or harmed by the player** ("civilians
-  are not targets" entry): `kind === 'airliner'` is out of the lock list in
-  `main.js updateTargeting`, immune to player damage at the single chokepoint
-  `ai.js AIAircraft.hit` (the `byPlayer` flag), and skipped in the gun ray and
-  unguided-missile proximity loops in `weapons.js`. The old check-fire warning
-  and the court-martial branch went with the trigger — there is nothing left
-  to punish. Enemy fire (`byPlayer = false`) still resolves against
-  airliner-kind friendlies (the defector 747, NAVY 1, the HABU), so escort
-  missions keep their stakes. Airliners still paint the scope as contacts.
 
 ## Analytics (GA4)
 
@@ -184,9 +147,7 @@ running as a plain static site (no build step, ES modules straight to the browse
 
 ## Current state / open threads
 
-- Voice set: original TTS baritone restored for all six callouts; Mk 83 callout now
-  says "Bombs" (reverts the espeak re-cut `59c8f35`). The `?wpn=` test hook now
-  accepts any weapon on the jet's ring (e.g. `?auto=t8&wpn=mk83`).
+- Voice set re-cut to a single speaker (commit `59c8f35`, version `9a389d2`).
 - Facebook vanity URL deployed (commit `7bd4ad3`).
 - Waiting on user: re-run GA report ~24 h after custom definitions registered → then
   produce the per-mission completion-funnel analysis and difficulty recommendations.

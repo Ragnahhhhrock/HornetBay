@@ -97,7 +97,7 @@ export class AswOps {
     this.localized = false;
     this.diveT = rand(300, 480);
     this._p3Called = false;
-    this.G.chatter('FLEET COM: POSSIBLE SUBMARINE CONTACT SURFACED WEST OF THE GROUP', 'info');
+    this.G.msg('FLEET COM: POSSIBLE SUBMARINE CONTACT SURFACED WEST OF THE GROUP', 'info');
   }
 
   _goneDeep(silent = false) {
@@ -108,7 +108,7 @@ export class AswOps {
     this.cycleT = rand(360, 660);
     this._clearOrdnance();
     this._releaseHelo();
-    if (!silent) this.G.chatter('P-3 ORION: CONTACT LOST — SHE\'S GONE DEEP', 'info');
+    if (!silent) this.G.msg('P-3 ORION: CONTACT LOST — SHE\'S GONE DEEP', 'info');
   }
 
   damageSub(dmg) {
@@ -117,7 +117,7 @@ export class AswOps {
     const p = this.sub.pos;
     for (let i = 0; i < 8; i++) this.G.fx.splash(_v.set(p.x + (Math.random() - 0.5) * 40, 1, p.z + (Math.random() - 0.5) * 60), 1.2);
     if (this.subHp <= 150) {
-      this.G.chatter('P-3 ORION: GOOD HITS! SHE\'S DIVING!', 'good');
+      this.G.msg('P-3 ORION: GOOD HITS! SHE\'S DIVING!', 'good');
       this._goneDeep(true);
     }
   }
@@ -133,7 +133,7 @@ export class AswOps {
     b.mesh.visible = true;
     b.mesh.position.copy(pos);
     b.vel.set(vel ? vel.x * 0.4 : 0, -12, vel ? vel.z * 0.4 : 0);
-    this.G.chatter(pos.y > 100 ? 'P-3 ORION: SONOBUOY AWAY' : 'NAVY 701: SONOBUOY AWAY', 'info');
+    this.G.msg(pos.y > 100 ? 'P-3 ORION: SONOBUOY AWAY' : 'NAVY 701: SONOBUOY AWAY', 'info');
   }
 
   _updateBuoys(dt) {
@@ -154,7 +154,7 @@ export class AswOps {
       for (const b of this.buoys) if (b.live && b.mesh.position.y <= 0.5 && horiz(b.mesh.position, this.sub.pos) < 6000) near++;
       if (near >= 2) {
         this.localized = true;
-        this.G.chatter('P-3 ORION: SONOBUOYS HAVE CONTACT — LOCALIZED', 'good');
+        this.G.msg('P-3 ORION: SONOBUOYS HAVE CONTACT — LOCALIZED', 'good');
       }
     }
   }
@@ -167,7 +167,7 @@ export class AswOps {
     t.vel.set(f.x * 30, -8, f.z * 30);
     this.G.scene.add(t.mesh);
     this.torps.push(t);
-    this.G.chatter(aircraft.kind === 'heli' ? 'NAVY 701: TORPEDO IN THE WATER' : 'P-3 ORION: TORPEDO IN THE WATER — RUNNING HOT', 'good');
+    this.G.msg(aircraft.kind === 'heli' ? 'NAVY 701: TORPEDO IN THE WATER' : 'P-3 ORION: TORPEDO IN THE WATER — RUNNING HOT', 'good');
   }
 
   _updateTorps(dt) {
@@ -212,7 +212,7 @@ export class AswOps {
     this.p3Engaged = true;
     if (!this._p3Called) {
       this._p3Called = true;
-      G.chatter('P-3 ORION: INVESTIGATING SUBMARINE CONTACT', 'info');
+      G.msg('P-3 ORION: INVESTIGATING SUBMARINE CONTACT', 'info');
     }
     // a 2.5 km wheel over the contact at 500 ft
     this.p3OrbitA += dt * 0.038;
@@ -241,7 +241,7 @@ export class AswOps {
         this.helo = h; this.heloDips = 0;
         h.task = 'asw'; h.mode = 'dip'; h.dipPhase = undefined;
         h.target = { x: sub.pos.x + rand(-600, 600), z: sub.pos.z + rand(-600, 600), y: 0 };
-        G.chatter('NAVY 701: PROCEEDING TO SUBMARINE CONTACT FOR DIPPING SONAR', 'info');
+        G.msg('NAVY 701: PROCEEDING TO SUBMARINE CONTACT FOR DIPPING SONAR', 'info');
       }
       return;
     }
@@ -337,7 +337,7 @@ export class EscortWeapons {
       if (this._salvoLeft > 0 && asw.up) {
         this._salvoLeft--;
         this._launch(ffg, 'harpoon', asw.subProxy, 0.30);
-        if (this._salvoLeft === 0) G.chatter('KLAKRING: WEAPONS HOLD — FRIENDLIES IN THE SAC', 'info');
+        if (this._salvoLeft === 0) G.msg('KLAKRING: WEAPONS HOLD — FRIENDLIES IN THE SAC', 'info');
         this.asCool = this._salvoLeft > 0 ? 6 : 20;
       } else this.asCool = 4;
     }
@@ -354,6 +354,6 @@ export class EscortWeapons {
     for (let i = 0; i < 10; i++) G.fx.smoke(org.pos, 1.5, 2.5, 0xcccccc);
     G.fx.flash(org.pos, 8);
     G.audio.missileFire();                  // the whoosh sells a shipboard launch too
-    G.chatter(`KLAKRING: ${type === 'sm1' ? 'SM-1 AWAY' : 'HARPOON AWAY'}`, 'info');
+    G.msg(`KLAKRING: ${type === 'sm1' ? 'SM-1 AWAY' : 'HARPOON AWAY'}`, 'info');
   }
 }

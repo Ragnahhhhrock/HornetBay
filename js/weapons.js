@@ -1,7 +1,7 @@
 // weapons.js — missiles, gun, countermeasures, explosions, particle FX
 import * as THREE from 'three';
 import { clamp, lerp, rand, randSpread } from './util.js';
-import { makeGlowTexture, makeSmokeTexture, missileMesh } from './models.js';
+import { makeGlowTexture, makeSmokeTexture } from './models.js';
 import { groundHeight } from './world.js';
 import { stats } from './stats.js';
 
@@ -158,36 +158,94 @@ export class FXPool {
 
 // ---------------- missiles ----------------
 const MISSILE_TYPES = {
-  aim120: { vmax: 1050, accel: 260, turn: 1.9, life: 40, prox: 30, dmg: 110, ir: false, burn: 3.0 },
-  aim9:   { vmax: 850,  accel: 320, turn: 3.2, life: 22, prox: 26, dmg: 110, ir: true, burn: 2.2  },
+  aim120: { vmax: 1050, accel: 260, turn: 1.9, life: 40, prox: 30, dmg: 110, ir: false },
+  aim9:   { vmax: 850,  accel: 320, turn: 3.2, life: 22, prox: 26, dmg: 110, ir: true  },
   // AIM-54 Phoenix: the big radar-guided stick — three AIM-120s of legs,
   // a truck of a warhead, but it wants a radar lock from much further out
-  aim54:  { vmax: 1300, accel: 250, turn: 1.7, life: 90, prox: 40, dmg: 160, ir: false, burn: 4.5, len: 4.0, dia: 0.38 },
+  aim54:  { vmax: 1300, accel: 250, turn: 1.7, life: 90, prox: 40, dmg: 160, ir: false, len: 4.0, dia: 0.38 },
   // AIM-7M/P Sparrow (the 1994 fleet round): Mach 4 boost-sustain, ~45 km reach,
   // a 40 kg continuous-rod warhead — SEMI-ACTIVE: it only guides while the
   // launch radar holds the lock. Break the lock and it goes ballistic.
-  aim7:   { vmax: 1050, accel: 300, turn: 1.6, life: 50, prox: 30, dmg: 130, ir: false, sarh: true, burn: 2.8, len: 3.7, dia: 0.20 },
+  aim7:   { vmax: 1050, accel: 300, turn: 1.6, life: 50, prox: 30, dmg: 130, ir: false, sarh: true, len: 3.7, dia: 0.20 },
   // 9K38 Igla MANPADS: shoulder-fired from the freighter decks and the escort
   // boats. Short-legged IR — deadly under 4 km and below 1,300 m, useless
   // above it. Flares beat it; so does altitude.
-  igla:   { vmax: 570, accel: 300, turn: 2.7, life: 15, prox: 20, dmg: 55, ir: true, burn: 1.6, len: 1.7, dia: 0.07 },
-  r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false, burn: 2.6 },
-  r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true, burn: 2.0  },
+  igla:   { vmax: 570, accel: 300, turn: 2.7, life: 15, prox: 20, dmg: 55, ir: true, len: 1.7, dia: 0.07 },
+  r27:    { vmax: 950,  accel: 240, turn: 1.6, life: 35, prox: 30, dmg: 70,  ir: false },
+  r73:    { vmax: 800,  accel: 300, turn: 3.0, life: 18, prox: 26, dmg: 60,  ir: true  },
   // shipboard rounds: Klakring's SM-1 area-defence SAM and the sea-skimming Harpoon
-  sm1:     { vmax: 950,  accel: 320, turn: 3.4, life: 40, prox: 30, dmg: 130, ir: false, burn: 3.5 },
-  harpoon: { vmax: 320,  accel: 70,  turn: 1.1, life: 150, prox: 45, dmg: 120, ir: false, burn: 3.0, len: 4.6, dia: 0.34 },
+  sm1:     { vmax: 950,  accel: 320, turn: 3.4, life: 40, prox: 30, dmg: 130, ir: false, len: 4.5, dia: 0.34 },
+  harpoon: { vmax: 320,  accel: 70,  turn: 1.1, life: 150, prox: 45, dmg: 120, ir: false, len: 4.6, dia: 0.34 },
 };
+let missileGeo = null, missileMat = null;
+
+// ---------------- true-to-life airframes for the rounds you meet up close ----------------
+// Flat triangular fin: root chord along the Z axis at body radius r0, swept back
+// to a tip at radius r0+span. Built once in the XZ plane, cloned into a cruciform.
+function _fin(r0, span, zRootFront, zRootBack, zTip, color) {
+  const s = new THREE.Shape();
+  s.moveTo(r0, zRootFront); s.lineTo(r0, zRootBack); s.lineTo(r0 + span, zTip); s.closePath();
+  const g = new THREE.ShapeGeometry(s);
+  g.rotateX(Math.PI / 2);            // shape (x=radial, y=z) → fin stands in the XZ plane
+  return new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color, side: THREE.DoubleSide }));
+}
+function _finRing(fin, n = 4) {
+  const out = [];
+  for (let i = 1; i < n; i++) { const c = fin.clone(); c.rotation.z = i * Math.PI / 2; out.push(c); }
+  return [fin, ...out];
+}
+// RIM-66 Standard SM-1MR (the battle group's area-defence round): all-white body,
+// long sharp nose, four delta wings amidships, four smaller tail fins astern.
+function _buildSM1() {
+  const g = new THREE.Group(), W = 0xf0efe8, D = 0x2c2f33;
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 3.5, 10), new THREE.MeshBasicMaterial({ color: W }));
+  body.geometry.rotateX(Math.PI / 2); body.position.z = -0.5; g.add(body);
+  const nose = new THREE.Mesh(new THREE.ConeGeometry(0.17, 1.0, 10), new THREE.MeshBasicMaterial({ color: W }));
+  nose.geometry.rotateX(Math.PI / 2); nose.position.z = 1.75; g.add(nose);
+  const noz = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.16, 0.2, 8), new THREE.MeshBasicMaterial({ color: D }));
+  noz.geometry.rotateX(Math.PI / 2); noz.position.z = -2.3; g.add(noz);
+  for (const f of _finRing(_fin(0.17, 0.36, 0.85, -0.25, -0.10, W))) g.add(f);   // mid delta wings (1.07 m span, per the real round)
+  for (const f of _finRing(_fin(0.17, 0.27, -1.60, -2.30, -2.15, W))) g.add(f);  // tail fins
+  return g;
+}
+// 9M39 Igla (the terrorist MANPADS): olive pencil-slim body, dark glass seeker
+// dome, the signature aerodynamic nose spike, tiny canards, folding tail fins.
+function _buildIgla() {
+  const g = new THREE.Group(), O = 0x6f7560, D = 0x2c2f33, GLASS = 0x3a2c1c;
+  const body = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 1.3, 8), new THREE.MeshBasicMaterial({ color: O }));
+  body.geometry.rotateX(Math.PI / 2); body.position.z = -0.15; g.add(body);
+  const noz = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.033, 0.12, 8), new THREE.MeshBasicMaterial({ color: D }));
+  noz.geometry.rotateX(Math.PI / 2); noz.position.z = -0.82; g.add(noz);
+  const dome = new THREE.Mesh(new THREE.SphereGeometry(0.036, 8, 6), new THREE.MeshBasicMaterial({ color: GLASS }));
+  dome.scale.z = 1.4; dome.position.z = 0.53; g.add(dome);
+  const spike = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.0015, 0.28, 6), new THREE.MeshBasicMaterial({ color: 0x9a9a94 }));
+  spike.geometry.rotateX(Math.PI / 2); spike.position.z = 0.74; g.add(spike);
+  for (const f of _finRing(_fin(0.035, 0.10, 0.44, 0.30, 0.36, O))) g.add(f);     // canards
+  for (const f of _finRing(_fin(0.035, 0.13, -0.42, -0.68, -0.60, O))) g.add(f);  // tail fins
+  return g;
+}
+const _missileModels = {};
+function _missileModel(type) {
+  if (!_missileModels[type]) _missileModels[type] = type === 'sm1' ? _buildSM1() : _buildIgla();
+  return _missileModels[type].clone();
+}
+
 export class Missile {
   constructor(G, owner, type, target) {
     const cfg = MISSILE_TYPES[type];
     this.G = G; this.cfg = cfg; this.type = type;
     this.owner = owner; this.target = target;
-    // the round itself: the same per-type body (fins, nozzle, seeker dome) the
-    // jets carry on the rails — and its rocket exhaust, lit while the motor burns
-    this.mesh = missileMesh(type);
-    this.flame = this.mesh.userData.flame || null;
-    if (this.flame) this.flame.visible = true;
-    this.burnT = cfg.burn || 2.2;
+    if (type === 'sm1' || type === 'igla') {
+      this.mesh = _missileModel(type);   // the rounds you meet up close wear their real silhouettes
+    } else {
+      if (!missileGeo) {
+        missileGeo = new THREE.CylinderGeometry(0.16, 0.16, 3.4, 6);
+        missileGeo.rotateX(Math.PI / 2);
+        missileMat = new THREE.MeshBasicMaterial({ color: 0xe8e8e8 });
+      }
+      this.mesh = new THREE.Mesh(missileGeo, missileMat);
+      if (cfg.len) this.mesh.scale.set(cfg.dia / 0.32, cfg.dia / 0.32, cfg.len / 3.4);   // Phoenix is a fat, long round
+    }
     this.pos = this.mesh.position;
     this.pos.copy(owner.pos);
     // Player exposes fwd as a getter, AIAircraft as a method — handle both
@@ -251,22 +309,9 @@ export class Missile {
     if (this.life < cfg.life * 0.25) this.vel.y -= 4 * dt;
     this.pos.addScaledVector(this.vel, dt);
     this.mesh.quaternion.setFromUnitVectors(_v.set(0, 0, 1), this.dir);
-    // rocket motor: the exhaust flame burns bright off the nozzle, then the
-    // round coasts — flame out, the smoke thins to a faint drift
-    this.burnT -= dt;
-    const burning = this.burnT > 0;
-    if (this.flame) {
-      if (burning) {
-        const s = 0.75 + Math.random() * 0.5;
-        this.flame.scale.set(s, s, 0.8 + Math.random() * 0.6);
-      } else this.flame.visible = false;
-    }
     // smoke trail
     this.smokeT -= dt;
-    if (this.smokeT <= 0) {
-      this.smokeT = burning ? 0.03 : 0.09;
-      G.fx.trail(this.pos, burning ? 1.6 : 1.0, burning ? 0xeeeeee : 0xbbbbbb, 2.2);
-    }
+    if (this.smokeT <= 0) { this.smokeT = 0.03; G.fx.trail(this.pos, 1.5, 0xeeeeee, 2.2); }
     // proximity kill
     if (tAlive && !this.spoofed) {
       const dist = this.pos.distanceTo(t.pos);
@@ -281,13 +326,10 @@ export class Missile {
         return;
       }
     }
-    // unguided shot (fired with no lock) — still lethal to anything in its
-    // path, except civil traffic: a player round will not even detonate on
-    // an airliner. It flies on through the sky the airliner owns.
+    // unguided shot (fired with no lock) — still lethal to anything in its path
     if (!t && !this.spoofed) {
       for (const b of G.bandits) {
         if (b.dead || b.removeMe || b === this.owner) continue;
-        if (this.owner === G.player && b.kind === 'airliner') continue;
         if (this.pos.distanceTo(b.pos) < cfg.prox) {
           G.explode(this.pos, 0.8);
           b.hit(cfg.dmg, G, this.owner === G.player);
@@ -348,11 +390,9 @@ export class GunSystem {
       tr.add(glow);
       G.scene.add(tr);
       this.tracers.push({ mesh: tr, vel: f.multiplyScalar(1050).add(player.vel), life: 1.4 });
-      // hit check: ray vs targets (cylinder around flight path).
-      // civil traffic is exempt — the Vulcan will not track an airliner.
+      // hit check: ray vs targets (cylinder around flight path)
       for (const t of targets) {
         if (t.dead) continue;
-        if (player.isPlayer && t.kind === 'airliner') continue;
         _d.copy(t.pos).sub(player.pos);
         const dist = _d.length();
         if (dist > 1600 || dist < 30) continue;

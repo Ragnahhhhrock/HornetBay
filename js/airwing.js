@@ -362,7 +362,7 @@ class Airframe {
             this.speed = Math.max(30, this.speed - c.speed);
             this.localHdg = wrapAngle(Math.atan2(course.x, -course.z) - c.heading);
             this._radio(G, 'TOWER: ' + this.name + ' TRAPPED ABOARD.');
-            G.chatter(this.name + ' CAUGHT THE 3-WIRE', 'info');
+            G.msg(this.name + ' CAUGHT THE 3-WIRE', 'info');
           }
         }
         break;

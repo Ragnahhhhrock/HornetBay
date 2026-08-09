@@ -46,10 +46,6 @@ export class Awacs {
     this.G.audio.radioClick();
   }
 
-  // station-keeping small talk (greetings, civil traffic, friendly notes, the
-  // scope picture) stays off the net — only the bogey warning above breaks squelch
-  _chatter(text) { this.G.chatter(`SCREWTOPS: ${text}`); }
-
   update(dt) {
     const G = this.G, ai = this.ai;
     if (ai.dead || ai.removeMe) return;
@@ -69,7 +65,7 @@ export class Awacs {
     if (G.state !== 'flying' || P.dead || P.onGround) return;
     if (!this.greeted) {
       this.greeted = true;
-      this._chatter('VAW-123 ON STATION, ANGELS TWO-THREE OVER THE BAY — BULLSEYE IS ALCATRAZ. WE\'RE YOUR EYES.');
+      this._call('VAW-123 ON STATION, ANGELS TWO-THREE OVER THE BAY — BULLSEYE IS ALCATRAZ. WE\'RE YOUR EYES.');
       return;
     }
     // 1) approaching bogies: hostile, within 50 NM of the player, closing
@@ -100,7 +96,7 @@ export class Awacs {
         if (d < 11000 && Math.abs(b.pos.y - P.pos.y) < 900) {
           const rel = wrapAngle(Math.atan2(b.pos.x - P.pos.x, -(b.pos.z - P.pos.z)) - P.heading);
           const below = Math.round((P.pos.y - b.pos.y) * 3.28084 / 500) * 500;
-          this._chatter(`CIVIL TRAFFIC — YOUR ${clockCode(rel)} O'CLOCK, ${Math.max(1, Math.round(d / 1852))} MILES, ${below > 0 ? below + ' BELOW' : 'CO-ALTITUDE'}.`);
+          this._call(`CIVIL TRAFFIC — YOUR ${clockCode(rel)} O'CLOCK, ${Math.max(1, Math.round(d / 1852))} MILES, ${below > 0 ? below + ' BELOW' : 'CO-ALTITUDE'}.`);
           this.cool.traffic = 40;
           return;
         }
@@ -114,7 +110,7 @@ export class Awacs {
       if (G.wingman && G.wingman.alive) fr.push('VIPER TWO ON YOUR WING');
       if (G.p3 && !G.p3.ai.dead) fr.push('THE ORION WORKING THE SEA LANES WEST');
       if (G.heliOps && G.heliOps.seahawk.mode !== 'parked') fr.push('THE CRUISER\'S HELO AIRBORNE');
-      if (fr.length) { this._chatter(`FRIENDLIES — ${fr.join(', ')}.`); return; }
+      if (fr.length) { this._call(`FRIENDLIES — ${fr.join(', ')}.`); return; }
     }
     // 4) the big picture, on a slow cycle
     if (this.cool.picture <= 0) {
@@ -125,7 +121,7 @@ export class Awacs {
         if (b.hostile) hos++;
         else if (b.kind === 'airliner') civ++;
       }
-      this._chatter(hos
+      this._call(hos
         ? `PICTURE — ${hos <= 20 ? NUM[hos] : hos} HOSTILE GROUPS WEST, CIVIL TRAFFIC ${civ <= 20 ? NUM[civ] : civ} IN THE BAY.`
         : `PICTURE CLEAN — NO HOSTILES ON THE SCOPE. CIVIL TRAFFIC ${civ <= 20 ? NUM[civ] : civ} IN THE BAY.`);
     }

@@ -435,19 +435,6 @@ export class Player {
       if (f.visible) { const s = 0.8 + Math.random() * 0.5; f.scale.set(s, s, 0.8 + Math.random() * 0.8); }
     }
     if (u.stabL) { const a = (inp.pitch || 0) * -0.5; u.stabL.rotation.x = a; u.stabR.rotation.x = a; }
-    if (u.surf) {   // control surfaces: ailerons answer the stick, flaps ride
-      // the gear, the Tomcat's spoilers pop on the down-going wing only.
-      // +x is the left wing; positive rotation.x lifts the trailing edge, so
-      // right stick (roll +1) droops the left aileron and lifts the right.
-      this._flap01 = damp(this._flap01 ?? 0, this.gearDown ? 1 : 0, 2.4, dt);
-      const ail = clamp(inp.roll || 0, -1, 1) * 0.42;
-      const flp = this._flap01 * -0.55;          // trailing edge down
-      const s = u.surf;
-      if (s.ail) { s.ail[0].rotation.x = -ail; s.ail[1].rotation.x = ail; }
-      if (s.flaperon) { s.flaperon[0].rotation.x = -ail + flp; s.flaperon[1].rotation.x = ail + flp; }
-      if (s.flap) { s.flap[0].rotation.x = flp; s.flap[1].rotation.x = flp; }
-      if (s.spoiler) { s.spoiler[0].rotation.x = Math.max(0, -ail) * 1.6; s.spoiler[1].rotation.x = Math.max(0, ail) * 1.6; }
-    }
     if (u.wings) {   // F-14 swing wings sweep aft as sweep01 -> 1 (20deg -> 68deg)
       // +y rotation moves the +x wingtip toward -z (the tail): l +a / r -a
       const a = this.sweep01 * 0.84;
