@@ -1179,7 +1179,7 @@ function updateCamera(dt) {
     if (I.down('BracketLeft') || I.down('NumpadSubtract') || I.down('Numpad3')) o.dist = clamp(o.dist * (1 + cdt * 1.4), 0.35, 5);    // [ / KP- : back off
     if (I.pressed('Digit0') || I.pressed('Numpad0')) { o.yaw = 0; o.pitch = 0.1; o.dist = 1; }
     const sf = spec.fwd(_v2);
-    const big = spec.cfg ? 0.85 : spec.len ? Math.max(2, spec.len / 45) : /^(b744|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
+    const big = spec.cfg ? 0.85 : spec.len ? Math.max(2, spec.len / 45) : /^(b744|b747|b737|dc10|md90)$/.test(spec.type) ? 3.2 : 1.0;
     const base = (24 + (spec.speed || 120) * 0.03) * big * o.dist;
     // orbit offset in the target's frame: start behind it, swing by yaw, lift by pitch
     const bx = -sf.x, bz = -sf.z;
@@ -1189,6 +1189,9 @@ function updateCamera(dt) {
     _v.set(spec.pos.x + rx * horiz,
            Math.max(spec.pos.y + 7 * big * o.dist + Math.sin(o.pitch) * base, 2.5),
            spec.pos.z + rz * horiz);
+    if (G._specSnap) {   // scripted cutaway (AF1's tarmac shot): no cross-bay camera flight
+      G._specSnap = false; camPos.set(_v.x, _v.y, _v.z);
+    }
     camPos.x = damp(camPos.x, _v.x, 4.5, dt);
     camPos.y = damp(camPos.y, _v.y, 4.5, dt);
     camPos.z = damp(camPos.z, _v.z, 4.5, dt);
@@ -1408,26 +1411,14 @@ function handleDiscreteInput(dt) {
   }
   if (I.pressed('KeyP') && !I.ab) { togglePause(); return; }
   if (I.pressed('KeyP') && I.ab) G.podDropRequested = true;
-  // weapon select: ENTER cycles (the Amiga original's key), TAB as an alias,
-  // 1/2/3 jump straight to a weapon; the voice callout says what's live
+  // weapon select: ENTER cycles — the Amiga original's one key, one press per
+  // weapon, no shortcuts; the voice callout says what's live
   const selW = (w) => { if (P.weapon !== w) { P.weapon = w; G.lockLevel = 0; G.audio.weaponSelect(P.weapon); } };
   // cycle order skips anything the jet doesn't carry (the A-10 has no AMRAAM)
   const wOrder = (P.type === 'f14' ? ['aim54', 'aim7', 'aim9', 'gun'] : ['aim120', 'aim9', 'gun'])
     .concat((P.stores.mk83 || 0) > 0 ? ['mk83'] : [])   // bombs ride the ring only when a mission loads them
     .filter(w => w === 'gun' || w === 'mk83' || (P.stores[w] || 0) > 0);
-  if (I.pressed('Enter') || I.pressed('Tab')) selW(wOrder[(wOrder.indexOf(P.weapon) + 1) % wOrder.length]);
-  if (!wingOrdersOpen()) {
-    if (I.pressed('Digit1')) selW(wOrder[0]);
-    if (P.type === 'f14') {
-      if (I.pressed('Digit2')) selW('aim7');
-      if (I.pressed('Digit3')) selW('aim9');
-      if (I.pressed('Digit4')) selW('gun');
-    } else {
-      if (I.pressed('Digit2')) selW('aim9');
-      if (I.pressed('Digit3')) selW('gun');
-    }
-    if ((P.stores.mk83 || 0) > 0 && I.pressed('Digit5')) selW('mk83');   // the pickle lives at 5
-  }
+  if (I.pressed('Enter')) selW(wOrder[(wOrder.indexOf(P.weapon) + 1) % wOrder.length]);
   // S — swing the Tomcat's wings (spread <-> swept); noop for fixed wings
   if (I.pressed('KeyS') && P.type === 'f14') {
     P.sweepTarget = P.sweepTarget ? 0 : 1;
