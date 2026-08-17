@@ -33,15 +33,6 @@ running as a plain static site (no build step, ES modules straight to the browse
 
 ## Deploy pipeline (every site change, in order)
 
-0. **SYNC THE WORKING TREE FIRST — non-negotiable.** Other sessions (parallel Kimi
-   chats) push to the same origin. Before editing ANYTHING, compare the tree against
-   origin and merge their work in; never rsync a stale tree over origin — on
-   2026-08-09 a stale rsync wiped six journal entries, the restored voice set, the
-   sweep servo and the control-surfaces work (recovery commit: see git log around
-   `a4b7c97`). Cheap check: `GIT_SSH_COMMAND=... git log --oneline -3 origin/main`
-   in a scratch clone, and diff anything unexpected into `/mnt/agents/work/fa18/`
-   before the first edit. The deploy rsync pushes the WHOLE tree — every stale file
-   in it becomes a deletion or a revert on origin.
 1. Edit in `/mnt/agents/work/fa18/`.
 2. Push:
    ```sh
@@ -196,15 +187,6 @@ running as a plain static site (no build step, ES modules straight to the browse
 - Voice set: original TTS baritone restored for all six callouts; Mk 83 callout now
   says "Bombs" (reverts the espeak re-cut `59c8f35`). The `?wpn=` test hook now
   accepts any weapon on the jet's ring (e.g. `?auto=t8&wpn=mk83`).
-  **2026-08-09: re-restored after a stale-tree rsync reverted it (see §Deploy rule 0).
-  The voice files on origin are canonical — do not re-cut them.**
-- Mission spectate (K key): `missionUnit` cast stamping in spawnAI/mission setup+update,
-  K ring in main.js (`cycleMissionSpectate`), HUD banner `MISSION SPECTATE` (specMission
-  flag). Wingman stamped in wingman.js launch(); m11 stamps the seized Bay Monarch.
-- Kh-55 cruise-missile model lives in `buildCruiseMissile()` (models.js). SM-1/Igla and
-  all AAM rounds get real silhouettes from `AAM_BODY` + `missileMesh()` (models.js,
-  shared with rail models, flame lit while the motor burns) — do NOT re-add per-type
-  builders in weapons.js; that parallel attempt was dropped in the recovery merge.
 - Facebook vanity URL deployed (commit `7bd4ad3`).
 - Waiting on user: re-run GA report ~24 h after custom definitions registered → then
   produce the per-mission completion-funnel analysis and difficulty recommendations.

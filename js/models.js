@@ -871,26 +871,18 @@ export function buildMD90(livery = 0) {
 
 // ---------------- cruise missile ----------------
 export function buildCruiseMissile() {
-  // Raduga Kh-55 (AS-15 'Kent' — the Bear's long arm): light-gray torpedo body,
-  // rounded ogive nose, straight pop-out wings low on the belly line, the ventral
-  // turbofan nacelle with its dark intake ramp, conical tail and tall vertical fin.
-  const g = new THREE.Group(), LIGHT = 0xd6d9dc, DARK = 0x2c2f33;
-  const b = cyl(0.26, 0.24, 4.6, LIGHT, 12); b.position.z = 0.2; g.add(b);
-  const nose = new THREE.Mesh(new THREE.SphereGeometry(0.26, 12, 8, 0, Math.PI * 2, 0, Math.PI / 2), M(LIGHT));
-  nose.geometry.rotateX(Math.PI / 2); nose.position.z = 2.5; g.add(nose);
-  const tail = cone(0.24, 0.7, LIGHT, 12); tail.rotation.y = Math.PI; tail.position.z = -2.45; g.add(tail);
-  const w = box(3.1, 0.05, 0.55, LIGHT); w.position.set(0, -0.04, 0.5); g.add(w);
-  const nac = cyl(0.15, 0.15, 1.6, LIGHT, 8); nac.position.set(0, -0.34, -0.7); g.add(nac);
-  const ramp = box(0.14, 0.10, 0.34, DARK); ramp.position.set(0, -0.40, 0.14); g.add(ramp);
-  const noz = cyl(0.12, 0.14, 0.22, DARK, 8); noz.position.set(0, -0.34, -1.56); g.add(noz);
-  const finV = box(0.05, 0.75, 0.5, LIGHT); finV.position.set(0, 0.42, -1.95); g.add(finV);
-  const finH = box(1.5, 0.05, 0.45, LIGHT); finH.position.set(0, 0.06, -2.0); g.add(finH);
-  const f = abFlame(1.4, 0.16); f.position.set(0, -0.34, -1.85); f.visible = true; g.add(f);
+  const g = new THREE.Group();
+  const b = cyl(0.35, 0.3, 5.4, 0x4a5258, 8); g.add(b);
+  const n = cone(0.35, 1.4, 0x3a4148, 8); n.position.z = 3.4; g.add(n);
+  const w1 = box(3.2, 0.08, 0.9, 0x4a5258); w1.position.z = 0.4; g.add(w1);
+  const w2 = box(0.08, 1.8, 0.7, 0x4a5258); w2.position.z = -2.2; g.add(w2);
+  const w3 = box(2.2, 0.08, 0.7, 0x4a5258); w3.position.z = -2.2; g.add(w3);
+  const f = abFlame(2.2, 0.3); f.position.z = -3.6; f.visible = true; g.add(f);
   g.userData = { ab: [f], gear: null, hook: null, stabL: null, stabR: null, stores: { aim9: [], aim120: [] }, type: 'cruise' };
   return g;
 }
 
-
+// ---------------- rescue raft ----------------
 export function buildRaft() {
   const g = new THREE.Group();
   const raft = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.55, 8, 12), M(0xe86818));

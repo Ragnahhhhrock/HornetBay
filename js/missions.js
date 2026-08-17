@@ -656,11 +656,7 @@ export const MISSIONS = [
     this.af1 = G.spawnAI('b747', {
       pos: V(-52000, 4200, 4000), heading: Math.PI / 2 + 0.35, speed: 220, hp: 750,
       name: 'AIR FORCE ONE', label: 'AF1', mode: 'land', noEvade: true,
-      // final leg runs the 10R centerline to the touchdown zone — she parks on
-      // the tarmac, not in the grass short of the field
-      // SFO 10R final — ON the 103° runway axis (threshold 11853,19853), not
-      // the map's due-east line: constant-z legs put her 65 m onto the grass
-      waypoints: [V(-2470, 1500, 16547), V(6300, 300, 18571), V(12146, 6, 19921)],
+      waypoints: [V(2000, 1500, 20000), V(9000, 300, 20000), V(11300, 6, 20000)],
     });
     this.af1.kind = 'af1';
     this.af1.onEvent = (ev) => { if (ev === 'landed') this.af1Down = true; };
@@ -697,22 +693,8 @@ export const MISSIONS = [
       G.radio('NORAD: AIRSPACE CLEAR. AIR FORCE ONE IS ON FINAL FOR SFO.');
     }
     if (this.cleared && this.af1Down) {
-      // she's on the ground at SFO — cut away to her: parked on the tarmac,
-      // safe and sound, for a five-second beat before the paperwork
-      if (this._safeCut === undefined) {
-        this._safeCut = 0;
-        G.specTarget = this.af1; G.specMission = false;
-        G.specOrbit = { yaw: 2.35, pitch: 0.10, dist: 1.6 };   // front-quarter — the hump and the blue stripe
-        G._specSnap = true;                                    // CUT — no cross-bay camera flight
-        G.msg('AIR FORCE ONE IS DOWN — SAFE AND SOUND AT SFO', 'good');
-        G.radio('NORAD: AIR FORCE ONE IS ON THE GROUND AT SFO. THE PRESIDENT IS SAFE. OUTSTANDING, VIPER.');
-      }
-      this._safeCut += dt / (G.timeScale || 1);   // five REAL seconds, whatever the time accel
-      if (this._safeCut >= 5) {
-        if (G.specTarget === this.af1) { G.specTarget = null; G.specOrbit = null; }   // hand the cockpit back for the RTB
-        if (!this._scored) { this._scored = true; G.addScore(2500); }   // once — this block re-fires every frame till she decks
-        G.completeMission('MISSION COMPLETE', 'AIR FORCE ONE HAS SAFELY LANDED AT\nSAN FRANCISCO INTERNATIONAL.\nTHE PRESIDENT IS UNHARMED.\n\nWELL DONE!\n\nSCORE +2500 + KILL BONUSES');
-      }
+      G.addScore(2500);
+      G.completeMission('MISSION COMPLETE', 'AIR FORCE ONE HAS SAFELY LANDED AT\nSAN FRANCISCO INTERNATIONAL.\nTHE PRESIDENT IS UNHARMED.\n\nWELL DONE!\n\nSCORE +2500 + KILL BONUSES');
     }
   },
 },
@@ -1443,7 +1425,7 @@ export const MISSIONS = [
   setup(G) {
     G.setPlayerStart({ onCarrier: true });
     this.ship = G.world.ships.all.find(v => v.name === 'MS BAY MONARCH');
-    if (this.ship) { this.ship._held = true; this.ship.missionUnit = true; }   // engines seized, dead in the water — and the center of the mission cast
+    if (this.ship) this.ship._held = true;   // engines seized, dead in the water
     const sp = this.ship ? this.ship.pos : V(5000, 0, -1000);
     this.t = 0; this.boats = []; this.boatWave1 = false; this.boatWave2 = false; this.dropDone = false;
     this.padT = 6; this.padsLeft = 8; this.hoverT = -1; this.sealHome = false;
